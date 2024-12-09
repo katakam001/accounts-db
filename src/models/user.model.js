@@ -39,6 +39,10 @@ module.exports = (sequelize, Sequelize) => {
       allowNull: false,
       defaultValue: true
     },
+    loginAttempts: {
+      type: Sequelize.INTEGER,
+      defaultValue: 0,
+    },
     email: {
       type: Sequelize.STRING,
       allowNull: false

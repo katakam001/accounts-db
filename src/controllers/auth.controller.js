@@ -60,6 +60,13 @@ exports.signin = async (req, res) => {
     );
 
     if (!passwordIsValid) {
+      user.loginAttempts += 1;
+      if (user.loginAttempts >= 3) {
+        user.status = false; // Set status to false (locked)
+        await user.save();
+        return res.status(403).send({ message: "Account is locked due to multiple failed login attempts." });
+      }
+      await user.save();
       return res.status(401).send({
         message: "Invalid Password!",
       });
@@ -78,6 +85,11 @@ exports.signin = async (req, res) => {
     for (let i = 0; i < roles.length; i++) {
       authorities.push("ROLE_" + roles[i].name.toUpperCase());
     }
+    // Reset login attempts on successful login
+    user.loginAttempts = 0;
+    user.status = true; // Set status to true (unlocked)
+    user.last_login = new Date();
+    await user.save();
 
     req.session.token = token;
 
