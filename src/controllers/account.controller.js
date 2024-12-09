@@ -42,7 +42,6 @@ exports.accountDelete = async (req, res) => {
       return res.status(404).send('Account not found');
     }
     await account.destroy();
-    console.log("status" + 204);
     res.status(200).send({ message: 'Account deleted successfully' });
   } catch (error) {
     res.status(500).send(error);
