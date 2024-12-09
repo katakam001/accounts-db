@@ -3,7 +3,14 @@ const Account = db.account;
 
 exports.accountList = async (req, res) => {
   try {
-    const accounts = await Account.findAll();
+    const userId = req.query.userId;
+    if (!userId) {
+      return res.status(400).json({ error: 'userId query parameter is required' });
+    }
+
+    const accounts = await Account.findAll({
+      where: { user_id: userId }
+    });
     res.status(200).json(accounts);
   } catch (error) {
     console.error('Error fetching accounts:', error);
