@@ -54,6 +54,7 @@ require("../src/routes/user.routes")(app);
 require("../src/routes/account.routes")(app);
 require("../src/routes/group.routes")(app);
 require("./routes/journal.routes.js")(app);
+require("./routes/trail-balance.routes.js")(app);
 
 // set port, listen for requests
 const PORT = process.env.PORT || 8080;

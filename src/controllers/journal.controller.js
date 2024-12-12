@@ -6,6 +6,9 @@ exports.getJournalEntries = async (req, res) => {
   try {
     const userId = req.query.userId;
     const financialYear = req.query.financialYear;
+    const accountName = req.query.accountName || null;
+    const groupName = req.query.groupName || null;
+
     if (!userId) {
       return res.status(400).json({ error: 'userId query parameter is required' });
     }
@@ -13,7 +16,7 @@ exports.getJournalEntries = async (req, res) => {
       return res.status(400).json({ error: 'financialYear query parameter is required' });
     }
 
-    const query = `
+    let query = `
 SELECT 
     "JournalEntry"."id" AS "journal_id", 
     "JournalEntry"."journal_date", 
@@ -40,14 +43,25 @@ LEFT JOIN
     "users" AS "User" ON "JournalEntry"."user_id" = "User"."id"
 WHERE 
     "JournalEntry"."user_id" = :userId
-    AND "JournalEntry"."financial_year" = :financialYear;
+    AND "JournalEntry"."financial_year" = :financialYear
     `;
 
+    if (accountName) {
+      query += ` AND "Account"."name" = :accountName`;
+    }
+
+    if (groupName) {
+      query += ` AND "Group"."name" = :groupName`;
+    }
+
+    const replacements = { userId, financialYear };
+    if (accountName) replacements.accountName = accountName;
+    if (groupName) replacements.groupName = groupName;
+
     const rawEntries = await db.sequelize.query(query, {
-      replacements: { userId, financialYear },
+      replacements,
       type: db.sequelize.QueryTypes.SELECT
     });
-    
 
     // Format the results
     const formattedEntries = rawEntries.reduce((acc, entry) => {
@@ -73,7 +87,7 @@ WHERE
           description: entry.journal_description,
           user_id: userId,
           user_name: entry.user_name,
-          financial_year:entry.financial_year,
+          financial_year: entry.financial_year,
           items: [item]
         });
       }
@@ -88,6 +102,7 @@ WHERE
     res.status(500).json({ error: 'Internal Server Error' });
   }
 };
+
 
 exports.deleteJournalEntry = async (req, res) => {
   const entryId = req.params.id;
@@ -265,7 +280,7 @@ exports.createJournalEntryWithItems = async (req, res) => {
       user_id: newEntry.user_id,
       createdAt: new Date(),
       updatedAt: new Date(),
-      financial_year:newEntry.financial_year
+      financial_year: newEntry.financial_year
     });
 
     // Insert journal items
@@ -345,7 +360,7 @@ exports.createJournalEntryWithItems = async (req, res) => {
           description: entry.journal_description,
           user_id: entry.user_id,
           user_name: entry.user_name,
-          financial_year:entry.financial_year,
+          financial_year: entry.financial_year,
           items: [item]
         });
       }
