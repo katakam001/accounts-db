@@ -4,12 +4,19 @@ const Group = db.group;
 exports.groupList = async (req, res) => {
   try {
     const userId = req.query.userId;
+    const financialYear = req.query.financialYear;
     if (!userId) {
       return res.status(400).json({ error: 'userId query parameter is required' });
     }
+    if (!financialYear) {
+      return res.status(400).json({ error: 'financialYear query parameter is required' });
+    }
 
     const groups = await Group.findAll({
-      where: { user_id: userId }
+      where: {
+        user_id: userId,
+        financial_year: financialYear
+      }
     });
 
     res.status(200).json(groups);

@@ -4,12 +4,19 @@ const Account = db.account;
 exports.accountList = async (req, res) => {
   try {
     const userId = req.query.userId;
+    const financialYear = req.query.financialYear;
     if (!userId) {
       return res.status(400).json({ error: 'userId query parameter is required' });
     }
+    if (!financialYear) {
+      return res.status(400).json({ error: 'financialYear query parameter is required' });
+    }
 
     const accounts = await Account.findAll({
-      where: { user_id: userId }
+      where: {
+        user_id: userId,
+        financial_year: financialYear
+      }
     });
     res.status(200).json(accounts);
   } catch (error) {
@@ -17,6 +24,7 @@ exports.accountList = async (req, res) => {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 };
+
 
 exports.accountUpdate = async (req, res) => {
   const { id } = req.params;
