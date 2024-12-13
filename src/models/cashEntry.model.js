@@ -31,7 +31,8 @@ module.exports = (sequelize, Sequelize, Account) => {
       type: Sequelize.STRING,
       allowNull: false,
     },
+  }, {
+      tableName: 'cash_entries',
   });
-
   return CashEntry;
 };
