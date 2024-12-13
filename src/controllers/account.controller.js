@@ -28,7 +28,7 @@ exports.accountList = async (req, res) => {
 
 exports.accountUpdate = async (req, res) => {
   const { id } = req.params;
-  const { name, description,  user_id,  balance, financial_year } = req.body;
+  const { name, description,  user_id,  debit_balance,credit_balance, financial_year } = req.body;
   try {
     const account = await Account.findByPk(id);
     if (!account) {
@@ -38,7 +38,8 @@ exports.accountUpdate = async (req, res) => {
     account.description = description;
     account.date_updated = new Date();
     account.user_id=user_id;
-    account.balance=balance;
+    account.debit_balance=debit_balance;
+    account.credit_balance=credit_balance;
     account.financial_year=financial_year;
     await account.save();
     res.send(account);
@@ -65,13 +66,14 @@ exports.accountDelete = async (req, res) => {
 
 exports.accountCreate = async (req, res) => {
   console.log(req.body);
-  const { name, description,  user_id,  balance, financial_year } = req.body;
+  const { name, description,  user_id,  debit_balance,credit_balance, financial_year } = req.body;
   try {
     const newAccount = await Account.create({
       name,
       description,
       user_id,
-      balance,
+      debit_balance,
+      credit_balance,
       financial_year
     });
     res.status(201).send(newAccount);

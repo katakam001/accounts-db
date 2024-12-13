@@ -29,6 +29,7 @@ db.user = require("../models/user.model.js")(sequelize, Sequelize);
 db.role = require("../models/role.model.js")(sequelize, Sequelize);
 db.account = require("../models/account.model.js")(sequelize, Sequelize);
 db.group = require("../models/group.model.js")(sequelize, Sequelize);
+db.cash = require("../models/cashEntry.model.js")(sequelize, Sequelize,db.account);
 db.journalEntry = require("../models/journalEntry.js")(sequelize, Sequelize);
 db.journalItem = require("../models/journalItem.js")(sequelize, Sequelize,db.account,db.group,db.journalEntry);
 
@@ -47,6 +48,9 @@ db.journalItem.belongsTo(db.group, { as: 'group', foreignKey: 'group_id' });
 
 
 db.journalEntry.belongsTo(db.user, { as: 'user', foreignKey: 'user_id' });
+db.account.hasMany(db.cash, { foreignKey: 'account_id' });
+db.cash.belongsTo(db.account, { foreignKey: 'account_id' });
+
 
 db.ROLES = ["user", "admin", "moderator"];
 

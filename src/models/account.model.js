@@ -15,7 +15,12 @@ module.exports = (sequelize, Sequelize) => {
         user_id: {
             type: Sequelize.INTEGER,
         },
-        balance: {
+        credit_balance: {
+            type: Sequelize.FLOAT,
+            defaultValue: 0,
+            allowNull: false,
+        },
+        debit_balance: {
             type: Sequelize.FLOAT,
             defaultValue: 0,
             allowNull: false,
