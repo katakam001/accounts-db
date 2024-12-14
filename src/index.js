@@ -56,7 +56,10 @@ require("../src/routes/group.routes")(app);
 require("./routes/journal.routes.js")(app);
 require("./routes/trail-balance.routes.js")(app);
 require("./routes/cash.routes.js")(app);
-
+require("./routes/purchaseCategory.routes.js")(app);
+require("./routes/purchaseField.routes.js")(app);
+require("./routes/unit.routes.js")(app);
+require("./routes/categoryUnit.routes.js")(app);
 // set port, listen for requests
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => {
