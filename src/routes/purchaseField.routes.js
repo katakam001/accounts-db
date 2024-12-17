@@ -10,7 +10,7 @@ module.exports = function (app) {
     next();
   });
 
-  app.get('/api/purchase-fields', purchaseFieldController.getAllFieldsWithCategory);
+  app.get('/api/purchase-fields', purchaseFieldController.getFields);
   app.post('/api/purchase-fields', purchaseFieldController.createField);
   app.put('/api/purchase-fields/:id', purchaseFieldController.updateField);
   app.delete('/api/purchase-fields/:id', purchaseFieldController.deleteField);

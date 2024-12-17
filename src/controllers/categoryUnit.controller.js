@@ -3,16 +3,20 @@ const Units = db.units;
 const PurchaseCategories = db.purchaseCategories;
 const CategoryUnits = db.categoryUnits;
 
-exports.getAllCategoryUnits = async (req, res) => {
+
+exports.getCategoryUnitsByCategoryId = async (req, res) => {
   try {
+    const { category_id } = req.query;
+    const whereCondition = category_id ? { category_id } : {};
     const categoryUnits = await CategoryUnits.findAll({
-                attributes: [
-                  'id',
-                  'category_id',
-                  'unit_id',
-                  [db.sequelize.col('category.name'), 'category_name'],
-                  [db.sequelize.col('unit.name'), 'unit_name']
-                ],
+      where: whereCondition,
+      attributes: [
+        'id',
+        'category_id',
+        'unit_id',
+        [db.sequelize.col('category.name'), 'category_name'],
+        [db.sequelize.col('unit.name'), 'unit_name']
+      ],
       include: [
         { model: PurchaseCategories, as: 'category', attributes: [] },
         { model: Units, as: 'unit', attributes: [] }
@@ -24,6 +28,8 @@ exports.getAllCategoryUnits = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+
 
 exports.createCategoryUnit = async (req, res) => {
   try {

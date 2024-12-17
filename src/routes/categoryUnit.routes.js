@@ -10,7 +10,7 @@ module.exports = function (app) {
     next();
   });
 
-  app.get('/api/category-units', controller.getAllCategoryUnits);
+  app.get('/api/category-units', controller.getCategoryUnitsByCategoryId);
   app.post('/api/category-units', controller.createCategoryUnit);
   app.put('/api/category-units/:id', controller.updateCategoryUnit);
   app.delete('/api/category-units/:id', controller.deleteCategoryUnit);

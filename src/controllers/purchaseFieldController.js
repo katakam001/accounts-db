@@ -3,32 +3,32 @@ const PurchaseFields = db.purchaseFields;
 const PurchaseCategories = db.purchaseCategories;
 
 
-exports.getAllFieldsWithCategory = async (req, res) => {
+exports.getFields = async (req, res) => {
+  const { category_id } = req.query;
   try {
-
+    const whereCondition = category_id ? { category_id } : {};
     const fields = await PurchaseFields.findAll({
-        attributes: [
-          'id',
-          'category_id',
-          'field_name',
-          'field_type',
-          'required',
-          [db.sequelize.col('category.name'), 'category_name']
-        ],
-        include: [{
-          model: PurchaseCategories,
-          as: 'category',
-          attributes: []
-        }]
-      });
-      console.log(fields);
-      
+      where: whereCondition,
+      attributes: [
+        'id',
+        'category_id',
+        'field_name',
+        'field_type',
+        'required',
+        [db.sequelize.col('category.name'), 'category_name']
+      ],
+      include: [{
+        model: PurchaseCategories,
+        as: 'category',
+        attributes: []
+      }]
+    });
+    console.log(fields);
     res.json(fields);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
-}; 
-
+};
 
 exports.createField = async (req, res) => {
   try {
@@ -41,7 +41,7 @@ exports.createField = async (req, res) => {
 
 exports.updateField = async (req, res) => {
   try {
-    const { id } = req.params;
+    const { id} = req.params;
     const [updated] = await PurchaseFields.update(req.body, { where: { id } });
     if (updated) {
       const updatedField = await PurchaseFields.findOne({ where: { id } });

@@ -11,7 +11,6 @@ module.exports = function (app) {
   });
 
   app.get('/api/purchase-categories', purchaseCategoryController.getAllCategories);
-  // app.get('/api/purchase-categories-units', purchaseCategoryController.getAllCategoriesWithUnits);
   app.post('/api/purchase-categories', purchaseCategoryController.createCategory);
   app.put('/api/purchase-categories/:id', purchaseCategoryController.updateCategory);
   app.delete('/api/purchase-categories/:id', purchaseCategoryController.deleteCategory);
