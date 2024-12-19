@@ -37,7 +37,7 @@ db.purchaseCategories = require("../models/purchaseCategories.model.js")(sequeli
 db.purchaseFields = require("../models/purchaseFields.model.js")(sequelize, Sequelize,db.purchaseCategories);
 db.units = require("../models/units.model.js")(sequelize, Sequelize);
 db.categoryUnits = require("../models/categoryUnit.model.js")(sequelize, Sequelize,db.purchaseCategories,db.units);
-db.purchaseEntry = require("../models/purchaseEntry.model.js")(sequelize, Sequelize,db.purchaseCategories,db.account);
+db.purchaseEntry = require("../models/purchaseEntry.model.js")(sequelize, Sequelize,db.purchaseCategories,db.account,db.units,db.journalEntry);
 db.purchaseEntryField = require("../models/purchaseEntryField.model.js")(sequelize, Sequelize,db.purchaseEntry);
 
 db.role.belongsToMany(db.user, {
@@ -61,15 +61,19 @@ db.cash.belongsTo(db.account, { foreignKey: 'account_id' });
 db.purchaseCategories.hasMany(db.purchaseFields, { foreignKey: 'category_id', as: 'fields' });
 db.purchaseFields.belongsTo(db.purchaseCategories, { foreignKey: 'category_id', as: 'category' });
 db.units.belongsToMany(db.purchaseCategories, { through: 'category_units', foreignKey: 'unit_id', as: 'categories' });
+db.units.hasMany(db.purchaseEntry, { foreignKey: 'unit_id', as: 'purchaseEntries' });
 db.purchaseCategories.belongsToMany(db.units, { through: 'category_units', foreignKey: 'category_id', as: 'units' });
 db.purchaseCategories.hasMany(db.purchaseEntry, {foreignKey: 'category_id',as: 'entries'});
 db.categoryUnits.belongsTo(db.purchaseCategories, { foreignKey: 'category_id', as: 'category' });
 db.categoryUnits.belongsTo(db.units, { foreignKey: 'unit_id', as: 'unit' });
-db.purchaseEntry.belongsTo(db.purchaseCategories, { foreignKey: 'category_id', as: 'category' });
-db.purchaseEntry.hasMany(db.purchaseEntryField, { foreignKey: 'entry_id', as: 'fields' });
+
 db.purchaseEntryField.belongsTo(db.purchaseEntry, { foreignKey: 'entry_id', as: 'entry' });
 db.account.hasMany(db.purchaseEntry, { foreignKey: 'account_id', as: 'purchaseEntries' });
-db.purchaseEntry.belongsTo(db.account, { foreignKey: 'account_id', as: 'account' });
 db.ROLES = ["user", "admin", "moderator"];
+db.purchaseEntry.belongsTo(db.journalEntry, { foreignKey: 'journal_id', as: 'journal' });
+db.purchaseEntry.belongsTo(db.account, { foreignKey: 'account_id', as: 'account' });
+db.purchaseEntry.belongsTo(db.units, {foreignKey: 'unit_id',as: 'unit',});
+db.purchaseEntry.belongsTo(db.purchaseCategories, { foreignKey: 'category_id', as: 'category' });
+db.purchaseEntry.hasMany(db.purchaseEntryField, { foreignKey: 'entry_id', as: 'fields' });
 
 module.exports = db;

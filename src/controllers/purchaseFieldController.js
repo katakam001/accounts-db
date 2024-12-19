@@ -15,6 +15,8 @@ exports.getFields = async (req, res) => {
         'field_name',
         'field_type',
         'required',
+        'field_category', // Include field_category
+        'exclude_from_total', // Include exclude_from_total
         [db.sequelize.col('category.name'), 'category_name']
       ],
       include: [{
@@ -29,6 +31,7 @@ exports.getFields = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
 
 exports.createField = async (req, res) => {
   try {
