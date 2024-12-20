@@ -1,5 +1,5 @@
-module.exports = (sequelize, Sequelize, PurchaseCategory, Account, Units,JournalEntry) => {
-  const PurchaseEntry = sequelize.define('PurchaseEntry', {
+module.exports = (sequelize, Sequelize, Category, Account, Units, JournalEntry) => {
+  const Entry = sequelize.define('Entry', {
     id: {
       allowNull: false,
       autoIncrement: true,
@@ -10,13 +10,13 @@ module.exports = (sequelize, Sequelize, PurchaseCategory, Account, Units,Journal
       type: Sequelize.INTEGER,
       allowNull: false,
       references: {
-        model: PurchaseCategory,
+        model: Category,
         key: 'id'
       },
       onUpdate: 'CASCADE',
       onDelete: 'CASCADE'
     },
-    purchase_date: {
+    entry_date: {
       type: Sequelize.DATE,
       allowNull: false
     },
@@ -46,7 +46,7 @@ module.exports = (sequelize, Sequelize, PurchaseCategory, Account, Units,Journal
       type: Sequelize.NUMERIC,
       allowNull: true
     },
-    purchase_value: { // New field for purchase_value
+    value: { // Updated field for value
       type: Sequelize.DECIMAL(20, 2),
       allowNull: true
     },
@@ -58,29 +58,33 @@ module.exports = (sequelize, Sequelize, PurchaseCategory, Account, Units,Journal
       type: Sequelize.STRING,
       allowNull: false
     },
-    unit_id: { // New field for unit_id
+    unit_id: { // Updated field for unit_id
       type: Sequelize.INTEGER,
       allowNull: false,
       references: {
-        model: Units, // Reference to the units table
+        model: Units,
         key: 'id'
       },
       onUpdate: 'CASCADE',
       onDelete: 'CASCADE'
     },
-    journal_id: { // New field for journal_id
+    journal_id: { // Updated field for journal_id
       type: Sequelize.INTEGER,
       allowNull: true,
       references: {
-        model: JournalEntry, // Reference to the journal entries table
+        model: JournalEntry,
         key: 'id'
       },
       onUpdate: 'CASCADE',
       onDelete: 'SET NULL'
+    },
+    type: { // New field for type
+      type: Sequelize.INTEGER,
+      allowNull: false
     }
   }, {
-    tableName: 'purchase_entries',
+    tableName: 'entries',
   });
 
-  return PurchaseEntry;
+  return Entry;
 };

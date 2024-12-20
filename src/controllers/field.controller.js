@@ -1,13 +1,12 @@
 const db = require("../models");
-const PurchaseFields = db.purchaseFields;
-const PurchaseCategories = db.purchaseCategories;
-
+const Fields = db.fields;
+const Categories = db.categories;
 
 exports.getFields = async (req, res) => {
   const { category_id } = req.query;
   try {
     const whereCondition = category_id ? { category_id } : {};
-    const fields = await PurchaseFields.findAll({
+    const fields = await Fields.findAll({
       where: whereCondition,
       attributes: [
         'id',
@@ -20,7 +19,7 @@ exports.getFields = async (req, res) => {
         [db.sequelize.col('category.name'), 'category_name']
       ],
       include: [{
-        model: PurchaseCategories,
+        model: Categories,
         as: 'category',
         attributes: []
       }]
@@ -32,10 +31,9 @@ exports.getFields = async (req, res) => {
   }
 };
 
-
 exports.createField = async (req, res) => {
   try {
-    const field = await PurchaseFields.create(req.body);
+    const field = await Fields.create(req.body);
     res.status(201).json(field);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -44,10 +42,10 @@ exports.createField = async (req, res) => {
 
 exports.updateField = async (req, res) => {
   try {
-    const { id} = req.params;
-    const [updated] = await PurchaseFields.update(req.body, { where: { id } });
+    const { id } = req.params;
+    const [updated] = await Fields.update(req.body, { where: { id } });
     if (updated) {
-      const updatedField = await PurchaseFields.findOne({ where: { id } });
+      const updatedField = await Fields.findOne({ where: { id } });
       res.status(200).json(updatedField);
     } else {
       throw new Error('Field not found');
@@ -60,7 +58,7 @@ exports.updateField = async (req, res) => {
 exports.deleteField = async (req, res) => {
   try {
     const { id } = req.params;
-    const deleted = await PurchaseFields.destroy({ where: { id } });
+    const deleted = await Fields.destroy({ where: { id } });
     if (deleted) {
       res.status(204).send();
     } else {

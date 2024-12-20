@@ -1,6 +1,7 @@
 const db = require("../models");
 const Account = db.account;
 const Group = db.group;
+const Address = db.address;
 
 exports.accountList = async (req, res) => {
   try {
@@ -31,7 +32,13 @@ exports.accountList = async (req, res) => {
         user_id: userId,
         financial_year: financialYear
       },
-      include: [includeGroups]
+      include: [
+        includeGroups,
+        {
+          model: Address,
+          as: 'address'
+        }
+      ]
     });
 
     // Transform the data to the desired format
@@ -52,7 +59,15 @@ exports.accountList = async (req, res) => {
         debit_balance: account.debit_balance,
         credit_balance: account.credit_balance,
         financial_year: account.financial_year,
-        groups: groups.length > 0 ? groups : null
+        isDealer: account.isDealer,
+        groups: groups.length > 0 ? groups : null,
+        address: account.address ? {
+          street: account.address.street,
+          city: account.address.city,
+          state: account.address.state,
+          postal_code: account.address.postal_code,
+          country: account.address.country
+        } : null
       };
     });
 
@@ -63,11 +78,10 @@ exports.accountList = async (req, res) => {
   }
 };
 
-
-
 exports.accountUpdate = async (req, res) => {
   const { id } = req.params;
-  const { name, description, user_id, debit_balance, credit_balance, financial_year, groups } = req.body;
+  const { name, description, user_id, debit_balance, credit_balance, financial_year,isDealer, groups, address } = req.body;
+ console.log(isDealer);
   try {
     const account = await Account.findByPk(id);
     if (!account) {
@@ -80,12 +94,35 @@ exports.accountUpdate = async (req, res) => {
     account.debit_balance = debit_balance;
     account.credit_balance = credit_balance;
     account.financial_year = financial_year;
+    account.isDealer = isDealer;
     await account.save();
 
     if (groups && groups.length > 0) {
       const groupIds = groups.map(group => group.id);
       await account.setGroups(groupIds);
     }
+
+    if (address) {
+      const existingAddress = await Address.findOne({ where: { account_id: id } });
+      if (existingAddress) {
+        existingAddress.street = address.street;
+        existingAddress.city = address.city;
+        existingAddress.state = address.state;
+        existingAddress.postal_code = address.postal_code;
+        existingAddress.country = address.country;
+        await existingAddress.save();
+      } else {
+        await Address.create({
+          account_id: id,
+          street: address.street,
+          city: address.city,
+          state: address.state,
+          postal_code: address.postal_code,
+          country: address.country
+        });
+      }
+    }
+
     res.send(account);
   } catch (error) {
     res.status(500).send(error);
@@ -111,7 +148,7 @@ exports.accountDelete = async (req, res) => {
 
 exports.accountCreate = async (req, res) => {
   console.log(req.body);
-  const { name, description, user_id, debit_balance, credit_balance, financial_year, groups } = req.body;
+  const { name, description, user_id, debit_balance, credit_balance, financial_year,isDealer, groups, address } = req.body;
   try {
     const newAccount = await Account.create({
       name,
@@ -119,13 +156,25 @@ exports.accountCreate = async (req, res) => {
       user_id,
       debit_balance,
       credit_balance,
-      financial_year
+      financial_year,
+      isDealer
     });
     console.log(newAccount);
 
     if (groups && groups.length > 0) {
       const groupIds = groups.map(group => group.id);
       await newAccount.setGroups(groupIds);
+    }
+
+    if (address) {
+      await Address.create({
+        account_id: newAccount.id,
+        street: address.street,
+        city: address.city,
+        state: address.state,
+        postal_code: address.postal_code,
+        country: address.country
+      });
     }
 
     res.status(201).send(newAccount);

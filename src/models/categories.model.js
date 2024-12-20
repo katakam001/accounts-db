@@ -1,5 +1,5 @@
 module.exports = (sequelize, Sequelize) => {
-  const PurchaseCategories = sequelize.define("PurchaseCategories", {
+  const Categories = sequelize.define("Categories", {
     id: {
       allowNull: false,
       autoIncrement: true,
@@ -9,10 +9,14 @@ module.exports = (sequelize, Sequelize) => {
     name: {
       type: Sequelize.STRING,
       allowNull: false
+    },
+    type: {
+      type: Sequelize.INTEGER,
+      allowNull: false
     }
   }, {
-    tableName: 'purchase_categories',
+    tableName: 'categories',
   });
 
-  return PurchaseCategories;
+  return Categories;
 };

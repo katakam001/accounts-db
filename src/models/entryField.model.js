@@ -1,5 +1,5 @@
-module.exports = (sequelize, Sequelize,PurchaseEntry) => {
-  const PurchaseEntryField = sequelize.define('PurchaseEntryField', {
+module.exports = (sequelize, Sequelize, Entry) => {
+  const EntryField = sequelize.define('EntryField', {
     id: {
       allowNull: false,
       autoIncrement: true,
@@ -10,7 +10,7 @@ module.exports = (sequelize, Sequelize,PurchaseEntry) => {
       type: Sequelize.INTEGER,
       allowNull: false,
       references: {
-        model: PurchaseEntry,
+        model: Entry,
         key: 'id'
       },
       onUpdate: 'CASCADE',
@@ -25,7 +25,7 @@ module.exports = (sequelize, Sequelize,PurchaseEntry) => {
       allowNull: false
     }
   }, {
-    tableName: 'purchase_entry_fields',
+    tableName: 'entry_fields',
   });
-  return PurchaseEntryField;
+  return EntryField;
 };

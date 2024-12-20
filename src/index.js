@@ -56,11 +56,11 @@ require("../src/routes/group.routes")(app);
 require("./routes/journal.routes.js")(app);
 require("./routes/trail-balance.routes.js")(app);
 require("./routes/cash.routes.js")(app);
-require("./routes/purchaseCategory.routes.js")(app);
-require("./routes/purchaseField.routes.js")(app);
+require("./routes/category.routes.js")(app); // Updated from purchaseCategory.routes.js
+require("./routes/field.routes.js")(app); // Updated from purchaseField.routes.js
 require("./routes/unit.routes.js")(app);
 require("./routes/categoryUnit.routes.js")(app);
-require("./routes/purchaseEntry.routes.js")(app);
+require("./routes/entry.routes.js")(app); // Updated from purchaseEntry.routes.js
 // set port, listen for requests
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => {

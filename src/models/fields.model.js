@@ -1,5 +1,5 @@
-module.exports = (sequelize, Sequelize, PurchaseCategories) => {
-  const PurchaseFields = sequelize.define("PurchaseFields", {
+module.exports = (sequelize, Sequelize, Categories) => {
+  const Fields = sequelize.define("Fields", {
     id: {
       allowNull: false,
       autoIncrement: true,
@@ -10,7 +10,7 @@ module.exports = (sequelize, Sequelize, PurchaseCategories) => {
       type: Sequelize.INTEGER,
       allowNull: false,
       references: {
-        model: PurchaseCategories,
+        model: Categories,
         key: 'id'
       },
       onUpdate: 'CASCADE',
@@ -37,10 +37,14 @@ module.exports = (sequelize, Sequelize, PurchaseCategories) => {
       type: Sequelize.BOOLEAN,
       allowNull: false,
       defaultValue: false
+    },
+    type: {
+      type: Sequelize.INTEGER,
+      allowNull: false
     }
   }, {
-    tableName: 'purchase_fields',
+    tableName: 'fields',
   });
 
-  return PurchaseFields;
+  return Fields;
 };

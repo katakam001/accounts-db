@@ -1,6 +1,6 @@
 const db = require("../models");
 const Units = db.units;
-const PurchaseCategories = db.purchaseCategories;
+const Categories = db.categories;
 const CategoryUnits = db.categoryUnits;
 
 
@@ -18,7 +18,7 @@ exports.getCategoryUnitsByCategoryId = async (req, res) => {
         [db.sequelize.col('unit.name'), 'unit_name']
       ],
       include: [
-        { model: PurchaseCategories, as: 'category', attributes: [] },
+        { model: Categories, as: 'category', attributes: [] },
         { model: Units, as: 'unit', attributes: [] }
       ]
     });

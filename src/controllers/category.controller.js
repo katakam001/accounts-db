@@ -1,10 +1,10 @@
 const db = require("../models");
-const PurchaseCategories = db.purchaseCategories;
+const Categories = db.categories;
 const Units = db.units;
 
 exports.getAllCategories = async (req, res) => {
   try {
-    const categories = await PurchaseCategories.findAll();
+    const categories = await Categories.findAll();
     res.json(categories);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -13,7 +13,7 @@ exports.getAllCategories = async (req, res) => {
 
 exports.getAllCategoriesWithUnits = async (req, res) => {
   try {
-    const categories = await PurchaseCategories.findAll({
+    const categories = await Categories.findAll({
       include: [{
         model: Units,
         as: 'units',
@@ -26,11 +26,10 @@ exports.getAllCategoriesWithUnits = async (req, res) => {
   }
 };
 
-
 exports.createCategory = async (req, res) => {
   try {
     console.log(req.body);
-    const category = await PurchaseCategories.create(req.body);
+    const category = await Categories.create(req.body);
     res.status(201).json(category);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -40,9 +39,9 @@ exports.createCategory = async (req, res) => {
 exports.updateCategory = async (req, res) => {
   try {
     const { id } = req.params;
-    const [updated] = await PurchaseCategories.update(req.body, { where: { id } });
+    const [updated] = await Categories.update(req.body, { where: { id } });
     if (updated) {
-      const updatedCategory = await PurchaseCategories.findOne({ where: { id } });
+      const updatedCategory = await Categories.findOne({ where: { id } });
       res.status(200).json(updatedCategory);
     } else {
       throw new Error('Category not found');
@@ -56,7 +55,7 @@ exports.deleteCategory = async (req, res) => {
   try {
     const { id } = req.params;
     console.log(id);
-    const deleted = await PurchaseCategories.destroy({ where: { id } });
+    const deleted = await Categories.destroy({ where: { id } });
     if (deleted) {
       res.status(204).send();
     } else {

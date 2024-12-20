@@ -1,4 +1,4 @@
-module.exports = (sequelize, Sequelize,PurchaseCategory,Units) => {
+module.exports = (sequelize, Sequelize,Category,Units) => {
   const CategoryUnits = sequelize.define('CategoryUnits', {
     id: {
       allowNull: false,
@@ -10,7 +10,7 @@ module.exports = (sequelize, Sequelize,PurchaseCategory,Units) => {
       type: Sequelize.INTEGER,
       allowNull: false,
       references: {
-        model: PurchaseCategory,
+        model: Category,
         key: 'id'
       },
       onUpdate: 'CASCADE',

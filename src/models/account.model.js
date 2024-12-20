@@ -29,6 +29,11 @@ module.exports = (sequelize, Sequelize) => {
             type: Sequelize.STRING,
             allowNull: false,
         },
+        isDealer: {
+            type: Sequelize.BOOLEAN,
+            defaultValue: false,
+            allowNull: false,
+        },
     }, {
         tableName: 'account_list',
     });
