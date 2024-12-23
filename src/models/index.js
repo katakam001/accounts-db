@@ -38,6 +38,7 @@ db.categoryUnits = require("../models/categoryUnit.model.js")(sequelize, Sequeli
 db.entry = require("../models/entry.model.js")(sequelize, Sequelize, db.categories, db.account, db.units, db.journalEntry);
 db.entryField = require("../models/entryField.model.js")(sequelize, Sequelize, db.entry);
 db.address=require("../models/address.model.js")(sequelize,Sequelize)
+db.groupMapping=require("../models/groupMapping.model.js")(sequelize,Sequelize,db.groupMapping,db.group);
 
 db.role.belongsToMany(db.user, {
   through: "user_roles"
@@ -51,8 +52,6 @@ db.journalEntry.hasMany(db.journalItem, { as: 'items', foreignKey: 'journal_id' 
 db.journalItem.belongsTo(db.journalEntry, { foreignKey: 'journal_id' });
 db.journalItem.belongsTo(db.account, { as: 'account', foreignKey: 'account_id' });
 db.journalItem.belongsTo(db.group, { as: 'group', foreignKey: 'group_id' });
-db.account.belongsToMany(db.group, { through: 'account_group', as: 'groups', foreignKey: 'account_id' });
-db.group.belongsToMany(db.account, { through: 'account_group', as: 'accounts', foreignKey: 'group_id' });
 
 db.journalEntry.belongsTo(db.user, { as: 'user', foreignKey: 'user_id' });
 db.account.hasMany(db.cash, { foreignKey: 'account_id' });
@@ -76,5 +75,10 @@ db.entry.belongsTo(db.account, { foreignKey: 'account_id', as: 'account' });
 db.entry.belongsTo(db.units, { foreignKey: 'unit_id', as: 'unit' });
 db.entry.belongsTo(db.categories, { foreignKey: 'category_id', as: 'category' });
 db.entry.hasMany(db.entryField, { foreignKey: 'entry_id', as: 'fields' });
-
+db.groupMapping.hasMany(db.groupMapping, { as: 'children', foreignKey: 'parent_id' });
+db.groupMapping.belongsTo(db.groupMapping, { as: 'parent', foreignKey: 'parent_id' });
+db.groupMapping.belongsTo(db.group, { foreignKey: 'group_id' });
+db.group.hasMany(db.groupMapping, { foreignKey: 'group_id' });
+db.account.belongsToMany(db.group, { through: db.accountGroup, as: 'groups', foreignKey: 'account_id' , otherKey: 'group_id'});
+db.group.belongsToMany(db.account, { through: db.accountGroup, as: 'accounts', foreignKey: 'group_id', otherKey: 'account_id'});
 module.exports = db;

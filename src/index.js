@@ -9,7 +9,7 @@ const createRouter = require('./query/events.js');
 app.use(
   cors({
     credentials: true,
-    origin: ["http://localhost:4200"],
+    origin: ["http://localhost:8081"],
   })
 );
 
@@ -61,6 +61,7 @@ require("./routes/field.routes.js")(app); // Updated from purchaseField.routes.j
 require("./routes/unit.routes.js")(app);
 require("./routes/categoryUnit.routes.js")(app);
 require("./routes/entry.routes.js")(app); // Updated from purchaseEntry.routes.js
+require("./routes/groupMapping.routes.js")(app); // Updated from purchaseEntry.routes.js
 // set port, listen for requests
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => {

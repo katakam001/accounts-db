@@ -7,6 +7,17 @@ const Op = db.Sequelize.Op;
 
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
+const nodemailer = require("nodemailer");
+const { google } = require('googleapis');
+
+
+const CLIENT_ID = 'xxxx';
+const CLIENT_SECRET = 'xxxxx';
+const REDIRECT_URI = 'xxxx';
+const REFRESH_TOKEN = 'xxxxx';
+
+const oAuth2Client = new google.auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
+oAuth2Client.setCredentials({ refresh_token: REFRESH_TOKEN });
 
 exports.signup = async (req, res) => {
   // Save User to Database
@@ -112,5 +123,77 @@ exports.signout = async (req, res) => {
     });
   } catch (err) {
     this.next(err);
+  }
+};
+
+// Request Password Reset
+exports.requestPasswordReset = async (req, res) => {
+  const { email } = req.body;
+  try {
+    const user = await User.findOne({
+      where: {
+        email: email,
+      },
+    });
+
+    if (!user) {
+      return res.status(404).send({ message: "User not found." });
+    }
+
+    const token = jwt.sign({ email }, config.secret, { expiresIn: '1h' });
+    const resetLink = `http://localhost:4200/password-reset/confirm?token=${token}`;
+
+
+    const accessToken = await oAuth2Client.getAccessToken();
+    console.log(accessToken);
+
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        type: 'OAuth2',
+        user: 'katakamdevelopertraining@gmail.com',
+        clientId: CLIENT_ID,
+        clientSecret: CLIENT_SECRET,
+        refreshToken: REFRESH_TOKEN,
+        accessToken: accessToken.token,
+      },
+    });
+    const mailOptions = {
+      from: 'katakamdevelopertraining@gmail.com',
+      to: email,
+      subject: 'Password Reset',
+      text: `Click the link to reset your password: ${resetLink}`
+    };
+    const result = await transporter.sendMail(mailOptions);
+    console.log('Email sent:', result);
+    res.json({ message: 'Password reset link is sent to your mail' });
+  } catch (error) {
+    res.status(500).send({ message: error.message });
+  }
+};
+
+// Confirm Password Reset
+exports.confirmPasswordReset = async (req, res) => {
+  const { token, newPassword } = req.body;
+
+  try {
+    const decoded = jwt.verify(token, config.secret);
+    const user = await User.findOne({
+      where: {
+        email: decoded.email,
+      },
+    });
+
+    if (!user) {
+      return res.status(404).send({ message: "User not found." });
+    }
+
+    const hashedPassword = bcrypt.hashSync(newPassword, 8);
+    user.password = hashedPassword;
+    await user.save();
+
+    res.json({ message: 'Password has been reset successfully' });
+  } catch (error) {
+    res.status(400).send({ message: 'Invalid or expired token' });
   }
 };
