@@ -1,0 +1,14 @@
+[Unit]
+Description=Start Application Service
+After=network.target
+
+[Service]
+ExecStart=/accounts-db/start_app.sh
+Restart=always
+User=ec2-user
+Environment=PATH=/usr/bin:/usr/local/bin
+Environment=NODE_ENV=production
+WorkingDirectory=/accounts-db
+
+[Install]
+WantedBy=multi-user.target

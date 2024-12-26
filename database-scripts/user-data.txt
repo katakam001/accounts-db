@@ -1,0 +1,77 @@
+#!/bin/bash
+
+# Update the system
+sudo yum update -y
+
+# Install Node.js and npm
+sudo yum install -y nodejs npm
+
+# Install Git
+sudo yum install git -y
+
+# Clone the repository
+git clone https://github.com/katakam001/accounts-db.git
+
+# Change directory to the cloned repository
+cd accounts-db
+
+# Install dependencies
+npm install
+
+# Create the update_config.sh script
+cat << 'EOF' > update_config.sh
+#!/bin/bash
+
+# Fetch SSM parameters
+DB_HOST=$(aws ssm get-parameter --name "/account-app/rds/host" --with-decryption --query "Parameter.Value" --output text)
+DB_PASSWORD=$(aws ssm get-parameter --name "/account-app/rds/password" --with-decryption --query "Parameter.Value" --output text)
+CLIENT_ID=$(aws ssm get-parameter --name "/account-app/client/id" --with-decryption --query "Parameter.Value" --output text)
+CLIENT_SECRET=$(aws ssm get-parameter --name "/account-app/client/secret" --with-decryption --query "Parameter.Value" --output text)
+REDIRECT_URI=$(aws ssm get-parameter --name "/account-app/client/redirect_uri" --with-decryption --query "Parameter.Value" --output text)
+REFRESH_TOKEN=$(aws ssm get-parameter --name "/account-app/client/refresh_token" --with-decryption --query "Parameter.Value" --output text)
+
+# Backup original files if not already backed up
+if [ ! -f src/config/db.config.js.bak ]; then
+  cp src/config/db.config.js src/config/db.config.js.bak
+fi
+
+if [ ! -f src/controllers/auth.controller.js.bak ]; then
+  cp src/controllers/auth.controller.js src/controllers/auth.controller.js.bak
+fi
+
+# Restore original files from backup
+cp src/config/db.config.js.bak src/config/db.config.js
+cp src/controllers/auth.controller.js.bak src/controllers/auth.controller.js
+
+# Replace placeholders in src/config/db.config.js
+sed -i "s|DB_HOST_PLACEHOLDER|$DB_HOST|" src/config/db.config.js
+sed -i "s|DB_PASSWORD_PLACEHOLDER|$DB_PASSWORD|" src/config/db.config.js
+
+# Replace placeholders in src/controllers/auth.controller.js
+sed -i "s|CLIENT_ID_PLACEHOLDER|$CLIENT_ID|" src/controllers/auth.controller.js
+sed -i "s|CLIENT_SECRET_PLACEHOLDER|$CLIENT_SECRET|" src/controllers/auth.controller.js
+sed -i "s|REDIRECT_URI_PLACEHOLDER|$REDIRECT_URI|" src/controllers/auth.controller.js
+sed -i "s|REFRESH_TOKEN_PLACEHOLDER|$REFRESH_TOKEN|" src/controllers/auth.controller.js
+
+echo "Database and authentication configuration updated successfully."
+EOF
+
+# Make the update_config.sh script executable
+chmod +x update_config.sh
+
+# Create the start_app.sh script
+cat << 'EOF' > start_app.sh
+#!/bin/bash
+
+# Run the shell script to fetch SSM parameters and update configuration files
+./update_config.sh
+
+# Start the application
+npm start
+EOF
+
+# Make the start_app.sh script executable
+chmod +x start_app.sh
+
+# Use the start_app.sh script to start the application
+./start_app.sh

@@ -1,0 +1,5 @@
+sudo nano /etc/systemd/system/start_app.service
+update the content in with this file start_app.service in account-db
+sudo systemctl daemon-reload
+sudo systemctl enable start_app.service
+sudo systemctl start start_app.service

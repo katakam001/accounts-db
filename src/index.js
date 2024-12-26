@@ -3,13 +3,13 @@ const cors = require("cors");
 const cookieSession = require("cookie-session");
 const app = express();
 const createRouter = require('./query/events.js');
-
+const syncAndInjectData = require('./syncAndInject');
 // app.use(cors());
 /* for Angular Client (withCredentials) */
 app.use(
   cors({
     credentials: true,
-    origin: ["http://localhost:8081"],
+    origin: ["http://localhost:4200"],
   })
 );
 
@@ -21,7 +21,7 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use(
   cookieSession({
-    name: "bezkoder-session",
+    name: "accounts-session",
     keys: ["COOKIE_SECRET"], // should use as secret environment variable
     httpOnly: true,
     sameSite: 'strict'
@@ -30,29 +30,20 @@ app.use(
 
 // database
 const db = require("../src/models");
-const Role = db.role;
-
-db.sequelize.sync();
 
 const router = createRouter(db.sequelize);
 app.use(router);
 
-// force: true will drop the table if it already exists
-// db.sequelize.sync({force: true}).then(() => {
-//   console.log('Drop and Resync Database with { force: true }');
-//   initial();
-// });
-
 // simple route
 app.get("/", (req, res) => {
-  res.json({ message: "Welcome to bezkoder application." });
+  res.json({ message: "Welcome to accounting application." });
 });
 
 // routes
-require("../src/routes/auth.routes")(app);
-require("../src/routes/user.routes")(app);
-require("../src/routes/account.routes")(app);
-require("../src/routes/group.routes")(app);
+require("./routes/auth.routes")(app);
+require("./routes/user.routes")(app);
+require("./routes/account.routes")(app);
+require("./routes/group.routes")(app);
 require("./routes/journal.routes.js")(app);
 require("./routes/trail-balance.routes.js")(app);
 require("./routes/cash.routes.js")(app);
@@ -62,25 +53,13 @@ require("./routes/unit.routes.js")(app);
 require("./routes/categoryUnit.routes.js")(app);
 require("./routes/entry.routes.js")(app); // Updated from purchaseEntry.routes.js
 require("./routes/groupMapping.routes.js")(app); // Updated from purchaseEntry.routes.js
-// set port, listen for requests
-const PORT = process.env.PORT || 8080;
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}.`);
+// Invoke the sync and inject function
+syncAndInjectData().then(() => {
+  // Start the application server
+  const PORT = process.env.PORT || 8080;
+  app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}.`);
+  });
 });
 
-function initial() {
-  Role.create({
-    id: 1,
-    name: "user",
-  });
 
-  Role.create({
-    id: 2,
-    name: "moderator",
-  });
-
-  Role.create({
-    id: 3,
-    name: "admin",
-  });
-}

@@ -4,12 +4,15 @@ const Units = db.units;
 
 exports.getAllCategories = async (req, res) => {
   try {
-    const categories = await Categories.findAll();
+    const { type } = req.query;
+    const whereClause = type ? { where: { type } } : {};
+    const categories = await Categories.findAll(whereClause);
     res.json(categories);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 };
+
 
 exports.getAllCategoriesWithUnits = async (req, res) => {
   try {

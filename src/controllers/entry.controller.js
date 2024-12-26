@@ -96,7 +96,7 @@ exports.addEntry = async (req, res) => {
     // Step 1: Insert a new journal entry
     const journalEntry = await JournalEntry.create({
       journal_date: entry.entry_date,
-      description: entry.type === 1 ? 'Purchase Entry' : 'Sale Entry', // Description based on type
+      description: entry.type === 1 ? 'Purchase Entry' : entry.type === 2 ? 'Sale Entry' : entry.type === 3 ? 'Purchase Return' : 'Sale Return', // Description based on type
       user_id: entry.user_id,
       financial_year: entry.financial_year
     }, { transaction: t });
@@ -134,12 +134,12 @@ exports.addEntry = async (req, res) => {
       // Second entry: Purchase Account (Debit)
       journalItems.push({
         journal_id: journalEntry.id,
-        account_id: await getAccountId('PURCHASE ACCOUNT'),
-        group_id: await getGroupIdFromAccountName('PURCHASE ACCOUNT'),
+        account_id: await getAccountId('Purchase Account'),
+        group_id: await getGroupIdFromAccountName('Purchase Account'),
         amount: entry.value,
         type: false // Debit
       });
-    } else { // Sale Entry
+    } else if (entry.type === 2) { // Sale Entry
       // First entry: Customer Account (Debit)
       journalItems.push({
         journal_id: journalEntry.id,
@@ -152,10 +152,46 @@ exports.addEntry = async (req, res) => {
       // Second entry: Sales Account (Credit)
       journalItems.push({
         journal_id: journalEntry.id,
-        account_id: await getAccountId('SALES ACCOUNT'),
-        group_id: await getGroupIdFromAccountName('SALES ACCOUNT'),
+        account_id: await getAccountId('Sales Account'),
+        group_id: await getGroupIdFromAccountName('Sales Account'),
         amount: entry.value,
         type: true // Credit
+      });
+    } else if (entry.type === 3) { // Purchase Return
+      // First entry: Supplier Account (Debit)
+      journalItems.push({
+        journal_id: journalEntry.id,
+        account_id: entry.account_id,
+        group_id: await getGroupId('Sundary Creditors'),
+        amount: amount,
+        type: false // Debit
+      });
+
+      // Second entry: Purchase Account (Credit)
+      journalItems.push({
+        journal_id: journalEntry.id,
+        account_id: await getAccountId('Purchase Account'),
+        group_id: await getGroupIdFromAccountName('Purchase Account'),
+        amount: entry.value,
+        type: true // Credit
+      });
+    } else if (entry.type === 4) { // Sale Return
+      // First entry: Customer Account (Credit)
+      journalItems.push({
+        journal_id: journalEntry.id,
+        account_id: entry.account_id,
+        group_id: await getGroupId('Sundary Debtors'),
+        amount: amount,
+        type: true // Credit
+      });
+
+      // Second entry: Sales Account (Debit)
+      journalItems.push({
+        journal_id: journalEntry.id,
+        account_id: await getAccountId('Sales Account'),
+        group_id: await getGroupIdFromAccountName('Sales Account'),
+        amount: entry.value,
+        type: false // Debit
       });
     }
 
@@ -171,7 +207,7 @@ exports.addEntry = async (req, res) => {
         accountName = accountName.replace(/^\s+|\s+$/g, ''); // Remove leading and trailing spaces
         console.log(accountName);
         const groupId = await getGroupIdFromAccountName(accountName);
-        const type = entry.type === 1 ? (field.exclude_from_total ? true : false) : (field.exclude_from_total ? false : true); // Adjust type based on entry type
+        const type = entry.type === 1 || entry.type === 4 ? (field.exclude_from_total ? true : false) : (field.exclude_from_total ? false : true); // Adjust type based on entry type
         journalItems.push({
           journal_id: journalEntry.id,
           account_id: await getAccountId(accountName),
@@ -196,6 +232,7 @@ exports.addEntry = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
 
 
 // Helper functions to get account and group IDs
@@ -274,8 +311,8 @@ exports.updateEntry = async (req, res) => {
         // Second entry: Purchase Account (Debit)
         journalItems.push({
           journal_id: journalEntry.id,
-          account_id: await getAccountId('PURCHASE ACCOUNT'),
-          group_id: await getGroupIdFromAccountName('PURCHASE ACCOUNT'),
+          account_id: await getAccountId('Purchase Account'),
+          group_id: await getGroupIdFromAccountName('Purchase Account'),
           amount: entry.value,
           type: false // Debit
         });
@@ -292,8 +329,8 @@ exports.updateEntry = async (req, res) => {
         // Second entry: Sales Account (Credit)
         journalItems.push({
           journal_id: journalEntry.id,
-          account_id: await getAccountId('SALES ACCOUNT'),
-          group_id: await getGroupIdFromAccountName('SALES ACCOUNT'),
+          account_id: await getAccountId('Sales Account'),
+          group_id: await getGroupIdFromAccountName('Sales Account'),
           amount: entry.value,
           type: true // Credit
         });

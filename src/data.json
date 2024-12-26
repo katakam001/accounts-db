@@ -1,0 +1,38 @@
+{
+    "units": [
+      { "id": 3, "name": "LOOSE", "createdAt": "2024-12-14T16:54:40.190Z", "updatedAt": "2024-12-14T16:54:40.190Z" },
+      { "id": 4, "name": "KGS", "createdAt": "2024-12-14T16:54:45.140Z", "updatedAt": "2024-12-14T16:54:45.140Z" },
+      { "id": 5, "name": "QUINTALS", "createdAt": "2024-12-14T16:54:56.304Z", "updatedAt": "2024-12-14T16:54:56.304Z" },
+      { "id": 6, "name": "BALES", "createdAt": "2024-12-14T16:55:08.206Z", "updatedAt": "2024-12-14T16:55:08.206Z" },
+      { "id": 7, "name": "UNITS", "createdAt": "2024-12-14T16:55:26.477Z", "updatedAt": "2024-12-14T16:55:26.477Z" },
+      { "id": 8, "name": "BORAS", "createdAt": "2024-12-14T16:57:40.409Z", "updatedAt": "2024-12-14T16:57:40.409Z" },
+      { "id": 2, "name": "LITERS", "createdAt": "2024-12-14T16:54:34.631Z", "updatedAt": "2024-12-14T16:58:11.934Z" },
+      { "id": 9, "name": "GRAMS", "createdAt": "2024-12-14T16:58:22.821Z", "updatedAt": "2024-12-14T16:58:22.821Z" },
+      { "id": 10, "name": "BAGS", "createdAt": "2024-12-15T16:05:30.947Z", "updatedAt": "2024-12-15T16:05:30.947Z" }
+    ],
+    "roles": [
+      { "id": 1, "name": "user", "createdAt": "2024-12-06T12:12:06.540Z", "updatedAt": "2024-12-06T12:12:06.540Z" },
+      { "id": 2, "name": "moderator", "createdAt": "2024-12-06T12:12:39.158Z", "updatedAt": "2024-12-06T12:12:39.158Z" },
+      { "id": 3, "name": "admin", "createdAt": "2024-12-06T12:13:09.043Z", "updatedAt": "2024-12-06T12:13:09.043Z" }
+    ],
+        "account_list": [
+          { "id": 1, "name": "ICICI bank", "description": "", "user_id": 2, "debit_balance": 30000.0, "financial_year": "2024-2025", "createdAt": "2024-05-26T13:54:06.000Z", "updatedAt": "2024-12-12T16:59:07.644Z", "credit_balance": 0.0, "isDealer": false, "type": 3 },
+          { "id": 4, "name": "Mannem Bhadraiah", "description": "", "user_id": 2, "debit_balance": 10000.0, "financial_year": "2024-2025", "createdAt": "2024-05-26T19:17:30.000Z", "updatedAt": "2024-12-12T16:59:46.882Z", "credit_balance": 0.0, "isDealer": false, "type": 1 },
+          { "id": 5, "name": "K Navya", "description": "", "user_id": 2, "debit_balance": 0.0, "financial_year": "2024-2025", "createdAt": "2024-05-26T19:19:38.000Z", "updatedAt": "2024-12-12T17:00:02.508Z", "credit_balance": 50000.0, "isDealer": false, "type": 1 },
+          { "id": 21, "name": "G Mohan Rao", "description": "", "user_id": 2, "debit_balance": 75000.0, "financial_year": "2024-2025", "createdAt": "2024-12-12T18:01:40.093Z", "updatedAt": "2024-12-12T18:01:40.093Z", "credit_balance": 0.0, "isDealer": false, "type": 1 },
+          { "id": 3, "name": "KALYAN AQUA", "description": "", "user_id": 2, "debit_balance": 0.0, "financial_year": "2024-2025", "createdAt": "2024-05-26T18:44:12.000Z", "updatedAt": "2024-12-20T08:27:03.865Z", "credit_balance": 15000.0, "isDealer": true, "type": 2 },
+          { "id": 2, "name": "JOSHNA ENTERPRISES", "description": "", "user_id": 2, "debit_balance": 0.0, "financial_year": "2024-2025", "createdAt": "2024-05-26T13:55:10.000Z", "updatedAt": "2024-12-20T08:27:29.789Z", "credit_balance": 50000.0, "isDealer": true, "type": 2 },
+          { "id": 23, "name": "RCM SGST", "description": "", "user_id": 2, "debit_balance": 0.0, "financial_year": "2024-2025", "createdAt": "2024-12-17T17:49:11.956Z", "updatedAt": "2024-12-17T17:49:11.956Z", "credit_balance": 0.0, "isDealer": false, "type": 4 },
+          { "id": 24, "name": "RCM CGST", "description": "", "user_id": 2, "debit_balance": 0.0, "financial_year": "2024-2025", "createdAt": "2024-12-17T17:49:29.358Z", "updatedAt": "2024-12-17T17:49:29.358Z", "credit_balance": 0.0, "isDealer": false, "type": 4 },
+          { "id": 25, "name": "SGST", "description": "", "user_id": 2, "debit_balance": 0.0, "financial_year": "2024-2025", "createdAt": "2024-12-17T17:50:59.319Z", "updatedAt": "2024-12-17T17:50:59.319Z", "credit_balance": 0.0, "isDealer": false, "type": 4 },
+          { "id": 26, "name": "CGST", "description": "", "user_id": 2, "debit_balance": 0.0, "financial_year": "2024-2025", "createdAt": "2024-12-17T17:51:21.548Z", "updatedAt": "2024-12-17T17:51:21.548Z", "credit_balance": 0.0, "isDealer": false, "type": 4 },
+          { "id": 27, "name": "IGST", "description": "", "user_id": 2, "debit_balance": 0.0, "financial_year": "2024-2025", "createdAt": "2024-12-17T17:51:52.583Z", "updatedAt": "2024-12-17T17:51:52.583Z", "credit_balance": 0.0, "isDealer": false, "type": 4 },
+          { "id": 29, "name": "RCM IGST", "description": "", "user_id": 2, "debit_balance": 0.0, "financial_year": "2024-2025", "createdAt": "2024-12-17T18:32:34.915Z", "updatedAt": "2024-12-17T18:32:34.915Z", "credit_balance": 0.0, "isDealer": false, "type": 4 },
+          { "id": 22, "name": "CASH", "description": "cash on hand", "user_id": 2, "debit_balance": 16230.0, "financial_year": "2024-2025", "createdAt": "2024-12-13T17:06:04.230Z", "updatedAt": "2024-12-13T17:36:39.447Z", "credit_balance": 0.0, "isDealer": false, "type": 4 },
+          { "id": 6, "name": "Bank Charges", "description": "", "user_id": 2, "debit_balance": 0.0, "financial_year": "2024-2025", "createdAt": "2024-05-26T19:21:30.000Z", "updatedAt": "2024-12-03T23:39:43.000Z", "credit_balance": 0.0, "isDealer": false, "type": 4 },
+          { "id": 28, "name": "Purchase Account", "description": "", "user_id": 2, "debit_balance": 0.0, "financial_year": "2024-2025", "createdAt": "2024-12-17T18:15:14.718Z", "updatedAt": "2024-12-23T07:18:51.091Z", "credit_balance": 0.0, "isDealer": false, "type": 4 },
+          { "id": 32, "name": "Sales Account", "description": "", "user_id": 2, "debit_balance": 0.0, "financial_year": "2024-2025", "createdAt": "2024-12-20T08:09:58.120Z", "updatedAt": "2024-12-23T07:19:04.357Z", "credit_balance": 0.0, "isDealer": false, "type": 4 }
+        ]
+          
+  }
+  
