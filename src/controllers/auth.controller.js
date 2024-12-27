@@ -21,7 +21,6 @@ oAuth2Client.setCredentials({ refresh_token: REFRESH_TOKEN });
 
 exports.signup = async (req, res) => {
   // Save User to Database
-  console.log("request:" + req);
   try {
     const user = await User.create({
       firstname: req.body.firstname,

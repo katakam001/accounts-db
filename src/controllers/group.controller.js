@@ -51,7 +51,6 @@ exports.groupDelete = async (req, res) => {
   const { id } = req.params;
   try {
     const group = await Group.findByPk(id);
-    console.log(group);
     if (!group) {
       return res.status(404).send('Group not found');
     }
@@ -63,7 +62,6 @@ exports.groupDelete = async (req, res) => {
 };
 
 exports.groupCreate = async (req, res) => {
-  console.log(req.body);
   const { name, description, user_id, financial_year } = req.body;
   try {
     const newGroup = await Group.create({

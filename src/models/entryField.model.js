@@ -1,4 +1,4 @@
-module.exports = (sequelize, Sequelize, Entry) => {
+module.exports = (sequelize, Sequelize, Entry, Fields) => {
   const EntryField = sequelize.define('EntryField', {
     id: {
       allowNull: false,
@@ -16,9 +16,15 @@ module.exports = (sequelize, Sequelize, Entry) => {
       onUpdate: 'CASCADE',
       onDelete: 'CASCADE'
     },
-    field_name: {
-      type: Sequelize.STRING,
-      allowNull: false
+    field_id: {
+      type: Sequelize.INTEGER,
+      allowNull: false,
+      references: {
+        model: Fields,
+        key: 'id'
+      },
+      onUpdate: 'CASCADE',
+      onDelete: 'CASCADE'
     },
     field_value: {
       type: Sequelize.TEXT,
@@ -27,5 +33,6 @@ module.exports = (sequelize, Sequelize, Entry) => {
   }, {
     tableName: 'entry_fields',
   });
+
   return EntryField;
 };

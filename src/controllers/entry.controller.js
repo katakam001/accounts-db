@@ -8,6 +8,7 @@ const JournalItem = db.journalItem;
 const JournalEntry = db.journalEntry;
 const AccountGroup = db.accountGroup;
 const Group = db.group;
+const Fields = db.fields; // Add this line
 
 exports.getEntries = async (req, res) => {
   const user_id = req.query.userId;
@@ -57,8 +58,16 @@ exports.getEntries = async (req, res) => {
           attributes: [
             'id',
             'entry_id',
-            'field_name',
-            'field_value'
+            'field_id',
+            'field_value',
+            [db.sequelize.literal('"fields->field"."field_name"'), 'field_name']
+          ],
+          include: [
+            {
+              model: Fields,
+              as: 'field',
+              attributes: []
+            }
           ]
         },
         {
@@ -87,8 +96,6 @@ exports.getEntries = async (req, res) => {
 
 exports.addEntry = async (req, res) => {
   const { entry, dynamicFields } = req.body;
-  console.log(entry);
-  console.log(dynamicFields);
 
   const t = await db.sequelize.transaction();
 
@@ -106,10 +113,9 @@ exports.addEntry = async (req, res) => {
     const newEntry = await Entry.create(entry, { transaction: t });
     const entryFields = dynamicFields.map(field => ({
       entry_id: newEntry.id,
-      field_name: field.field_name,
+      field_id: field.field_id,
       field_value: field.field_value
     }));
-    console.log(entryFields);
     await EntryField.bulkCreate(entryFields, { transaction: t });
 
     // Determine the amount based on exclude_from_total and field_category
@@ -258,7 +264,6 @@ async function getGroupId(groupName) {
 
 exports.updateEntry = async (req, res) => {
   const { id } = req.params;
-  console.log(id);
   const { entry, dynamicFields } = req.body;
   const t = await db.sequelize.transaction();
   console.log("entering");
@@ -269,7 +274,7 @@ exports.updateEntry = async (req, res) => {
     await EntryField.destroy({ where: { entry_id: id }, transaction: t });
     const entryFields = dynamicFields.map(field => ({
       entry_id: id,
-      field_name: field.field_name,
+      field_id: field.field_id,
       field_value: field.field_value
     }));
     await EntryField.bulkCreate(entryFields, { transaction: t });

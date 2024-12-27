@@ -31,7 +31,6 @@ exports.getAllCategoriesWithUnits = async (req, res) => {
 
 exports.createCategory = async (req, res) => {
   try {
-    console.log(req.body);
     const category = await Categories.create(req.body);
     res.status(201).json(category);
   } catch (error) {
@@ -57,7 +56,6 @@ exports.updateCategory = async (req, res) => {
 exports.deleteCategory = async (req, res) => {
   try {
     const { id } = req.params;
-    console.log(id);
     const deleted = await Categories.destroy({ where: { id } });
     if (deleted) {
       res.status(204).send();

@@ -70,7 +70,6 @@ exports.cashEntryUpdate = async (req, res) => {
 // Add a new cash entry
 exports.cashEntryCreate = async (req, res) => {
   const { cash_entry_date, narration_description, account_id, type, amount, user_id, financial_year } = req.body;
-  console.log(amount);
   const cash_date = cash_entry_date;
   const narration = narration_description;
   try {

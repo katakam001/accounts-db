@@ -1,30 +1,9 @@
 const db = require("../models");
 const Fields = db.fields;
-const Categories = db.categories;
 
 exports.getFields = async (req, res) => {
-  const { category_id } = req.query;
   try {
-    const whereCondition = category_id ? { category_id } : {};
-    const fields = await Fields.findAll({
-      where: whereCondition,
-      attributes: [
-        'id',
-        'category_id',
-        'field_name',
-        'field_type',
-        'required',
-        'field_category', // Include field_category
-        'exclude_from_total', // Include exclude_from_total
-        [db.sequelize.col('category.name'), 'category_name']
-      ],
-      include: [{
-        model: Categories,
-        as: 'category',
-        attributes: []
-      }]
-    });
-    console.log(fields);
+    const fields = await Fields.findAll();
     res.json(fields);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -58,8 +37,8 @@ exports.updateField = async (req, res) => {
 exports.deleteField = async (req, res) => {
   try {
     const { id } = req.params;
-    const deleted = await Fields.destroy({ where: { id } });
-    if (deleted) {
+    const deletedField = await Fields.destroy({ where: { id } });
+    if (deletedField) {
       res.status(204).send();
     } else {
       throw new Error('Field not found');

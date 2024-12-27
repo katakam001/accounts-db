@@ -3,12 +3,6 @@ const db = require("../models");
 exports.getTrailBalance = async (req, res) => {
     const { userId, fromDate, toDate, financialYear } = req.body;
 
-    console.log(userId);
-    console.log(fromDate);
-
-    console.log(toDate);
-    console.log(financialYear);
-
     const query = `
       WITH JournalEntries AS (
           SELECT 
@@ -101,10 +95,6 @@ exports.getTrailBalance = async (req, res) => {
             replacements: { userId, fromDate, toDate, financialYear },
             type: db.sequelize.QueryTypes.SELECT,
         });
-
-        console.log(rawEntries);
-
-
 
         // Format the data
         const formattedData = rawEntries.map(entry => ({

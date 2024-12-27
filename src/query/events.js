@@ -23,7 +23,6 @@ function createRouter(db) {
           type: db.QueryTypes.SELECT
         }
       );
-      console.log(results); // This should log the rows
       res.status(200).json(results);
     } catch (error) {
       console.error('Error executing query:', error);

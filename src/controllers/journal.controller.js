@@ -94,7 +94,6 @@ WHERE
 
       return acc;
     }, []);
-    console.log(formattedEntries);
 
     res.status(200).json(formattedEntries);
   } catch (error) {
@@ -136,10 +135,6 @@ exports.updateJournalEntry = async (req, res) => {
   // Convert journal_date string to Date object
   const journalDate = new Date(updatedEntry.journal_date);
 
-  console.log(entryId);
-  console.log(updatedEntry);
-
-
   try {
     // Update journal entry
     const [affectedRows, updated] = await JournalEntry.update(
@@ -156,10 +151,6 @@ exports.updateJournalEntry = async (req, res) => {
         plain: true,
       }
     );
-    console.log("line is beforeRows");
-    // console.log(updated);
-    console.log(affectedRows);
-    console.log("line is afterRows");
 
     if (affectedRows === 0) {
       return res.status(404).send('Journal entry not found');
@@ -184,9 +175,6 @@ exports.updateJournalEntry = async (req, res) => {
     }));
 
     console.log("line is coming1");
-
-    console.log(journalItems);
-
 
     await JournalItem.bulkCreate(journalItems, {
       fields: ['journal_id', 'account_id', 'group_id', 'amount', 'type', 'createdAt', 'updatedAt'],
@@ -258,7 +246,6 @@ exports.updateJournalEntry = async (req, res) => {
 
       return acc;
     }, []);
-    console.log(formattedEntries);
 
     res.status(200).json(formattedEntries);
   } catch (error) {
@@ -300,7 +287,6 @@ exports.createJournalEntryWithItems = async (req, res) => {
     });
 
     const entryId = createdJournalEntry.id;
-    console.log(entryId);
 
     // Fetch the updated journal entry with items
     const updatedJournalEntry = await db.sequelize.query(`
@@ -367,7 +353,6 @@ exports.createJournalEntryWithItems = async (req, res) => {
 
       return acc;
     }, []);
-    console.log(formattedEntries);
 
     res.status(200).json(formattedEntries);
   } catch (error) {
