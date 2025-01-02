@@ -10,12 +10,12 @@ module.exports = function (app) {
     next();
   });
 
-  app.get("/api/groupMappingTree", controller.groupToAccountMappingTree);
-  app.post('/api/addGroupMapping', controller.addGroupMapping);
+  app.get("/api/groupMappingTree",[authJwt.verifyToken], controller.groupToAccountMappingTree);
+  app.post('/api/addGroupMapping',[authJwt.verifyToken], controller.addGroupMapping);
   // Route to update a group mapping
-  app.put('/api/updateGroupMapping/:id', controller.updateGroupMapping);
+  app.put('/api/updateGroupMapping/:id',[authJwt.verifyToken], controller.updateGroupMapping);
 
 // Route to delete a group mapping
-app.delete('/api/deleteGroupMapping/:id', controller.deleteGroupMapping);
+app.delete('/api/deleteGroupMapping/:id',[authJwt.verifyToken], controller.deleteGroupMapping);
 
 };

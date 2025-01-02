@@ -10,8 +10,8 @@ module.exports = function (app) {
     next();
   });
 
-  app.get('/api/entries', controller.getEntries);
-  app.post('/api/entries', controller.addEntry);
-  app.put('/api/entries/:id', controller.updateEntry);
-  app.delete('/api/entries/:id', controller.deleteEntry);
+  app.get('/api/entries',[authJwt.verifyToken], controller.getEntries);
+  app.post('/api/entries',[authJwt.verifyToken], controller.addEntry);
+  app.put('/api/entries/:id',[authJwt.verifyToken], controller.updateEntry);
+  app.delete('/api/entries/:id',[authJwt.verifyToken], controller.deleteEntry);
 };

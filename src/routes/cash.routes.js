@@ -10,10 +10,10 @@ module.exports = function (app) {
     next();
   });
 
-  app.get("/api/cash-entries", controller.cashBookList);
-  app.put("/api/cash-entries/:id", controller.cashEntryUpdate);
-  app.delete("/api/cash-entries/:id", controller.cashEntryDelete);
-  app.post("/api/cash-entries", controller.cashEntryCreate);
+  app.get("/api/cash-entries",[authJwt.verifyToken],controller.cashBookList);
+  app.put("/api/cash-entries/:id",[authJwt.verifyToken], controller.cashEntryUpdate);
+  app.delete("/api/cash-entries/:id",[authJwt.verifyToken],controller.cashEntryDelete);
+  app.post("/api/cash-entries",[authJwt.verifyToken], controller.cashEntryCreate);
 
 };
 

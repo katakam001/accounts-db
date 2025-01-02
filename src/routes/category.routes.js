@@ -10,8 +10,8 @@ module.exports = function (app) {
     next();
   });
 
-  app.get('/api/categories', categoryController.getAllCategories);
-  app.post('/api/categories', categoryController.createCategory);
-  app.put('/api/categories/:id', categoryController.updateCategory);
-  app.delete('/api/categories/:id', categoryController.deleteCategory);
+  app.get('/api/categories',[authJwt.verifyToken], categoryController.getAllCategories);
+  app.post('/api/categories',[authJwt.verifyToken], categoryController.createCategory);
+  app.put('/api/categories/:id',[authJwt.verifyToken], categoryController.updateCategory);
+  app.delete('/api/categories/:id',[authJwt.verifyToken], categoryController.deleteCategory);
 };

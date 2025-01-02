@@ -10,10 +10,10 @@ module.exports = function (app) {
     next();
   });
 
-  app.get("/api/journal-entries", controller.getJournalEntries);
-  app.put("/api/journal-entries/:id", controller.updateJournalEntry);
-  app.delete("/api/journal-entries/:id", controller.deleteJournalEntry);
-  app.post("/api/journal-entries", controller.createJournalEntryWithItems);
+  app.get("/api/journal-entries",[authJwt.verifyToken], controller.getJournalEntries);
+  app.put("/api/journal-entries/:id",[authJwt.verifyToken], controller.updateJournalEntry);
+  app.delete("/api/journal-entries/:id",[authJwt.verifyToken], controller.deleteJournalEntry);
+  app.post("/api/journal-entries",[authJwt.verifyToken], controller.createJournalEntryWithItems);
 
 };
 

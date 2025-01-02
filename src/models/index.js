@@ -1,19 +1,22 @@
-const config = require("../config/db.config.js");
 
 const Sequelize = require("sequelize");
-const sequelize = new Sequelize(
-  config.DB,
-  config.USER,
-  config.PASSWORD,
+// Access the global dbConfig
+global.dbConfig = require('../config/db.config'); 
+const dbConfig = global.dbConfig;
+
+const sequelize = global.sequelize || new Sequelize(
+  dbConfig.DB,
+  dbConfig.USER,
+  dbConfig.PASSWORD,
   {
-    host: config.HOST,
-    dialect: config.dialect,
+    host: dbConfig.HOST,
+    dialect: dbConfig.dialect,
     logging: console.log,
     pool: {
-      max: config.pool.max,
-      min: config.pool.min,
-      acquire: config.pool.acquire,
-      idle: config.pool.idle
+      max: dbConfig.pool.max,
+      min: dbConfig.pool.min,
+      acquire: dbConfig.pool.acquire,
+      idle: dbConfig.pool.idle
     }
   }
 );
@@ -40,6 +43,8 @@ db.entry = require("../models/entry.model.js")(sequelize, Sequelize, db.categori
 db.entryField = require("../models/entryField.model.js")(sequelize, Sequelize, db.entry,db.fields);
 db.address=require("../models/address.model.js")(sequelize,Sequelize)
 db.groupMapping=require("../models/groupMapping.model.js")(sequelize,Sequelize,db.groupMapping,db.group);
+db.areas = require("../models/area.model.js")(sequelize, Sequelize);
+db.brokers = require("../models/broker.model.js")(sequelize, Sequelize);
 
 db.fieldsMapping.belongsTo(db.categories, { foreignKey: 'category_id', as: 'category' });
 db.fieldsMapping.belongsTo(db.fields, { foreignKey: 'field_id', as: 'field' });
@@ -86,6 +91,6 @@ db.groupMapping.hasMany(db.groupMapping, { as: 'children', foreignKey: 'parent_i
 db.groupMapping.belongsTo(db.groupMapping, { as: 'parent', foreignKey: 'parent_id' });
 db.groupMapping.belongsTo(db.group, { foreignKey: 'group_id' });
 db.group.hasMany(db.groupMapping, { foreignKey: 'group_id' });
-db.account.belongsToMany(db.group, { through: db.accountGroup, as: 'groups', foreignKey: 'account_id' , otherKey: 'group_id'});
+db.account.belongsToMany(db.group, { through: db.accountGroup, as: 'group', foreignKey: 'account_id' , otherKey: 'group_id'});
 db.group.belongsToMany(db.account, { through: db.accountGroup, as: 'accounts', foreignKey: 'group_id', otherKey: 'account_id'});
 module.exports = db;

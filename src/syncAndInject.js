@@ -1,8 +1,7 @@
-const db = require('./models');
 const readData = require('./utils/readData');
 const injectData = require('./utils/injectData');
 
-const syncAndInjectData = async () => {
+const syncAndInjectData = async (db) => {
   try {
     // Sync the models
     await db.sequelize.sync();

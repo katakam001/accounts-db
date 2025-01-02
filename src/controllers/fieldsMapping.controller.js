@@ -1,11 +1,12 @@
-const db = require("../models");
-const FieldsMapping = db.fieldsMapping;
-const Categories = db.categories;
-const Fields = db.fields;
+const {getDb} = require("../utils/getDb");
 
 exports.getFieldsMapping = async (req, res) => {
   const { category_id } = req.query;
   try {
+    const db = getDb();
+    const FieldsMapping = db.fieldsMapping;
+    const Categories = db.categories;
+    const Fields = db.fields;
     const whereCondition = category_id ? { category_id } : {};
     const fieldsMapping = await FieldsMapping.findAll({
       where: whereCondition,
@@ -41,6 +42,8 @@ exports.getFieldsMapping = async (req, res) => {
 
 exports.createFieldMapping = async (req, res) => {
   try {
+    const db = getDb();
+    const FieldsMapping = db.fieldsMapping;
     const fieldMapping = await FieldsMapping.create(req.body);
     res.status(201).json(fieldMapping);
   } catch (error) {
@@ -50,6 +53,8 @@ exports.createFieldMapping = async (req, res) => {
 
 exports.updateFieldMapping = async (req, res) => {
   try {
+    const db = getDb();
+    const FieldsMapping = db.fieldsMapping;
     const { id } = req.params;
     const [updated] = await FieldsMapping.update(req.body, { where: { id } });
     if (updated) {
@@ -65,6 +70,8 @@ exports.updateFieldMapping = async (req, res) => {
 
 exports.deleteFieldMapping = async (req, res) => {
   try {
+    const db = getDb();
+    const FieldsMapping = db.fieldsMapping;
     const { id } = req.params;
     const deletedMapping = await FieldsMapping.destroy({ where: { id } });
     if (deletedMapping) {

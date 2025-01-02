@@ -1,9 +1,8 @@
-const db = require("../models");
-const JournalEntry = db.journalEntry;
-const JournalItem = db.journalItem;
+const {getDb} = require("../utils/getDb");
 
 exports.getJournalEntries = async (req, res) => {
   try {
+    const db = getDb();
     const userId = req.query.userId;
     const financialYear = req.query.financialYear;
     const accountName = req.query.accountName || null;
@@ -107,6 +106,9 @@ exports.deleteJournalEntry = async (req, res) => {
   const entryId = req.params.id;
 
   try {
+    const db = getDb();
+    const JournalEntry = db.journalEntry;
+    const JournalItem = db.journalItem;
     // Delete journal entry and its associated items
     const deleted = await JournalEntry.destroy({
       where: { id: entryId },
@@ -136,6 +138,9 @@ exports.updateJournalEntry = async (req, res) => {
   const journalDate = new Date(updatedEntry.journal_date);
 
   try {
+    const db = getDb();
+    const JournalEntry = db.journalEntry;
+    const JournalItem = db.journalItem;
     // Update journal entry
     const [affectedRows, updated] = await JournalEntry.update(
       {
@@ -260,6 +265,9 @@ exports.createJournalEntryWithItems = async (req, res) => {
   const journalDate = new Date(newEntry.journal_date);
 
   try {
+    const db = getDb();
+    const JournalEntry = db.journalEntry;
+    const JournalItem = db.journalItem;
     // Create new journal entry
     const createdJournalEntry = await JournalEntry.create({
       journal_date: journalDate,

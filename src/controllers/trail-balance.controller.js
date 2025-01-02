@@ -1,4 +1,4 @@
-const db = require("../models");
+const {getDb} = require("../utils/getDb");
 
 exports.getTrailBalance = async (req, res) => {
     const { userId, fromDate, toDate, financialYear } = req.body;
@@ -91,6 +91,7 @@ exports.getTrailBalance = async (req, res) => {
     `;
 
     try {
+        const db = getDb();
         const rawEntries = await db.sequelize.query(query, {
             replacements: { userId, fromDate, toDate, financialYear },
             type: db.sequelize.QueryTypes.SELECT,

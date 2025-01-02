@@ -1,11 +1,11 @@
-const db = require("../models");
-const Units = db.units;
-const Categories = db.categories;
-const CategoryUnits = db.categoryUnits;
-
+const {getDb} = require("../utils/getDb");
 
 exports.getCategoryUnitsByCategoryId = async (req, res) => {
   try {
+    const db = getDb();
+    const Units = db.units;
+    const Categories = db.categories;
+    const CategoryUnits = db.categoryUnits;
     const { category_id } = req.query;
     const whereCondition = category_id ? { category_id } : {};
     const categoryUnits = await CategoryUnits.findAll({
@@ -33,6 +33,8 @@ exports.getCategoryUnitsByCategoryId = async (req, res) => {
 
 exports.createCategoryUnit = async (req, res) => {
   try {
+    const db = getDb();
+    const CategoryUnits = db.categoryUnits;
     const categoryUnit = await CategoryUnits.create(req.body);
     res.status(201).json(categoryUnit);
   } catch (error) {
@@ -42,6 +44,8 @@ exports.createCategoryUnit = async (req, res) => {
 
 exports.updateCategoryUnit = async (req, res) => {
   try {
+    const db = getDb();
+    const CategoryUnits = db.categoryUnits;
     const { id } = req.params;
     const [updated] = await CategoryUnits.update(req.body, { where: { id } });
     if (updated) {
@@ -57,6 +61,8 @@ exports.updateCategoryUnit = async (req, res) => {
 
 exports.deleteCategoryUnit = async (req, res) => {
   try {
+    const db = getDb();
+    const CategoryUnits = db.categoryUnits;
     const { id } = req.params;
     const deleted = await CategoryUnits.destroy({ where: { id } });
     if (deleted) {

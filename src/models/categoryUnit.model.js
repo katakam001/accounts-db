@@ -1,4 +1,4 @@
-module.exports = (sequelize, Sequelize,Category,Units) => {
+module.exports = (sequelize, Sequelize, Category, Units) => {
   const CategoryUnits = sequelize.define('CategoryUnits', {
     id: {
       allowNull: false,
@@ -25,6 +25,14 @@ module.exports = (sequelize, Sequelize,Category,Units) => {
       },
       onUpdate: 'CASCADE',
       onDelete: 'CASCADE'
+    },
+    user_id: {
+      type: Sequelize.INTEGER,
+      allowNull: true,
+    },
+    financial_year: {
+      type: Sequelize.STRING(10),
+      allowNull: true,
     }
   }, {
     tableName: 'category_units',

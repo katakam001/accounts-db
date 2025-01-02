@@ -9,6 +9,14 @@ module.exports = (sequelize, Sequelize) => {
     name: {
       type: Sequelize.STRING,
       allowNull: false
+    },
+    user_id: {
+      type: Sequelize.INTEGER,
+      allowNull: true,
+    },
+    financial_year: {
+      type: Sequelize.STRING(10),
+      allowNull: true,
     }
   }, {
     tableName: 'units',

@@ -1,10 +1,22 @@
 const jwt = require("jsonwebtoken");
-const config = require("../config/auth.config.js");
-const db = require("../models");
-const User = db.user;
+const config = require("../config/auth.config"); // Adjust the path as needed
+const {getDb} = require("../utils/getDb");
+const fs = require('fs');
 
-verifyToken = (req, res, next) => {
-  let token = req.session.token;
+const publicKey = fs.readFileSync(config.publicKeyPath, 'utf8');
+
+// Verify Access Token function
+function verifyAccessToken(token) {
+  try {
+    const decoded = jwt.verify(token, publicKey, { algorithms: ['RS256'] });
+    return decoded;
+  } catch (error) {
+    return null;
+  }
+}
+
+const verifyToken = (req, res, next) => {
+  let token = req.cookies.accessToken;
 
   if (!token) {
     return res.status(403).send({
@@ -12,21 +24,22 @@ verifyToken = (req, res, next) => {
     });
   }
 
-  jwt.verify(token,
-    config.secret,
-    (err, decoded) => {
-      if (err) {
-        return res.status(401).send({
-          message: "Unauthorized!",
-        });
-      }
-      req.userId = decoded.id;
-      next();
+  const decoded = verifyAccessToken(token);
+  if (!decoded) {
+    return res.status(401).send({
+      message: "Unauthorized!",
     });
+  }
+
+  req.userId = decoded.id;
+  next();
 };
+
 
 isAdmin = async (req, res, next) => {
   try {
+    const db = getDb();
+    const User = db.user;
     const user = await User.findByPk(req.userId);
     const roles = await user.getRoles();
 
@@ -48,6 +61,8 @@ isAdmin = async (req, res, next) => {
 
 isModerator = async (req, res, next) => {
   try {
+    const db = getDb();
+    const User = db.user;
     const user = await User.findByPk(req.userId);
     const roles = await user.getRoles();
 
@@ -69,6 +84,8 @@ isModerator = async (req, res, next) => {
 
 isModeratorOrAdmin = async (req, res, next) => {
   try {
+    const db = getDb();
+    const User = db.user;
     const user = await User.findByPk(req.userId);
     const roles = await user.getRoles();
 

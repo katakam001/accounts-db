@@ -1,10 +1,11 @@
-const db = require("../models");
-const Account = db.account;
-const Group = db.group;
-const Address = db.address;
+const {getDb} = require("../utils/getDb");
 
 exports.accountList = async (req, res) => {
   try {
+    const db = getDb();
+    const Account = db.account;
+    const Group = db.group;
+    const Address = db.address;
     const userId = req.query.userId;
     const financialYear = req.query.financialYear;
     const groups = req.query.groups ? req.query.groups.split(',') : null;
@@ -18,7 +19,7 @@ exports.accountList = async (req, res) => {
 
     const includeGroups = {
       model: Group,
-      as: 'groups',
+      as: 'group',
       through: { attributes: [] } // Exclude the join table attributes
     };
 
@@ -39,16 +40,15 @@ exports.accountList = async (req, res) => {
         }
       ]
     });
-
     // Transform the data to the desired format
     const transformedAccounts = accounts.map(account => {
-      const groups = account.groups.map(group => ({
-        id: group.id,
-        name: group.name,
-        description: group.description,
-        financial_year: group.financial_year,
-        user_id: group.user_id
-      }));
+      const group = account.group && account.group.length > 0 ? {
+        id: account.group[0].id,
+        name: account.group[0].name,
+        description: account.group[0].description,
+        financial_year: account.group[0].financial_year,
+        user_id: account.group[0].user_id
+      } : null;
 
       return {
         id: account.id,
@@ -59,7 +59,7 @@ exports.accountList = async (req, res) => {
         credit_balance: account.credit_balance,
         financial_year: account.financial_year,
         isDealer: account.isDealer,
-        groups: groups.length > 0 ? groups : null,
+        group: group,
         address: account.address ? {
           street: account.address.street,
           city: account.address.city,
@@ -78,9 +78,14 @@ exports.accountList = async (req, res) => {
 };
 
 exports.accountUpdate = async (req, res) => {
-  const { id } = req.params;
-  const { name, description, user_id, debit_balance, credit_balance, financial_year,isDealer, groups, address } = req.body;
   try {
+    const db = getDb();
+    const Account = db.account;
+    const Group = db.group;
+    const Address = db.address;
+    const AccountGroup = db.accountGroup;
+    const { id } = req.params;
+    const { name, description, user_id, debit_balance, credit_balance, financial_year, isDealer, group, address } = req.body;  
     const account = await Account.findByPk(id);
     if (!account) {
       return res.status(404).send('Account not found');
@@ -94,11 +99,29 @@ exports.accountUpdate = async (req, res) => {
     account.financial_year = financial_year;
     account.isDealer = isDealer;
     await account.save();
+    console.log(group);
 
-    if (groups && groups.length > 0) {
-      const groupIds = groups.map(group => group.id);
-      await account.setGroups(groupIds);
+    let groupData = null;
+    if (group) {
+      const existingAccountGroup = await AccountGroup.findOne({ where: { account_id: id } });
+      if (existingAccountGroup) {
+        existingAccountGroup.group_id = group;
+        await existingAccountGroup.save();
+      } else {
+        await AccountGroup.create({ account_id: id, group_id: group });
+      }
+      const groupExist = await Group.findByPk(group);
+      if (groupExist) {
+        groupData = {
+          id: groupExist.id,
+          name: groupExist.name,
+          description: groupExist.description,
+          financial_year: groupExist.financial_year,
+          user_id: groupExist.user_id
+        };
+      }
     }
+    console.log(groupData);
 
     if (address) {
       const existingAddress = await Address.findOne({ where: { account_id: id } });
@@ -121,31 +144,78 @@ exports.accountUpdate = async (req, res) => {
       }
     }
 
-    res.send(account);
+    const response = {
+      id: account.id,
+      name: account.name,
+      description: account.description,
+      user_id: account.user_id,
+      debit_balance: account.debit_balance,
+      credit_balance: account.credit_balance,
+      financial_year: account.financial_year,
+      isDealer: account.isDealer,
+      group: groupData,
+      address: address ? {
+        street: address.street,
+        city: address.city,
+        state: address.state,
+        postal_code: address.postal_code,
+        country: address.country
+      } : null
+    };
+
+    res.send(response);
   } catch (error) {
+    console.log(error);
     res.status(500).send(error);
   }
 };
 
 // Delete Account
 exports.accountDelete = async (req, res) => {
-  const { id } = req.params;
   try {
+    const db = getDb();
+    const Account = db.account;
+    const Address = db.address;
+    const AccountGroup = db.accountGroup;
+    const { id } = req.params;
     const account = await Account.findByPk(id);
     if (!account) {
-      return res.status(404).send('Account not found');
+      return res.status(404).json({ message: 'Account not found' });
     }
-    await account.setGroups([]); // Remove associations with groups
+
+    // Check if account group exists and remove it
+    const accountGroup = await AccountGroup.findOne({ where: { account_id: id } });
+    if (accountGroup) {
+      await AccountGroup.destroy({ where: { account_id: id } });
+    }
+
+    // Check if address exists and remove it
+    const address = await Address.findOne({ where: { account_id: id } });
+    if (address) {
+      await Address.destroy({ where: { account_id: id } });
+    }
+
+    // Delete the account
     await account.destroy();
-    res.status(200).send({ message: 'Account deleted successfully' });
+    res.status(200).json({ message: 'Account deleted successfully' });
   } catch (error) {
-    res.status(500).send(error);
+    if (error.name === 'SequelizeForeignKeyConstraintError') {
+      res.status(400).json({ message: 'Cannot delete account due to foreign key constraint' });
+    } else {
+      res.status(500).json({ message: 'Internal server error', error: error.message });
+    }
   }
 };
 
+
 exports.accountCreate = async (req, res) => {
-  const { name, description, user_id, debit_balance, credit_balance, financial_year,isDealer, groups, address } = req.body;
   try {
+    const db = getDb();
+    const Account = db.account;
+    const Group = db.group;
+    const Address = db.address;
+    const AccountGroup = db.accountGroup;
+    const { name, description, user_id, debit_balance, credit_balance, financial_year, isDealer, group, address } = req.body;  
     const newAccount = await Account.create({
       name,
       description,
@@ -156,13 +226,24 @@ exports.accountCreate = async (req, res) => {
       isDealer
     });
 
-    if (groups && groups.length > 0) {
-      const groupIds = groups.map(group => group.id);
-      await newAccount.setGroups(groupIds);
+    let groupData = null;
+    if (group) {
+      await AccountGroup.create({ account_id: newAccount.id, group_id:group });
+      const groupExist = await Group.findByPk(group);
+      if (groupExist) {
+        groupData = {
+          id: groupExist.id,
+          name: groupExist.name,
+          description: groupExist.description,
+          financial_year: groupExist.financial_year,
+          user_id: groupExist.user_id
+        };
+      }
     }
 
+    let addressData = null;
     if (address) {
-      await Address.create({
+      const newAddress = await Address.create({
         account_id: newAccount.id,
         street: address.street,
         city: address.city,
@@ -170,10 +251,31 @@ exports.accountCreate = async (req, res) => {
         postal_code: address.postal_code,
         country: address.country
       });
+      addressData = {
+        street: newAddress.street,
+        city: newAddress.city,
+        state: newAddress.state,
+        postal_code: newAddress.postal_code,
+        country: newAddress.country
+      };
     }
 
-    res.status(201).send(newAccount);
+    const response = {
+      id: newAccount.id,
+      name: newAccount.name,
+      description: newAccount.description,
+      user_id: newAccount.user_id,
+      debit_balance: newAccount.debit_balance,
+      credit_balance: newAccount.credit_balance,
+      financial_year: newAccount.financial_year,
+      isDealer: newAccount.isDealer,
+      group: groupData,
+      address: addressData
+    };
+
+    res.status(201).send(response);
   } catch (error) {
-    res.status(500).send(error);
+    console.error('Error creating account:', error);
+    res.status(500).send('Internal server error');
   }
 };

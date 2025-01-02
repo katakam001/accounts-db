@@ -10,10 +10,10 @@ module.exports = function (app) {
     next();
   });
 
-  app.get("/api/groups", controller.groupList);
-  app.put("/api/groups/:id", controller.groupUpdate);
-  app.delete("/api/groups/:id", controller.groupDelete);
-  app.post("/api/groups", controller.groupCreate);
+  app.get("/api/groups",[authJwt.verifyToken], controller.groupList);
+  app.put("/api/groups/:id",[authJwt.verifyToken], controller.groupUpdate);
+  app.delete("/api/groups/:id",[authJwt.verifyToken], controller.groupDelete);
+  app.post("/api/groups",[authJwt.verifyToken], controller.groupCreate);
 
 };
 

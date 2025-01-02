@@ -1,14 +1,13 @@
 module.exports = (sequelize, Sequelize) => {
-  const Fields = sequelize.define("Fields", {
+  const Area = sequelize.define("Area", {
     id: {
-      allowNull: false,
-      autoIncrement: true,
+      type: Sequelize.INTEGER,
       primaryKey: true,
-      type: Sequelize.INTEGER
+      autoIncrement: true,
     },
-    field_name: {
+    name: {
       type: Sequelize.STRING,
-      allowNull: false
+      allowNull: false,
     },
     user_id: {
       type: Sequelize.INTEGER,
@@ -19,8 +18,8 @@ module.exports = (sequelize, Sequelize) => {
       allowNull: true,
     }
   }, {
-    tableName: 'fields',
+    tableName: 'areas',
   });
 
-  return Fields;
+  return Area;
 };

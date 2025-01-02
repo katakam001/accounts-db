@@ -1,10 +1,10 @@
-const db = require("../models");
-const CashEntry = db.cash;
-const Account = db.account;
-
+const {getDb} = require("../utils/getDb");
 
 exports.cashBookList = async (req, res) => {
   try {
+    const db = getDb();
+    const CashEntry = db.cash;
+    const Account = db.account;
     const userid = req.query.userId;
     const financial_year = req.query.financialYear;
 
@@ -48,6 +48,8 @@ exports.cashEntryUpdate = async (req, res) => {
   const { id } = req.params;
   const { cash_entry_date, narration_description, account_id, type, amount, user_id, financial_year } = req.body;
   try {
+    const db = getDb();
+    const CashEntry = db.cash;
     const cashEntry = await CashEntry.findByPk(id);
     if (!cashEntry) {
       return res.status(404).json({ error: 'Cash entry not found' });
@@ -73,6 +75,8 @@ exports.cashEntryCreate = async (req, res) => {
   const cash_date = cash_entry_date;
   const narration = narration_description;
   try {
+    const db = getDb();
+    const CashEntry = db.cash;
     const cashEntry = await CashEntry.create({
       cash_date,
       narration,
@@ -94,6 +98,8 @@ exports.cashEntryDelete = async (req, res) => {
   const { id } = req.params;
   
   try {
+    const db = getDb();
+    const CashEntry = db.cash;
     const cashEntry = await CashEntry.findByPk(id);
     if (!cashEntry) {
       return res.status(404).json({ error: 'Cash entry not found' });

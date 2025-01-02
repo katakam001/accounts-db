@@ -1,8 +1,9 @@
-const db = require("../models");
-const Units = db.units;
+const {getDb} = require("../utils/getDb");
 
 exports.getAllUnits = async (req, res) => {
   try {
+    const db = getDb();
+    const Units = db.units;
     const units = await Units.findAll();
     res.json(units);
   } catch (error) {
@@ -12,6 +13,8 @@ exports.getAllUnits = async (req, res) => {
 
 exports.createUnit = async (req, res) => {
   try {
+    const db = getDb();
+    const Units = db.units;
     const unit = await Units.create(req.body);
     res.status(201).json(unit);
   } catch (error) {
@@ -21,6 +24,8 @@ exports.createUnit = async (req, res) => {
 
 exports.updateUnit = async (req, res) => {
   try {
+    const db = getDb();
+    const Units = db.units;
     const { id } = req.params;
     const [updated] = await Units.update(req.body, { where: { id } });
     if (updated) {
@@ -36,6 +41,8 @@ exports.updateUnit = async (req, res) => {
 
 exports.deleteUnit = async (req, res) => {
   try {
+    const db = getDb();
+    const Units = db.units;
     const { id } = req.params;
     const deleted = await Units.destroy({ where: { id } });
     if (deleted) {

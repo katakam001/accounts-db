@@ -9,11 +9,10 @@ module.exports = function (app) {
     );
     next();
   });
-
-  app.get("/api/accounts", controller.accountList);
-  app.put("/api/accounts/:id", controller.accountUpdate);
-  app.delete("/api/accounts/:id", controller.accountDelete);
-  app.post("/api/accounts", controller.accountCreate);
+  app.get("/api/accounts",[authJwt.verifyToken],controller.accountList);
+  app.put("/api/accounts/:id",[authJwt.verifyToken], controller.accountUpdate);
+  app.delete("/api/accounts/:id",[authJwt.verifyToken],controller.accountDelete);
+  app.post("/api/accounts",[authJwt.verifyToken],controller.accountCreate);
 
 };
 

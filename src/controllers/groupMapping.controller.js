@@ -1,11 +1,10 @@
-const db = require("../models");
-const GroupMapping = db.groupMapping;
-const Group=db.group;
-const AccountGroup=db.accountGroup;
-const Account = db.account;
+const {getDb} = require("../utils/getDb");
 
 exports.groupMappingTree = async (req, res) => {
   try {
+    const db = getDb();
+    const GroupMapping = db.groupMapping;
+    const Group=db.group;
     const groups = await GroupMapping.findAll({
       include: [
         {
@@ -49,6 +48,9 @@ exports.groupMappingTree = async (req, res) => {
 
 exports.groupToAccountMappingTree = async (req, res) => {
   try {
+    const db = getDb();
+    const GroupMapping = db.groupMapping;
+    const Group=db.group;
     const groups = await GroupMapping.findAll({
       include: [
         {
@@ -121,6 +123,9 @@ const buildTree = (data, accounts, parentId = null) => {
 
 exports.addGroupMapping = async (req, res) => {
   try {
+    const db = getDb();
+    const GroupMapping = db.groupMapping;
+    const Group=db.group;
     const { parent_id, group_name } = req.body;
 
     // Fetch the group_id from the group_list table based on the group name
@@ -158,6 +163,8 @@ exports.addGroupMapping = async (req, res) => {
 
 exports.updateGroupMapping = async (req, res) => {
   try {
+    const db = getDb();
+    const GroupMapping = db.groupMapping;
     const { id, name } = req.body;
     const group = await GroupMapping.findByPk(id);
     if (group) {
@@ -175,6 +182,8 @@ exports.updateGroupMapping = async (req, res) => {
 
 exports.deleteGroupMapping = async (req, res) => {
   try {
+    const db = getDb();
+    const GroupMapping = db.groupMapping;
     const { id } = req.params;
     const group = await GroupMapping.findByPk(id, {
       include: {

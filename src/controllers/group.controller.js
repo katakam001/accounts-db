@@ -1,8 +1,9 @@
-const db = require("../models");
-const Group = db.group;
+const {getDb} = require("../utils/getDb");
 
 exports.groupList = async (req, res) => {
   try {
+    const db = getDb();
+    const Group = db.group;
     const userId = req.query.userId;
     const financialYear = req.query.financialYear;
     if (!userId) {
@@ -30,6 +31,8 @@ exports.groupUpdate = async (req, res) => {
   const { id } = req.params;
   const { name, description, user_id, financial_year } = req.body;
   try {
+    const db = getDb();
+    const Group = db.group;
     const group = await Group.findByPk(id);
     if (!group) {
       return res.status(404).send('Group not found');
@@ -50,6 +53,8 @@ exports.groupUpdate = async (req, res) => {
 exports.groupDelete = async (req, res) => {
   const { id } = req.params;
   try {
+    const db = getDb();
+    const Group = db.group;
     const group = await Group.findByPk(id);
     if (!group) {
       return res.status(404).send('Group not found');
@@ -64,6 +69,8 @@ exports.groupDelete = async (req, res) => {
 exports.groupCreate = async (req, res) => {
   const { name, description, user_id, financial_year } = req.body;
   try {
+    const db = getDb();
+    const Group = db.group;
     const newGroup = await Group.create({
       name,
       description,

@@ -13,6 +13,14 @@ module.exports = (sequelize, Sequelize) => {
     type: {
       type: Sequelize.INTEGER,
       allowNull: false
+    },
+    user_id: {
+      type: Sequelize.INTEGER,
+      allowNull: true,
+    },
+    financial_year: {
+      type: Sequelize.STRING(10),
+      allowNull: true,
     }
   }, {
     tableName: 'categories',

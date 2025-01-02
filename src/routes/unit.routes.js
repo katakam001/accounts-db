@@ -10,8 +10,8 @@ module.exports = function (app) {
     next();
   });
 
-  app.get('/api/units', controller.getAllUnits);
-  app.post('/api/units', controller.createUnit);
-  app.put('/api/units/:id', controller.updateUnit);
-  app.delete('/api/units/:id', controller.deleteUnit);
+  app.get('/api/units',[authJwt.verifyToken], controller.getAllUnits);
+  app.post('/api/units',[authJwt.verifyToken], controller.createUnit);
+  app.put('/api/units/:id',[authJwt.verifyToken], controller.updateUnit);
+  app.delete('/api/units/:id',[authJwt.verifyToken], controller.deleteUnit);
 };

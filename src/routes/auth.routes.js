@@ -20,6 +20,7 @@ module.exports = function (app) {
   );
 
   app.post("/api/auth/signin", controller.signin);
+  app.post("/api/auth/refresh-token", controller.refreshtoken);
 
   app.post("/api/auth/signout", controller.signout);
   app.post("/api/auth/password-reset", controller.requestPasswordReset);

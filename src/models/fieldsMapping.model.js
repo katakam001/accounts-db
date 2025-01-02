@@ -47,6 +47,14 @@ module.exports = (sequelize, Sequelize, Categories, Fields) => {
     type: {
       type: Sequelize.INTEGER,
       allowNull: false
+    },
+    user_id: {
+      type: Sequelize.INTEGER,
+      allowNull: true,
+    },
+    financial_year: {
+      type: Sequelize.STRING(10),
+      allowNull: true,
     }
   }, {
     tableName: 'fields_mapping',

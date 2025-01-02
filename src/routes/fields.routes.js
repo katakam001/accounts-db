@@ -10,8 +10,8 @@ module.exports = function (app) {
     next();
   });
 
-  app.get('/api/fields', fieldsController.getFields);
-  app.post('/api/fields', fieldsController.createField);
-  app.put('/api/fields/:id', fieldsController.updateField);
-  app.delete('/api/fields/:id', fieldsController.deleteField);
+  app.get('/api/fields',[authJwt.verifyToken], fieldsController.getFields);
+  app.post('/api/fields',[authJwt.verifyToken], fieldsController.createField);
+  app.put('/api/fields/:id',[authJwt.verifyToken], fieldsController.updateField);
+  app.delete('/api/fields/:id',[authJwt.verifyToken], fieldsController.deleteField);
 };

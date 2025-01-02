@@ -1,14 +1,4 @@
-const db = require("../models");
-const Entry = db.entry;
-const EntryField = db.entryField;
-const Categories = db.categories;
-const Account = db.account;
-const Units = db.units;
-const JournalItem = db.journalItem;
-const JournalEntry = db.journalEntry;
-const AccountGroup = db.accountGroup;
-const Group = db.group;
-const Fields = db.fields; // Add this line
+const {getDb} = require("../utils/getDb");
 
 exports.getEntries = async (req, res) => {
   const user_id = req.query.userId;
@@ -26,6 +16,13 @@ exports.getEntries = async (req, res) => {
   }
 
   try {
+    const db = getDb();
+    const Entry = db.entry;
+    const EntryField = db.entryField;
+    const Categories = db.categories;
+    const Account = db.account;
+    const Units = db.units;
+    const Fields = db.fields; // Add this line
     const entries = await Entry.findAll({
       where: {
         user_id,
@@ -97,9 +94,14 @@ exports.getEntries = async (req, res) => {
 exports.addEntry = async (req, res) => {
   const { entry, dynamicFields } = req.body;
 
-  const t = await db.sequelize.transaction();
 
   try {
+    const db = getDb();
+    const t = await db.sequelize.transaction();
+    const Entry = db.entry;
+    const EntryField = db.entryField;
+    const JournalItem = db.journalItem;
+    const JournalEntry = db.journalEntry;
     // Step 1: Insert a new journal entry
     const journalEntry = await JournalEntry.create({
       journal_date: entry.entry_date,
@@ -243,11 +245,16 @@ exports.addEntry = async (req, res) => {
 
 // Helper functions to get account and group IDs
 async function getAccountId(accountName) {
+  const db = getDb();
+  const Account = db.account;
   const account = await Account.findOne({ where: { name: accountName } });
   return account ? account.id : null;
 }
 
 async function getGroupIdFromAccountName(accountName) {
+  const db = getDb();
+  const Account = db.account;
+  const AccountGroup = db.accountGroup;
   const account = await Account.findOne({ where: { name: accountName } });
   if (account) {
     const accountGroup = await AccountGroup.findOne({ where: { account_id: account.id } });
@@ -258,6 +265,8 @@ async function getGroupIdFromAccountName(accountName) {
 
 // Helper function to get group ID by group name
 async function getGroupId(groupName) {
+  const db = getDb();
+  const Group = db.group;
   const group = await Group.findOne({ where: { name: groupName } });
   return group ? group.id : null;
 }
@@ -265,10 +274,15 @@ async function getGroupId(groupName) {
 exports.updateEntry = async (req, res) => {
   const { id } = req.params;
   const { entry, dynamicFields } = req.body;
-  const t = await db.sequelize.transaction();
   console.log("entering");
-
   try {
+    const db = getDb();
+    const t = await db.sequelize.transaction();
+    const Entry = db.entry;
+    const EntryField = db.entryField;
+    const JournalItem = db.journalItem;
+    const JournalEntry = db.journalEntry;
+
     // Step 1: Update the entry
     await Entry.update(entry, { where: { id }, transaction: t });
     await EntryField.destroy({ where: { entry_id: id }, transaction: t });
@@ -382,9 +396,14 @@ exports.updateEntry = async (req, res) => {
 
 exports.deleteEntry = async (req, res) => {
   const { id } = req.params;
-  const t = await db.sequelize.transaction();
-
   try {
+    const db = getDb();
+    const t = await db.sequelize.transaction();
+    const Entry = db.entry;
+    const EntryField = db.entryField;
+    const JournalItem = db.journalItem;
+    const JournalEntry = db.journalEntry;
+
     // Find the entry to get the journal_id and type
     const entry = await Entry.findOne({ where: { id }, transaction: t });
     if (entry) {

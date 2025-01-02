@@ -1,8 +1,9 @@
-const db = require("../models");
-const Fields = db.fields;
+const {getDb} = require("../utils/getDb");
 
 exports.getFields = async (req, res) => {
   try {
+    const db = getDb();
+    const Fields = db.fields;
     const fields = await Fields.findAll();
     res.json(fields);
   } catch (error) {
@@ -12,6 +13,8 @@ exports.getFields = async (req, res) => {
 
 exports.createField = async (req, res) => {
   try {
+    const db = getDb();
+    const Fields = db.fields;
     const field = await Fields.create(req.body);
     res.status(201).json(field);
   } catch (error) {
@@ -21,6 +24,8 @@ exports.createField = async (req, res) => {
 
 exports.updateField = async (req, res) => {
   try {
+    const db = getDb();
+    const Fields = db.fields;
     const { id } = req.params;
     const [updated] = await Fields.update(req.body, { where: { id } });
     if (updated) {
@@ -36,6 +41,8 @@ exports.updateField = async (req, res) => {
 
 exports.deleteField = async (req, res) => {
   try {
+    const db = getDb();
+    const Fields = db.fields;
     const { id } = req.params;
     const deletedField = await Fields.destroy({ where: { id } });
     if (deletedField) {

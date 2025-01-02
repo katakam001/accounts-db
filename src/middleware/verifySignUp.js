@@ -1,9 +1,8 @@
-const db = require("../models");
-const ROLES = db.ROLES;
-const User = db.user;
-
+const {getDb} = require("../utils/getDb");
 checkDuplicateUsernameOrEmail = async (req, res, next) => {
   try {
+    const db = getDb();
+    const User = db.user;
     // Username
     let user = await User.findOne({
       where: {
@@ -39,6 +38,9 @@ checkDuplicateUsernameOrEmail = async (req, res, next) => {
 };
 
 checkRolesExisted = (req, res, next) => {
+  const db = getDb();
+  const ROLES = db.ROLES;
+
   if (req.body.roles) {
     for (let i = 0; i < req.body.roles.length; i++) {
       if (!ROLES.includes(req.body.roles[i])) {

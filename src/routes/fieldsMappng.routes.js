@@ -10,8 +10,8 @@ module.exports = function (app) {
     next();
   });
 
-  app.get('/api/fieldsMapping', fieldsMappingController.getFieldsMapping);
-  app.post('/api/fieldsMapping', fieldsMappingController.createFieldMapping);
-  app.put('/api/fieldsMapping/:id', fieldsMappingController.updateFieldMapping);
-  app.delete('/api/fieldsMapping/:id', fieldsMappingController.deleteFieldMapping);
+  app.get('/api/fieldsMapping',[authJwt.verifyToken], fieldsMappingController.getFieldsMapping);
+  app.post('/api/fieldsMapping',[authJwt.verifyToken], fieldsMappingController.createFieldMapping);
+  app.put('/api/fieldsMapping/:id',[authJwt.verifyToken], fieldsMappingController.updateFieldMapping);
+  app.delete('/api/fieldsMapping/:id',[authJwt.verifyToken], fieldsMappingController.deleteFieldMapping);
 };

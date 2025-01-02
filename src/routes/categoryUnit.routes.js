@@ -10,9 +10,9 @@ module.exports = function (app) {
     next();
   });
 
-  app.get('/api/category-units', controller.getCategoryUnitsByCategoryId);
-  app.post('/api/category-units', controller.createCategoryUnit);
-  app.put('/api/category-units/:id', controller.updateCategoryUnit);
-  app.delete('/api/category-units/:id', controller.deleteCategoryUnit);
+  app.get('/api/category-units',[authJwt.verifyToken], controller.getCategoryUnitsByCategoryId);
+  app.post('/api/category-units',[authJwt.verifyToken], controller.createCategoryUnit);
+  app.put('/api/category-units/:id',[authJwt.verifyToken], controller.updateCategoryUnit);
+  app.delete('/api/category-units/:id',[authJwt.verifyToken], controller.deleteCategoryUnit);
 };
 
