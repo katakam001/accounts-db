@@ -411,7 +411,7 @@ exports.deleteEntry = async (req, res) => {
       const entryType = entry.type; // Optional: Check the entry type
 
       // Optional: Validate entry type if needed
-      if (![1, 2].includes(entryType)) {
+      if (![1, 2,3,4].includes(entryType)) {
         throw new Error('Invalid entry type');
       }
 
