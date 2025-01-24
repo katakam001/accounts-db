@@ -1,0 +1,667 @@
+Stock Register
+Date   |item|Opening Stock | purchase|sale return | recieved From process|Total|Sales|purchase return|Dispatch To process|Closing Stock|
+Apr 1st|kappas|3500        |0         |0                     |3500 |10   |0                  |3490
+
+CREATE TABLE public.stock_register_new (
+    id serial4 NOT NULL,
+    entry_id int4 NULL,
+    production_entry_id int4 NULL,
+    item_id int4 NOT NULL,
+    entry_date date NOT NULL,
+    opening_balance numeric NOT NULL,
+    quantity numeric NOT NULL,
+    closing_balance numeric NOT NULL,
+    entry_type varchar(20) NOT NULL,
+    user_id int4 NOT NULL,
+    financial_year varchar(10) NOT NULL,
+    dispatch_to_process numeric DEFAULT 0 NOT NULL,
+    received_from_process numeric DEFAULT 0 NOT NULL
+) PARTITION BY LIST (financial_year);
+
+CREATE TABLE IF NOT EXISTS public.stock_register_%s PARTITION OF public.stock_register
+        FOR VALUES IN (%L)',
+        p_financial_year, p_financial_year
+
+CREATE TABLE public.stock_register_2024_2025 PARTITION OF public.stock_register_new
+FOR VALUES IN ('2024-2025') PARTITION BY LIST (user_id);
+
+CREATE TABLE IF NOT EXISTS public.stock_register_%s_user%s PARTITION OF public.stock_register_%s
+FOR VALUES IN (%L)',
+p_financial_year, p_user_id, p_financial_year, p_user_id
+
+CREATE TABLE public.stock_register_2024_2025_2 PARTITION OF public.stock_register_2024_2025 FOR VALUES IN (2);
+
+INSERT INTO public.stock_register_new
+SELECT * FROM public.stock_register;
+
+
+ALTER TABLE public.stock_register RENAME TO stock_register_old;
+ALTER TABLE public.stock_register_new RENAME TO stock_register;
+
+ALTER TABLE public.stock_register_old RENAME CONSTRAINT stock_register_pkey TO stock_register_pkey1;
+ALTER TABLE public.stock_register_old RENAME CONSTRAINT unique_stock_register TO unique_stock_register1;
+ALTER TABLE public.stock_register_old RENAME CONSTRAINT stock_register_entry_id_fkey TO stock_register_entry_id_fkey1;
+ALTER TABLE public.stock_register_old RENAME CONSTRAINT stock_register_item_id_fkey TO stock_register_item_id_fkey1;
+ALTER TABLE public.stock_register_old RENAME CONSTRAINT stock_register_production_entry_id_fkey TO stock_register_production_entry_id_fkey1;
+
+
+ALTER TABLE public.stock_register
+ADD CONSTRAINT stock_register_pkey PRIMARY KEY (id, financial_year, user_id),
+ADD CONSTRAINT unique_stock_register UNIQUE (item_id, entry_date, user_id, financial_year),
+ADD CONSTRAINT stock_register_entry_id_fkey FOREIGN KEY (entry_id) REFERENCES public.entries(id),
+ADD CONSTRAINT stock_register_item_id_fkey FOREIGN KEY (item_id) REFERENCES public.items(id),
+ADD CONSTRAINT stock_register_production_entry_id_fkey FOREIGN KEY (production_entry_id) REFERENCES public.production_entries(id);
+
+ALTER INDEX idx_stock_register_entry_date RENAME TO idx_stock_register_old_entry_date;
+ALTER INDEX idx_stock_register_financial_year RENAME TO idx_stock_register_old_financial_year;
+ALTER INDEX idx_stock_register_item_id RENAME TO idx_stock_register_old_item_id;
+ALTER INDEX idx_stock_register_user_id RENAME TO idx_stock_register_old_user_id;
+
+
+CREATE INDEX idx_stock_register_entry_date ON public.stock_register USING btree (entry_date);
+CREATE INDEX idx_stock_register_financial_year ON public.stock_register USING btree (financial_year);
+CREATE INDEX idx_stock_register_item_id ON public.stock_register USING btree (item_id);
+CREATE INDEX idx_stock_register_user_id ON public.stock_register USING btree (user_id);
+
+DROP TABLE public.stock_register_old;
+
+CREATE OR REPLACE PROCEDURE generate_stock_register(p_item_id INT, p_user_id INT, p_financial_year TEXT)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    rec RECORD;
+BEGIN
+    -- Acquire a lock on the stock_register table for the specific user and financial year
+    PERFORM pg_advisory_xact_lock(hashtext(p_user_id::text || p_financial_year));
+
+    -- Create the partition if it doesn't exist
+    EXECUTE format('
+        CREATE TABLE IF NOT EXISTS public.stock_register_%s PARTITION OF public.stock_register
+        FOR VALUES IN (%L)',
+        p_financial_year, p_financial_year
+    );
+
+    -- Create the sub-partition if it doesn't exist
+    EXECUTE format('
+        CREATE TABLE IF NOT EXISTS public.stock_register_%s_user%s PARTITION OF public.stock_register_%s
+        FOR VALUES IN (%L)',
+        p_financial_year, p_user_id, p_financial_year, p_user_id
+    );
+
+    -- Create a temporary table for the financial year dates
+    DROP TABLE IF EXISTS date_range;
+    CREATE TEMP TABLE date_range AS
+    SELECT generate_series(
+        (substring(p_financial_year from 1 for 4) || '-04-01')::date,
+        (substring(p_financial_year from 6 for 4) || '-03-31')::date,
+        '1 day'::interval
+    ) AS entry_date;
+
+    -- Insert or update aggregated data into the stock_register table
+    WITH entries_data AS (
+        SELECT i.id AS item_id, dr.entry_date, 
+               COALESCE(SUM(
+                   CASE 
+                       WHEN e.type = 1 THEN e.quantity
+                       WHEN e.type IN (2, 3, 5) THEN -e.quantity
+                       WHEN e.type IN (4, 6) THEN e.quantity
+                       ELSE 0
+                   END
+               ), 0) AS quantity,
+               COALESCE(SUM(
+                   CASE 
+                       WHEN e.type = 1 THEN e.quantity
+                       WHEN e.type IN (2, 3, 5) THEN -e.quantity
+                       WHEN e.type IN (4, 6) THEN e.quantity
+                       ELSE 0
+                   END
+               ), 0) AS closing_balance
+        FROM date_range dr
+        LEFT JOIN public.items i ON i.id = p_item_id
+        LEFT JOIN public.entries e ON dr.entry_date = e.entry_date AND e.item_id = i.id AND e.financial_year = p_financial_year AND e.user_id = p_user_id
+        GROUP BY i.id, dr.entry_date
+    ),
+    production_data AS (
+        SELECT i.id AS item_id, dr.entry_date, 
+               COALESCE(SUM(
+                   CASE 
+                       WHEN pe.production_entry_id IS NULL AND pe.raw_item_id = i.id THEN pe.quantity
+                       ELSE 0
+                   END
+               ), 0) AS Dispatch_To_process,
+               COALESCE(SUM(
+                   CASE 
+                       WHEN pe.production_entry_id IS NOT NULL AND pe.item_id = i.id THEN pe.quantity
+                       ELSE 0
+                   END
+               ), 0) AS Received_From_process
+        FROM date_range dr
+        LEFT JOIN public.items i ON i.id = p_item_id
+        LEFT JOIN public.production_entries pe ON dr.entry_date = pe.production_date AND pe.financial_year = p_financial_year AND pe.user_id = p_user_id
+        GROUP BY i.id, dr.entry_date
+    )
+    INSERT INTO public.stock_register (entry_id, production_entry_id, item_id, entry_date, opening_balance, quantity, closing_balance, entry_type, user_id, financial_year, Dispatch_To_process, Received_From_process)
+    SELECT NULL, NULL, ed.item_id, ed.entry_date, 
+           0 AS opening_balance,
+           ed.quantity,
+           ed.closing_balance - COALESCE(pd.Dispatch_To_process, 0) + COALESCE(pd.Received_From_process, 0) AS closing_balance,
+           'Combined Entry' AS entry_type,
+           p_user_id, p_financial_year,
+           pd.Dispatch_To_process,
+           pd.Received_From_process
+    FROM entries_data ed
+    LEFT JOIN production_data pd ON ed.item_id = pd.item_id AND ed.entry_date = pd.entry_date
+    WHERE ed.financial_year = p_financial_year AND ed.user_id = p_user_id
+    ON CONFLICT (item_id, entry_date, user_id, financial_year) DO UPDATE
+    SET quantity = EXCLUDED.quantity,
+        closing_balance = EXCLUDED.closing_balance,
+        Dispatch_To_process = EXCLUDED.Dispatch_To_process,
+        Received_From_process = EXCLUDED.Received_From_process;
+
+    -- Create a temporary table to hold the updated balances
+    DROP TABLE IF EXISTS temp_stock_register;
+    CREATE TEMP TABLE temp_stock_register AS
+    SELECT * FROM public.stock_register
+    WHERE user_id = p_user_id AND financial_year = p_financial_year;
+
+    -- Update the opening_balance and closing_balance for each day
+    FOR rec IN
+        SELECT id, item_id, entry_date, quantity, closing_balance, Dispatch_To_process, Received_From_process
+        FROM temp_stock_register
+        ORDER BY item_id, entry_date
+    LOOP
+        UPDATE temp_stock_register
+        SET opening_balance = COALESCE(
+                (SELECT closing_balance
+                 FROM temp_stock_register
+                 WHERE item_id = rec.item_id
+                   AND entry_date = rec.entry_date - INTERVAL '1 day'), 0),
+            closing_balance = COALESCE(
+                (SELECT closing_balance
+                 FROM temp_stock_register
+                 WHERE item_id = rec.item_id
+                   AND entry_date = rec.entry_date - INTERVAL '1 day'), 0) + rec.quantity + rec.Received_From_process - rec.Dispatch_To_process
+        WHERE id = rec.id;
+    END LOOP;
+
+    -- Update the original stock_register table with the updated balances
+    UPDATE public.stock_register sr
+    SET opening_balance = tsr.opening_balance,
+        closing_balance = tsr.closing_balance
+    FROM temp_stock_register tsr
+    WHERE sr.id = tsr.id;
+END;
+$$;
+
+
+Potential Solutions
+Composite Partitioning:
+
+Use composite partitioning to divide the data by multiple columns, such as entry_date and user_id. This can help distribute the data more evenly and reduce the number of partitions per user.
+
+Partition Pruning:
+
+Ensure that queries are written to take advantage of partition pruning, which allows PostgreSQL to skip scanning irrelevant partitions. This can significantly improve query performance.
+
+Automated Partition Management:
+
+Use automated tools or scripts to manage partitions. For example, you can use PostgreSQL extensions like pg_partman to automate partition creation and maintenance.
+
+Archiving:
+
+Archive old data that is no longer needed for day-to-day operations. This can help reduce the size of active partitions and improve performance.
+
+Monitoring and Tuning:
+
+Continuously monitor the performance of your database and queries. Use tools like pg_stat_statements and EXPLAIN ANALYZE to identify and address performance bottlenecks.
+
+### 1. Vacuuming
+
+To enable `pg_cron` on Amazon RDS for PostgreSQL, follow these steps:
+
+### 1. Modify the Parameter Group
+1. **Create a Custom Parameter Group**:
+   - Go to the RDS console.
+   - Navigate to **Parameter Groups**.
+   - Create a new parameter group or modify an existing one.
+
+2. **Add `pg_cron` to `shared_preload_libraries`**:
+   - Edit the parameter group.
+   - Find the `shared_preload_libraries` parameter.
+   - Add `pg_cron` to the list of libraries.
+
+### 2. Apply the Parameter Group to Your RDS Instance
+1. **Modify Your RDS Instance**:
+   - Go to the RDS console.
+   - Select your RDS instance.
+   - Click on **Modify**.
+   - Change the parameter group to the one you just created or modified.
+   - Save the changes.
+
+2. **Reboot Your RDS Instance**:
+   - After modifying the parameter group, you need to reboot your RDS instance for the changes to take effect.
+
+### 3. Enable `pg_cron` Extension
+1. **Connect to Your RDS Instance**:
+   - Use a tool like `psql` or any PostgreSQL client to connect to your RDS instance.
+
+2. **Create the `pg_cron` Extension**:
+   - Run the following command to create the `pg_cron` extension:
+     ```sql
+     CREATE EXTENSION pg_cron;
+     ```
+	 CREATE SCHEMA cron;
+	 
+GRANT USAGE ON SCHEMA cron TO PUBLIC;
+GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA cron TO PUBLIC;
+
+CREATE OR REPLACE FUNCTION get_vacuum_schedule()
+RETURNS TABLE(table_name TEXT, schedule TEXT) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT relname AS table_name,
+           CASE
+               WHEN n_dead_tup > 10000 THEN 'daily'
+               WHEN n_dead_tup > 2000 THEN 'weekly'
+               ELSE 'monthly'
+           END AS schedule
+    FROM pg_stat_user_tables
+    WHERE schemaname = 'public'
+      AND relname LIKE 'stock_register_%';
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION schedule_vacuum_jobs()
+RETURNS VOID AS $$
+DECLARE
+    rec RECORD;
+BEGIN
+    FOR rec IN SELECT * FROM get_vacuum_schedule() LOOP
+        IF rec.schedule = 'daily' THEN
+            PERFORM cron.schedule('vacuum_' || rec.table_name, '0 3 * * *', 'VACUUM ANALYZE public.' || rec.table_name);
+        ELSIF rec.schedule = 'weekly' THEN
+            PERFORM cron.schedule('vacuum_' || rec.table_name, '0 3 * * 0', 'VACUUM ANALYZE public.' || rec.table_name);
+        ELSE
+            PERFORM cron.schedule('vacuum_' || rec.table_name, '0 3 1 * *', 'VACUUM ANALYZE public.' || rec.table_name);
+        END IF;
+    END LOOP;
+END;
+$$ LANGUAGE plpgsql;
+
+SELECT cron.schedule('update_vacuum_schedules', '0 2 * * *', 'CALL schedule_vacuum_jobs()');
+
+
+### 3. **Automated Partition Management**
+Automate the creation and management of partitions based on user activity. This ensures that partitions are created and vacuumed as needed without manual intervention.
+
+CREATE OR REPLACE PROCEDURE prune_old_partitions()
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    partition_name TEXT;
+BEGIN
+    FOR partition_name IN
+        SELECT tablename
+        FROM pg_tables
+        WHERE schemaname = 'public'
+          AND tablename LIKE 'stock_register_%'
+          AND tablename < 'stock_register_' || to_char(current_date - INTERVAL '10 year', 'YYYY_MM')
+    LOOP
+        EXECUTE format('DROP TABLE IF EXISTS public.%I', partition_name);
+    END LOOP;
+END;
+$$;
+
+
+### 4. **Regular Reviews and Adjustments**
+Regularly review the performance and activity metrics to adjust the vacuuming schedules as needed. This ensures that your database remains efficient and performs optimally.
+
+By implementing these strategies, you can tailor the frequency of `VACUUM ANALYZE` to the specific needs of each user, ensuring optimal performance and efficient data management. If you have any further questions or need more assistance, feel free to ask!
+
+
+### 2. Index Maintenance
+Reindex your tables periodically to ensure that indexes remain efficient. You can use the `REINDEX` command to rebuild indexes.
+
+CREATE OR REPLACE PROCEDURE reindex_all_tables()
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    table_name TEXT;
+BEGIN
+    FOR table_name IN
+        SELECT tablename
+        FROM pg_tables
+        WHERE schemaname = 'public'
+    LOOP
+        EXECUTE format('REINDEX TABLE public.%I', table_name);
+    END LOOP;
+END;
+$$;
+
+SELECT cron.schedule('reindex_all_tables', '0 3 1 1 *', 'CALL reindex_all_tables()');
+
+
+CREATE OR REPLACE PROCEDURE reindex_active_tables()
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    table_name TEXT;
+BEGIN
+    -- Reindex the most active dynamic tables
+    FOR table_name IN
+        SELECT relname
+        FROM pg_stat_user_tables
+        WHERE schemaname = 'public'
+        ORDER BY n_tup_ins + n_tup_upd + n_tup_del DESC
+        LIMIT 10 -- Adjust this limit based on your needs
+    LOOP
+        EXECUTE format('REINDEX TABLE public.%I', table_name);
+    END LOOP;
+
+    -- Reindex the most active partition tables
+    FOR table_name IN
+        SELECT relname
+        FROM pg_stat_user_tables
+        WHERE schemaname = 'public'
+          AND relname LIKE 'stock_register_%'
+        ORDER BY n_tup_ins + n_tup_upd + n_tup_del DESC
+        LIMIT 100 -- Adjust this limit based on your needs
+    LOOP
+        EXECUTE format('REINDEX TABLE public.%I', table_name);
+    END LOOP;
+END;
+$$;
+SELECT cron.schedule('reindex_active_tables', '0 3 1 * *', 'CALL reindex_active_tables()');
+
+  ```
+
+### 3. Monitoring
+Use monitoring tools to keep an eye on your database performance. Tools like `pg_stat_statements` can help you identify slow queries and optimize them.
+
+- **Enable pg_stat_statements**:
+  ```sql
+  CREATE EXTENSION pg_stat_statements;
+  ```
+
+- **Query Slow Queries**:
+  ```sql
+  SELECT query, calls, total_time, mean_time
+  FROM pg_stat_statements
+  ORDER BY total_time DESC
+  LIMIT 10;
+  ```
+
+- **Monitoring Tools**:
+  - **pgAdmin**: A comprehensive PostgreSQL management tool.
+  - **pgBadger**: A log analyzer for PostgreSQL.
+  - **Azure Database for PostgreSQL Monitoring**: Cloud-based monitoring solution.
+
+### 4. Partition Management
+Regularly review and manage your partitions. Drop old partitions that are no longer needed to free up space and improve performance. You can automate this process using job schedulers like `pg_cron` or `pg_timetable`.
+
+Fantastic! Let's implement the archiving and restoration procedures for your partitions.
+
+### 1. Archiving Old Partitions
+
+#### Stored Procedure for Partition Archiving:
+```sql
+CREATE OR REPLACE PROCEDURE archive_old_partitions()
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    partition_name TEXT;
+    main_partition_name TEXT;
+BEGIN
+    -- Ensure the archive schema exists
+    EXECUTE 'CREATE SCHEMA IF NOT EXISTS archive';
+
+    -- Archive sub-partition tables first
+    FOR partition_name IN
+        SELECT tablename
+        FROM pg_tables
+        WHERE schemaname = 'public'
+          AND tablename LIKE 'stock_register_%_%'
+          AND substring(tablename, 16, 9) < to_char(current_date - INTERVAL '2 years', 'YYYY_YYYY')
+    LOOP
+        EXECUTE format('ALTER TABLE public.%I SET SCHEMA archive', partition_name);
+    END LOOP;
+
+    -- Archive main partition tables next
+    FOR main_partition_name IN
+        SELECT tablename
+        FROM pg_tables
+        WHERE schemaname = 'public'
+          AND tablename LIKE 'stock_register_%'
+          AND tablename NOT LIKE 'stock_register_%_%'
+          AND substring(tablename, 16, 9) < to_char(current_date - INTERVAL '2 years', 'YYYY_YYYY')
+    LOOP
+        EXECUTE format('ALTER TABLE public.%I SET SCHEMA archive', main_partition_name);
+    END LOOP;
+END;
+$$;
+```
+
+### 2. Restoring Archived Partitions
+
+#### Stored Procedure to Restore Archived Partitions:
+```sql
+CREATE OR REPLACE PROCEDURE restore_archived_partition(p_financial_year TEXT, p_user_id INT)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    partition_name TEXT;
+BEGIN
+    partition_name := format('stock_register_%s_%s', p_financial_year, p_user_id);
+
+    -- Check if the partition exists in the archive schema
+    IF EXISTS (SELECT 1 FROM pg_tables WHERE schemaname = 'archive' AND tablename = partition_name) THEN
+        -- Move the partition back to the public schema
+        EXECUTE format('ALTER TABLE archive.%I SET SCHEMA public', partition_name);
+    ELSE
+        RAISE NOTICE 'Partition % does not exist in the archive schema', partition_name;
+    END IF;
+END;
+$$;
+```
+
+### 3. Scheduling the Archiving Procedure
+
+Use `pg_cron` to schedule the `archive_old_partitions` procedure to run quarterly:
+
+```sql
+SELECT cron.schedule('archive_old_partitions', '0 4 1 */3 *', 'CALL archive_old_partitions()');
+```
+
+### Example Usage
+
+To restore a partition for the financial year `2023_2024` and user ID `2`, you can call the procedure like this:
+```sql
+CALL restore_archived_partition('2023_2024', 2);
+```
+
+This setup ensures that old partitions are archived regularly and can be restored when needed. If you need further assistance or have more questions, feel free to ask!
+
+CREATE OR REPLACE PROCEDURE generate_stock_register(p_item_id INT, p_user_id INT, p_financial_year TEXT)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    rec RECORD;
+    partition_name TEXT;
+    main_partition_name TEXT;
+BEGIN
+    partition_name := format('stock_register_%s_%s', p_financial_year, p_user_id);
+    main_partition_name := format('stock_register_%s', p_financial_year);
+
+    -- Acquire a lock on the stock_register table for the specific user and financial year
+    PERFORM pg_advisory_xact_lock(hashtext(p_user_id::text || p_financial_year));
+
+    -- Check if the main partition exists in the archive schema and restore it if necessary
+    IF EXISTS (SELECT 1 FROM pg_tables WHERE schemaname = 'archive' AND tablename = main_partition_name) THEN
+        EXECUTE format('ALTER TABLE archive.%I SET SCHEMA public', main_partition_name);
+    END IF;
+
+    -- Check if the sub-partition exists in the archive schema and restore it if necessary
+    IF EXISTS (SELECT 1 FROM pg_tables WHERE schemaname = 'archive' AND tablename = partition_name) THEN
+        EXECUTE format('ALTER TABLE archive.%I SET SCHEMA public', partition_name);
+    END IF;
+
+    -- Create the main partition if it doesn't exist
+    BEGIN
+        EXECUTE format('
+            CREATE TABLE IF NOT EXISTS public.stock_register_%s PARTITION OF public.stock_register
+            FOR VALUES IN (%L)
+            PARTITION BY LIST (user_id)',
+            p_financial_year, p_financial_year
+        );
+    EXCEPTION
+        WHEN others THEN
+            RAISE NOTICE 'Error creating partition for financial year %', p_financial_year;
+    END;
+
+    -- Create the sub-partition if it doesn't exist
+    BEGIN
+        EXECUTE format('
+            CREATE TABLE IF NOT EXISTS public.stock_register_%s_%s PARTITION OF public.stock_register_%s
+            FOR VALUES IN (%L)',
+            p_financial_year, p_user_id, p_financial_year, p_user_id
+        );
+    EXCEPTION
+        WHEN others THEN
+            RAISE NOTICE 'Error creating sub-partition for user % in financial year %', p_user_id, p_financial_year;
+    END;
+
+    -- Create a temporary table for the financial year dates
+    DROP TABLE IF EXISTS date_range;
+    CREATE TEMP TABLE date_range AS
+    SELECT generate_series(
+        (substring(p_financial_year from 1 for 4) || '-04-01')::date,
+        (substring(p_financial_year from 6 for 4) || '-03-31')::date,
+        '1 day'::interval
+    ) AS entry_date;
+
+    -- Insert or update aggregated data into the stock_register table
+    WITH entries_data AS (
+        SELECT i.id AS item_id, dr.entry_date, 
+               COALESCE(SUM(
+                   CASE 
+                       WHEN e.type = 1 THEN e.quantity
+                       WHEN e.type IN (2, 3, 5) THEN -e.quantity
+                       WHEN e.type IN (4, 6) THEN e.quantity
+                       ELSE 0
+                   END
+               ), 0) AS quantity,
+               COALESCE(SUM(
+                   CASE 
+                       WHEN e.type = 1 THEN e.quantity
+                       WHEN e.type IN (2, 3, 5) THEN -e.quantity
+                       WHEN e.type IN (4, 6) THEN e.quantity
+                       ELSE 0
+                   END
+               ), 0) AS closing_balance
+        FROM date_range dr
+        LEFT JOIN public.items i ON i.id = p_item_id
+        LEFT JOIN public.entries e ON dr.entry_date = e.entry_date AND e.item_id = i.id AND e.financial_year = p_financial_year AND e.user_id = p_user_id
+        GROUP BY i.id, dr.entry_date
+    ),
+    production_data AS (
+        SELECT i.id AS item_id, dr.entry_date, 
+               COALESCE(SUM(
+                   CASE 
+                       WHEN pe.production_entry_id IS NULL AND pe.raw_item_id = i.id THEN pe.quantity
+                       ELSE 0
+                   END
+               ), 0) AS Dispatch_To_process,
+               COALESCE(SUM(
+                   CASE 
+                       WHEN pe.production_entry_id IS NOT NULL AND pe.item_id = i.id THEN pe.quantity
+                       ELSE 0
+                   END
+               ), 0) AS Received_From_process
+        FROM date_range dr
+        LEFT JOIN public.items i ON i.id = p_item_id
+        LEFT JOIN public.production_entries pe ON dr.entry_date = pe.production_date AND pe.financial_year = p_financial_year AND pe.user_id = p_user_id
+        GROUP BY i.id, dr.entry_date
+    )
+    INSERT INTO public.stock_register (entry_id, production_entry_id, item_id, entry_date, opening_balance, quantity, closing_balance, entry_type, user_id, financial_year, Dispatch_To_process, Received_From_process)
+    SELECT NULL, NULL, ed.item_id, ed.entry_date, 
+           0 AS opening_balance,
+           ed.quantity,
+           ed.closing_balance - COALESCE(pd.Dispatch_To_process, 0) + COALESCE(pd.Received_From_process, 0) AS closing_balance,
+           'Combined Entry' AS entry_type,
+           p_user_id, p_financial_year,
+           pd.Dispatch_To_process,
+           pd.Received_From_process
+    FROM entries_data ed
+    LEFT JOIN production_data pd ON ed.item_id = pd.item_id AND ed.entry_date = pd.entry_date
+    WHERE ed.financial_year = p_financial_year AND ed.user_id = p_user_id
+    ON CONFLICT (item_id, entry_date, user_id, financial_year) DO UPDATE
+    SET quantity = EXCLUDED.quantity,
+        closing_balance = EXCLUDED.closing_balance,
+        Dispatch_To_process = EXCLUDED.Dispatch_To_process,
+        Received_From_process = EXCLUDED.Received_From_process;
+
+    -- Create a temporary table to hold the updated balances
+    DROP TABLE IF EXISTS temp_stock_register;
+    CREATE TEMP TABLE temp_stock_register AS
+    SELECT * FROM public.stock_register
+    WHERE user_id = p_user_id AND financial_year = p_financial_year;
+
+    -- Update the opening_balance and closing_balance for each day
+    FOR rec IN
+        SELECT id, item_id, entry_date, quantity, closing_balance, Dispatch_To_process, Received_From_process
+        FROM temp_stock_register
+        ORDER BY item_id, entry_date
+    LOOP
+        UPDATE temp_stock_register
+        SET opening_balance = COALESCE(
+                (SELECT closing_balance
+                 FROM temp_stock_register
+                 WHERE item_id = rec.item_id
+                   AND entry_date = rec.entry_date - INTERVAL '1 day'), 0),
+            closing_balance = COALESCE(
+                (SELECT closing_balance
+                 FROM temp_stock_register
+                 WHERE item_id = rec.item_id
+                   AND entry_date = rec.entry_date - INTERVAL '1 day'), 0) + rec.quantity + rec.Received_From_process - rec.Dispatch_To_process
+        WHERE id = rec.id;
+    END LOOP;
+
+    -- Update the original stock_register table with the updated balances
+    UPDATE public.stock_register sr
+    SET opening_balance = tsr.opening_balance,
+        closing_balance = tsr.closing_balance
+    FROM temp_stock_register tsr
+    WHERE sr.id = tsr.id;
+END;
+$$;
+
+
+
+By implementing these monitoring and maintenance tasks, you can ensure that your database remains efficient and performs optimally. 
+
+Considerations for High-Item Users
+Composite Partitioning:
+
+You can use composite partitioning to divide the data by multiple columns, such as entry_date and user_id. This can help distribute the data more evenly and reduce the number of partitions per user.
+
+Indexing:
+
+Ensure that each partition and sub-partition has appropriate indexes on columns frequently used in queries, such as user_id, item_id, and entry_date. Indexes can significantly improve query performance.
+
+Partition Pruning:
+
+Ensure that queries are written to take advantage of partition pruning, which allows PostgreSQL to skip scanning irrelevant partitions. This can significantly improve query performance.
+
+Archiving:
+
+Archive old data that is no longer needed for day-to-day operations. This can help reduce the size of active partitions and improve performance.
+
+
+
+CALL restore_archived_partition('2023_2024', 2);
+Before running generate_stock_register need to create new schema call ARCHIVE
+Final cron job:
+SELECT cron.schedule('archive_old_partitions', '0 4 1 */3 *', 'CALL archive_old_partitions()');
+SELECT cron.schedule('reindex_active_tables', '0 3 1 * *', 'CALL reindex_active_tables()');
+SELECT cron.schedule('reindex_all_tables', '0 3 1 1 *', 'CALL reindex_all_tables()');
+SELECT cron.schedule('update_vacuum_schedules', '0 2 * * *', 'CALL schedule_vacuum_jobs()');

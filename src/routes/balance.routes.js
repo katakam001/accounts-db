@@ -1,5 +1,5 @@
 const { authJwt } = require("../middleware");
-const controller = require("../controllers/location.controller");
+const balanceController = require("../controllers/balance.controller");
 
 module.exports = function (app) {
   app.use(function (req, res, next) {
@@ -10,6 +10,5 @@ module.exports = function (app) {
     next();
   });
 
-  app.get('/api/locations',[authJwt.verifyToken], controller.getAllLocations);
-  app.get('/api/locations/:id',[authJwt.verifyToken], controller.getLocationById);
+  app.get("/api/balance", [authJwt.verifyToken], balanceController.getInitialBalance);
 };

@@ -1,5 +1,5 @@
 const { authJwt } = require("../middleware");
-const controller = require("../controllers/location.controller");
+const controller = require("../controllers/consolidateStockRegister.controller.js");
 
 module.exports = function (app) {
   app.use(function (req, res, next) {
@@ -10,6 +10,5 @@ module.exports = function (app) {
     next();
   });
 
-  app.get('/api/locations',[authJwt.verifyToken], controller.getAllLocations);
-  app.get('/api/locations/:id',[authJwt.verifyToken], controller.getLocationById);
+  app.get('/api/consolidated_stock_register', [authJwt.verifyToken], controller.getConsolidatedStockDetails);
 };

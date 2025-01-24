@@ -10,6 +10,7 @@ module.exports = function (app) {
     next();
   });
   app.get("/api/accounts",[authJwt.verifyToken],controller.accountList);
+  app.get("/api/accounts/:name?/:id?", [authJwt.verifyToken], controller.getAccount); // New route to get account by name or id
   app.put("/api/accounts/:id",[authJwt.verifyToken], controller.accountUpdate);
   app.delete("/api/accounts/:id",[authJwt.verifyToken],controller.accountDelete);
   app.post("/api/accounts",[authJwt.verifyToken],controller.accountCreate);

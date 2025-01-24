@@ -1,4 +1,4 @@
-module.exports = (sequelize, Sequelize, Category, Account, Units, JournalEntry) => {
+module.exports = (sequelize, Sequelize, Category, Account, Units, JournalEntry, Items) => {
   const Entry = sequelize.define('Entry', {
     id: {
       allowNull: false,
@@ -30,9 +30,15 @@ module.exports = (sequelize, Sequelize, Category, Account, Units, JournalEntry) 
       onUpdate: 'CASCADE',
       onDelete: 'SET NULL'
     },
-    item_description: {
-      type: Sequelize.TEXT,
-      allowNull: true
+    item_id: {
+      type: Sequelize.INTEGER,
+      allowNull: false,
+      references: {
+        model: Items,
+        key: 'id'
+      },
+      onUpdate: 'CASCADE',
+      onDelete: 'CASCADE'
     },
     quantity: {
       type: Sequelize.NUMERIC,
@@ -46,7 +52,7 @@ module.exports = (sequelize, Sequelize, Category, Account, Units, JournalEntry) 
       type: Sequelize.NUMERIC,
       allowNull: true
     },
-    value: { // Updated field for value
+    value: {
       type: Sequelize.DECIMAL(20, 2),
       allowNull: true
     },
@@ -58,7 +64,7 @@ module.exports = (sequelize, Sequelize, Category, Account, Units, JournalEntry) 
       type: Sequelize.STRING,
       allowNull: false
     },
-    unit_id: { // Updated field for unit_id
+    unit_id: {
       type: Sequelize.INTEGER,
       allowNull: false,
       references: {
@@ -68,7 +74,7 @@ module.exports = (sequelize, Sequelize, Category, Account, Units, JournalEntry) 
       onUpdate: 'CASCADE',
       onDelete: 'CASCADE'
     },
-    journal_id: { // Updated field for journal_id
+    journal_id: {
       type: Sequelize.INTEGER,
       allowNull: true,
       references: {
@@ -78,7 +84,7 @@ module.exports = (sequelize, Sequelize, Category, Account, Units, JournalEntry) 
       onUpdate: 'CASCADE',
       onDelete: 'SET NULL'
     },
-    type: { // New field for type
+    type: {
       type: Sequelize.INTEGER,
       allowNull: false
     }

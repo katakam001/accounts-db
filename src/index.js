@@ -6,6 +6,7 @@ const chokidar = require('chokidar');
 const app = express();
 const syncAndInjectData = require('./syncAndInject');
 const { getDb, reloadDb } = require("./utils/getDb");
+const { server, broadcast } = require('./websocket'); // Import the WebSocket server and broadcast function
 
 // Function to reload configuration
 async function reloadConfig() {
@@ -39,7 +40,6 @@ async function reloadConfig() {
   reloadDb();
   // Sync and inject data
   await syncAndInjectData(getDb());
-
 }
 
 // Watch for changes in the configuration files
@@ -75,7 +75,6 @@ app.use(express.json());
 // parse requests of content-type - application/x-www-form-urlencoded
 app.use(express.urlencoded({ extended: true }));
 
-
 // Use cookie-parser middleware 
 app.use(cookieParser());
 
@@ -105,12 +104,22 @@ require("./routes/groupMapping.routes.js")(app); // Updated from purchaseEntry.r
 require("./routes/area.routes.js")(app); // Updated from purchaseEntry.routes.js
 require("./routes/broker.routes.js")(app); // Updated from purchaseEntry.routes.js
 require("./routes/location.routes.js")(app); // Updated from purchaseEntry.routes.js
+require("./routes/items.routes.js")(app); // Updated from purchaseEntry.routes.js
+require("./routes/yield.routes.js")(app); // Updated from purchaseEntry.routes.js
+require("./routes/conversion.routes.js")(app); // Updated from purchaseEntry.routes.js
+require("./routes/productionEntries.routes.js")(app); // Updated from purchaseEntry.routes.js
+require("./routes/stockRegister.routes.js")(app); // Updated from purchaseEntry.routes.js
+require("./routes/consolidateStockRegister.routes.js")(app); // Updated from purchaseEntry.routes.js
+require("./routes/balance.routes.js")(app); // Updated from purchaseEntry.routes.js
 
 // Invoke the sync and inject function
 syncAndInjectData(db).then(() => {
   // Start the application server
   const PORT = process.env.PORT || 8080;
-  app.listen(PORT, () => {
+  server.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}.`);
   });
 });
+
+// Attach the Express app to the HTTP server
+server.on('request', app);

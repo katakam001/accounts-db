@@ -39,12 +39,20 @@ db.fields = require("./fields.model.js")(sequelize, Sequelize);
 db.fieldsMapping = require("./fieldsMapping.model.js")(sequelize, Sequelize, db.categories,db.fields);
 db.units = require("../models/units.model.js")(sequelize, Sequelize);
 db.categoryUnits = require("../models/categoryUnit.model.js")(sequelize, Sequelize, db.categories, db.units);
-db.entry = require("../models/entry.model.js")(sequelize, Sequelize, db.categories, db.account, db.units, db.journalEntry);
+db.items=require("../models/item.model.js")(sequelize,Sequelize)
+db.entry = require("../models/entry.model.js")(sequelize, Sequelize, db.categories, db.account, db.units, db.journalEntry,db.items);
 db.entryField = require("../models/entryField.model.js")(sequelize, Sequelize, db.entry,db.fields);
 db.address=require("../models/address.model.js")(sequelize,Sequelize)
 db.groupMapping=require("../models/groupMapping.model.js")(sequelize,Sequelize,db.groupMapping,db.group);
 db.areas = require("../models/area.model.js")(sequelize, Sequelize);
 db.brokers = require("../models/broker.model.js")(sequelize, Sequelize);
+db.raw_items=require("../models/rawItem.model.js")(sequelize,Sequelize,db.items,db.units);
+db.conversions = require("../models/conversion.model.js")(sequelize, Sequelize,db.units);
+db.processed_items = require("../models/processedItems.model.js")(sequelize, Sequelize,db.raw_items,db.items,db.units,db.conversions);
+db.production_entries = require("../models/production_entries.model.js")(sequelize, Sequelize,db.items,db.units,db.conversions,db.production_entries);
+db.consolidated_stock_register = require("../models/consolidatedStockRegister.model.js")(sequelize, Sequelize);
+db.balance = require("../models/balance.model.js")(sequelize, Sequelize);
+
 
 db.fieldsMapping.belongsTo(db.categories, { foreignKey: 'category_id', as: 'category' });
 db.fieldsMapping.belongsTo(db.fields, { foreignKey: 'field_id', as: 'field' });
@@ -87,10 +95,40 @@ db.entry.belongsTo(db.account, { foreignKey: 'account_id', as: 'account' });
 db.entry.belongsTo(db.units, { foreignKey: 'unit_id', as: 'unit' });
 db.entry.belongsTo(db.categories, { foreignKey: 'category_id', as: 'category' });
 db.entry.hasMany(db.entryField, { foreignKey: 'entry_id', as: 'fields' });
+db.entry.belongsTo(db.items, { foreignKey: 'item_id', as: 'item' }); // New association
 db.groupMapping.hasMany(db.groupMapping, { as: 'children', foreignKey: 'parent_id' });
 db.groupMapping.belongsTo(db.groupMapping, { as: 'parent', foreignKey: 'parent_id' });
 db.groupMapping.belongsTo(db.group, { foreignKey: 'group_id' });
 db.group.hasMany(db.groupMapping, { foreignKey: 'group_id' });
 db.account.belongsToMany(db.group, { through: db.accountGroup, as: 'group', foreignKey: 'account_id' , otherKey: 'group_id'});
 db.group.belongsToMany(db.account, { through: db.accountGroup, as: 'accounts', foreignKey: 'group_id', otherKey: 'account_id'});
+db.items.hasMany(db.raw_items, { foreignKey: 'item_id', as: 'rawItems' });
+db.raw_items.belongsTo(db.items, { foreignKey: 'item_id', as: 'item' });
+db.raw_items.belongsTo(db.units, { foreignKey: 'unit_id', as: 'unit' });
+db.raw_items.hasMany(db.processed_items, { foreignKey: 'raw_item_id', as: 'processedItems' });
+db.processed_items.belongsTo(db.raw_items, { foreignKey: 'raw_item_id', as: 'rawItem' });
+db.processed_items.belongsTo(db.items, { foreignKey: 'item_id', as: 'item' });
+db.processed_items.belongsTo(db.units, { foreignKey: 'unit_id', as: 'unit' });
+db.processed_items.belongsTo(db.conversions, { foreignKey: 'conversion_id', as: 'conversion' });
+db.production_entries.belongsTo(db.items, { foreignKey: 'raw_item_id', as: 'rawItem' });
+db.production_entries.belongsTo(db.items, { foreignKey: 'item_id', as: 'processedItem' });
+db.production_entries.belongsTo(db.units, { foreignKey: 'unit_id', as: 'unit' });
+db.production_entries.belongsTo(db.conversions, { foreignKey: 'conversion_id', as: 'conversion' });
+db.production_entries.hasMany(db.production_entries, { foreignKey: 'production_entry_id', as: 'processedItems' });
+
+
+// Conversion associations
+db.conversions.belongsTo(db.units, { foreignKey: 'from_unit_id', as: 'fromUnit' });
+db.conversions.belongsTo(db.units, { foreignKey: 'to_unit_id', as: 'toUnit' });
+
+
+// Import stored procedures
+// require("../stored_procedures/generateStockRegister.js")(sequelize, Sequelize);
+// require("../stored_procedures/archiveOldPartitions.js")(sequelize, Sequelize);
+// require("../stored_procedures/reindexActiveTables.js")(sequelize, Sequelize);
+// require("../stored_procedures/reindexAllTables.js")(sequelize, Sequelize);
+// require("../stored_procedures/scheduleVacuumJobs.js")(sequelize, Sequelize);
+// require("../stored_procedures/getVacuumSchedule.js")(sequelize, Sequelize);
+// require("../stored_procedures/pruneOldPartitions.js")(sequelize, Sequelize);
+
 module.exports = db;

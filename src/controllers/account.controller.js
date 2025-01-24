@@ -77,6 +77,89 @@ exports.accountList = async (req, res) => {
   }
 };
 
+exports.getAccount = async (req, res) => {
+  try {
+    const db = getDb();
+    const Account = db.account;
+    const Group = db.group;
+    const Address = db.address;
+    const accountName = req.params.name;
+    const accountId = req.params.id;
+    const userId = req.query.userId;
+    const financialYear = req.query.financialYear;
+
+    if (!userId) {
+      return res.status(400).json({ error: 'userId query parameter is required' });
+    }
+    if (!financialYear) {
+      return res.status(400).json({ error: 'financialYear query parameter is required' });
+    }
+
+    let whereClause = {
+      user_id: userId,
+      financial_year: financialYear
+    };
+
+    if (accountName) {
+      whereClause.name = accountName;
+    } else if (accountId) {
+      whereClause.id = accountId;
+    } else {
+      return res.status(400).json({ error: 'Either accountName or accountId parameter is required' });
+    }
+
+    const account = await Account.findOne({
+      where: whereClause,
+      include: [
+        {
+          model: Group,
+          as: 'group',
+          through: { attributes: [] } // Exclude the join table attributes
+        },
+        {
+          model: Address,
+          as: 'address'
+        }
+      ]
+    });
+
+    if (account) {
+      // Transform the data to the desired format
+      const transformedAccount = {
+        id: account.id,
+        name: account.name,
+        description: account.description,
+        user_id: account.user_id,
+        debit_balance: account.debit_balance,
+        credit_balance: account.credit_balance,
+        financial_year: account.financial_year,
+        isDealer: account.isDealer,
+        group: account.group ? {
+          id: account.group.id,
+          name: account.group.name,
+          description: account.group.description,
+          financial_year: account.group.financial_year,
+          user_id: account.group.user_id
+        } : null,
+        address: account.address ? {
+          street: account.address.street,
+          city: account.address.city,
+          state: account.address.state,
+          postal_code: account.address.postal_code,
+          country: account.address.country
+        } : null
+      };
+
+      res.status(200).json(transformedAccount);
+    } else {
+      res.status(404).json({ message: 'Account not found' });
+    }
+  } catch (error) {
+    console.error('Error fetching account:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
+
 exports.accountUpdate = async (req, res) => {
   try {
     const db = getDb();

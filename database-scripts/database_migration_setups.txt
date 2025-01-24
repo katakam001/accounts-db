@@ -1,0 +1,57 @@
+
+create database using the script:
+C:\Software\accounts-db\src\utils>node createDatabase.js
+Database account_db already exists.
+Executing (default): SELECT 1+1 AS result
+Connection has been established successfully.
+
+C:\Software\accounts-db>npx sequelize db:migrate --url postgres://postgres:xxxxxx@localhost:5432/account_db  --migrations-path src/migrations --debug
+
+Sequelize CLI [Node: 22.11.0, CLI: 6.6.2, ORM: 6.37.5]
+
+Parsed url postgres://postgres:*****@localhost:5432/account_db
+== 20250108082956-initial-setup-no-references: migrating =======
+== 20250108082956-initial-setup-no-references: migrated (0.104s)
+
+== 20250108082957-initial-setup-with-references: migrating =======
+== 20250108082957-initial-setup-with-references: migrated (0.115s)
+
+== 20250108082958-add-indexes: migrating =======
+== 20250108082958-add-indexes: migrated (0.081s)
+
+== 20250108082958-create-function: migrating =======
+== 20250108082958-create-function: migrated (0.025s)
+
+== 20250108082958-create-stored-procedures: migrating =======
+== 20250108082958-create-stored-procedures: migrated (0.020s)
+
+
+dump the existing database.
+
+pg_dump -U username -h localhost -d source_database --data-only -F c -v -f schema_backup.dump
+
+restore the dump to target database.
+pg_restore -U username -h localhost -d target_database  --disable-triggers -v schema_backup.dump
+
+
+Undo all the changes:
+
+C:\Software\accounts-db>npx sequelize db:migrate:undo:all --url postgres://postgres:xxxxx@localhost:5432/account_db --migrations-path src/migrations --debug
+
+Sequelize CLI [Node: 22.11.0, CLI: 6.6.2, ORM: 6.37.5]
+
+Parsed url postgres://postgres:*****@localhost:5432/account_db
+== 20250108082958-create-stored-procedures: reverting =======
+== 20250108082958-create-stored-procedures: reverted (0.023s)
+
+== 20250108082958-create-function: reverting =======
+== 20250108082958-create-function: reverted (0.012s)
+
+== 20250108082958-add-indexes: reverting =======
+== 20250108082958-add-indexes: reverted (0.051s)
+
+== 20250108082957-initial-setup-with-references: reverting =======
+== 20250108082957-initial-setup-with-references: reverted (0.110s)
+
+== 20250108082956-initial-setup-no-references: reverting =======
+== 20250108082956-initial-setup-no-references: reverted (0.047s)

@@ -1,4 +1,6 @@
 const {getDb} = require("../utils/getDb");
+const { broadcast } = require('../websocket'); // Import the broadcast function
+
 
 exports.getEntries = async (req, res) => {
   const user_id = req.query.userId;
@@ -23,6 +25,7 @@ exports.getEntries = async (req, res) => {
     const Account = db.account;
     const Units = db.units;
     const Fields = db.fields; // Add this line
+    const Items = db.items; // Add this line
     const entries = await Entry.findAll({
       where: {
         user_id,
@@ -34,7 +37,7 @@ exports.getEntries = async (req, res) => {
         'category_id',
         'entry_date',
         'account_id',
-        'item_description',
+        'item_id', // Change to item_id
         'quantity',
         'unit_price',
         'total_amount',
@@ -46,7 +49,8 @@ exports.getEntries = async (req, res) => {
         [db.sequelize.col('category.name'), 'category_name'],
         [db.sequelize.col('account.name'), 'account_name'],
         [db.sequelize.col('unit.name'), 'unit_name'],
-        [db.sequelize.col('unit.id'), 'unit_id']
+        [db.sequelize.col('unit.id'), 'unit_id'],
+        [db.sequelize.col('item.name'), 'item_name'] // Add item_name
       ],
       include: [
         {
@@ -81,6 +85,11 @@ exports.getEntries = async (req, res) => {
           model: Units,
           as: 'unit',
           attributes: []
+        },
+        {
+          model: Items, // Add this line
+          as: 'item', // Add this line
+          attributes: [] // Add this line
         }
       ]
     });
@@ -90,10 +99,101 @@ exports.getEntries = async (req, res) => {
   }
 };
 
+exports.getEntryById = async (req, res) => {
+  const entryId = req.params.id;
+
+  if (!entryId) {
+    return res.status(400).json({ error: 'Entry ID parameter is required' });
+  }
+
+  try {
+    const db = getDb();
+    const Entry = db.entry;
+    const EntryField = db.entryField;
+    const Categories = db.categories;
+    const Account = db.account;
+    const Units = db.units;
+    const Fields = db.fields;
+    const Items = db.items;
+
+    const entry = await Entry.findOne({
+      where: {
+        id: entryId
+      },
+      attributes: [
+        'id',
+        'category_id',
+        'entry_date',
+        'account_id',
+        'item_id',
+        'quantity',
+        'unit_price',
+        'total_amount',
+        'user_id',
+        'financial_year',
+        'value',
+        'journal_id',
+        'type',
+        [db.sequelize.col('category.name'), 'category_name'],
+        [db.sequelize.col('account.name'), 'account_name'],
+        [db.sequelize.col('unit.name'), 'unit_name'],
+        [db.sequelize.col('unit.id'), 'unit_id'],
+        [db.sequelize.col('item.name'), 'item_name']
+      ],
+      include: [
+        {
+          model: EntryField,
+          as: 'fields',
+          attributes: [
+            'id',
+            'entry_id',
+            'field_id',
+            'field_value',
+            [db.sequelize.literal('"fields->field"."field_name"'), 'field_name']
+          ],
+          include: [
+            {
+              model: Fields,
+              as: 'field',
+              attributes: []
+            }
+          ]
+        },
+        {
+          model: Categories,
+          as: 'category',
+          attributes: []
+        },
+        {
+          model: Account,
+          as: 'account',
+          attributes: []
+        },
+        {
+          model: Units,
+          as: 'unit',
+          attributes: []
+        },
+        {
+          model: Items,
+          as: 'item',
+          attributes: []
+        }
+      ]
+    });
+
+    if (!entry) {
+      return res.status(404).json({ error: 'Entry not found' });
+    }
+
+    res.json(entry);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
 
 exports.addEntry = async (req, res) => {
   const { entry, dynamicFields } = req.body;
-
 
   try {
     const db = getDb();
@@ -102,12 +202,14 @@ exports.addEntry = async (req, res) => {
     const EntryField = db.entryField;
     const JournalItem = db.journalItem;
     const JournalEntry = db.journalEntry;
+
     // Step 1: Insert a new journal entry
     const journalEntry = await JournalEntry.create({
       journal_date: entry.entry_date,
-      description: entry.type === 1 ? 'Purchase Entry' : entry.type === 2 ? 'Sale Entry' : entry.type === 3 ? 'Purchase Return' : 'Sale Return', // Description based on type
+      description: getDescription(entry.type),
       user_id: entry.user_id,
-      financial_year: entry.financial_year
+      financial_year: entry.financial_year,
+      type: entry.type
     }, { transaction: t });
 
     // Step 2: Insert a new entry with the journal_id
@@ -121,126 +223,37 @@ exports.addEntry = async (req, res) => {
     await EntryField.bulkCreate(entryFields, { transaction: t });
 
     // Determine the amount based on exclude_from_total and field_category
-    let amount = entry.total_amount;
-    if (dynamicFields.some(field => field.field_category === 1 && field.exclude_from_total)) {
-      amount = entry.value;
-    }
+    const amount = dynamicFields.some(field => field.field_category === 1 && field.exclude_from_total) ? entry.value : entry.total_amount;
 
     // Step 3: Insert journal items for the entry
-    const journalItems = [];
-
-    if (entry.type === 1) { // Purchase Entry
-      // First entry: Supplier Account (Credit)
-      journalItems.push({
-        journal_id: journalEntry.id,
-        account_id: entry.account_id,
-        group_id: await getGroupId('Sundary Creditors'),
-        amount: amount,
-        type: true // Credit
-      });
-
-      // Second entry: Purchase Account (Debit)
-      journalItems.push({
-        journal_id: journalEntry.id,
-        account_id: await getAccountId('Purchase Account'),
-        group_id: await getGroupIdFromAccountName('Purchase Account'),
-        amount: entry.value,
-        type: false // Debit
-      });
-    } else if (entry.type === 2) { // Sale Entry
-      // First entry: Customer Account (Debit)
-      journalItems.push({
-        journal_id: journalEntry.id,
-        account_id: entry.account_id,
-        group_id: await getGroupId('Sundary Debtors'),
-        amount: amount,
-        type: false // Debit
-      });
-
-      // Second entry: Sales Account (Credit)
-      journalItems.push({
-        journal_id: journalEntry.id,
-        account_id: await getAccountId('Sales Account'),
-        group_id: await getGroupIdFromAccountName('Sales Account'),
-        amount: entry.value,
-        type: true // Credit
-      });
-    } else if (entry.type === 3) { // Purchase Return
-      // First entry: Supplier Account (Debit)
-      journalItems.push({
-        journal_id: journalEntry.id,
-        account_id: entry.account_id,
-        group_id: await getGroupId('Sundary Creditors'),
-        amount: amount,
-        type: false // Debit
-      });
-
-      // Second entry: Purchase Account (Credit)
-      journalItems.push({
-        journal_id: journalEntry.id,
-        account_id: await getAccountId('Purchase Account'),
-        group_id: await getGroupIdFromAccountName('Purchase Account'),
-        amount: entry.value,
-        type: true // Credit
-      });
-    } else if (entry.type === 4) { // Sale Return
-      // First entry: Customer Account (Credit)
-      journalItems.push({
-        journal_id: journalEntry.id,
-        account_id: entry.account_id,
-        group_id: await getGroupId('Sundary Debtors'),
-        amount: amount,
-        type: true // Credit
-      });
-
-      // Second entry: Sales Account (Debit)
-      journalItems.push({
-        journal_id: journalEntry.id,
-        account_id: await getAccountId('Sales Account'),
-        group_id: await getGroupIdFromAccountName('Sales Account'),
-        amount: entry.value,
-        type: false // Debit
-      });
-    }
-
-    // Other entries based on dynamic fields
-    for (const field of dynamicFields) {
-      if (field.field_category === 1) {
-        let accountName = field.field_name.replace(/[0-9%]/g, '').trim();
-        accountName = accountName.replace(/\s+/g, ' '); // Remove extra spaces
-        accountName = accountName.replace(/^\.+|\.+$/g, ''); // Remove leading and trailing periods
-        accountName = accountName.replace(/RCM\s+/g, 'RCM '); // Handle "RCM 2.5% SGST" -> "RCM SGST"
-        accountName = accountName.replace(/\s+\./g, ''); // Remove spaces before periods
-        accountName = accountName.replace(/\.\s+/g, ''); // Remove periods before spaces
-        accountName = accountName.replace(/^\s+|\s+$/g, ''); // Remove leading and trailing spaces
-        console.log(accountName);
-        const groupId = await getGroupIdFromAccountName(accountName);
-        const type = entry.type === 1 || entry.type === 4 ? (field.exclude_from_total ? true : false) : (field.exclude_from_total ? false : true); // Adjust type based on entry type
-        journalItems.push({
-          journal_id: journalEntry.id,
-          account_id: await getAccountId(accountName),
-          group_id: groupId,
-          amount: field.field_value,
-          type: type
-        });
-      }
-    }
+    const journalItems = await getJournalItems(entry, dynamicFields, journalEntry.id, amount);
 
     await JournalItem.bulkCreate(journalItems, {
       fields: ['journal_id', 'account_id', 'group_id', 'amount', 'type', 'createdAt', 'updatedAt'],
       returning: ['journal_id', 'account_id', 'group_id', 'amount', 'type', 'createdAt', 'updatedAt'],
       transaction: t
     });
+    const fullEntry = await fetchFullEntry(newEntry.id);
 
     await t.commit();
-    res.status(201).json(newEntry);
+
+    // Fetch additional attributes for the new entry
+
+    // Broadcast the new entry along with journal entries and items (excluding entryFields)
+    const broadcastData = {
+      entry: fullEntry,
+      journalEntry: journalEntry,
+      journalItems: journalItems
+    };
+    broadcast({ type: 'INSERT', data: broadcastData, entryType: 'entry', user_id: entry.user_id, financial_year: entry.financial_year });
+
+    res.status(201).json({ message: 'Entry created successfully' }); // Simplified response
   } catch (error) {
     console.log(error);
     await t.rollback();
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: 'Internal server error' });
   }
 };
-
 
 
 // Helper functions to get account and group IDs
@@ -271,10 +284,101 @@ async function getGroupId(groupName) {
   return group ? group.id : null;
 }
 
+const getDescription = (type, isUpdate = false) => {
+  switch (type) {
+    case 1: return isUpdate ? 'Purchase Update' : 'Purchase Entry';
+    case 2: return isUpdate ? 'Sale Update' : 'Sale Entry';
+    case 3: return isUpdate ? 'Purchase Return Update' : 'Purchase Return';
+    case 4: return isUpdate ? 'Sale Return Update' : 'Sale Return';
+    case 5: return isUpdate ? 'Credit Note Update' : 'Credit Note';
+    case 6: return isUpdate ? 'Debit Note Update' : 'Debit Note';
+    default: return '';
+  }
+};
+
+const getJournalItems = async (entry, dynamicFields, journalId, amount) => {
+  const journalItems = [];
+
+  switch (entry.type) {
+    case 1: // Purchase Entry
+      journalItems.push(await createJournalItem(journalId, entry.account_id, 'Sundary Creditors', amount, true));
+      journalItems.push(await createJournalItemWithAccountId(journalId, 'Purchase Account', 'Purchase Account', entry.value, false));
+      break;
+    case 2: // Sale Entry
+      journalItems.push(await createJournalItem(journalId, entry.account_id, 'Sundary Debtors', amount, false));
+      journalItems.push(await createJournalItemWithAccountId(journalId, 'Sales Account', 'Sales Account', entry.value, true));
+      break;
+    case 3: // Purchase Return
+      journalItems.push(await createJournalItem(journalId, entry.account_id, 'Sundary Creditors', amount, false));
+      journalItems.push(await createJournalItemWithAccountId(journalId, 'Purchase Account', 'Purchase Account', entry.value, true));
+      break;
+    case 4: // Sale Return
+      journalItems.push(await createJournalItem(journalId, entry.account_id, 'Sundary Debtors', amount, true));
+      journalItems.push(await createJournalItemWithAccountId(journalId, 'Sales Account', 'Sales Account', entry.value, false));
+      break;
+    case 5: // Credit Note
+      journalItems.push(await createJournalItem(journalId, entry.account_id, 'Sundary Creditors', amount, false));
+      journalItems.push(await createJournalItemWithAccountId(journalId, 'Discount Received', 'Discount Received', entry.value, true));
+      break;
+    case 6: // Debit Note
+      journalItems.push(await createJournalItem(journalId, entry.account_id, 'Sundary Creditors', amount, true));
+      journalItems.push(await createJournalItemWithAccountId(journalId, 'Discount Paid', 'Discount Paid', entry.value, false));
+      break;
+  }
+
+  // Other entries based on dynamic fields
+  for (const field of dynamicFields) {
+    if (field.field_category === 1) {
+      const accountName = cleanAccountName(field.field_name);
+      const groupId = await getGroupIdFromAccountName(accountName);
+      const type = entry.type === 1 || entry.type === 4 || entry.type === 6 ? field.exclude_from_total : !field.exclude_from_total;
+      journalItems.push({
+        journal_id: journalId,
+        account_id: await getAccountId(accountName),
+        group_id: groupId,
+        amount: field.field_value,
+        type: type
+      });
+    }
+  }
+
+  return journalItems;
+};
+
+const createJournalItem = async (journalId, accountId, groupName, amount, type) => {
+  return {
+    journal_id: journalId,
+    account_id: accountId,
+    group_id: await getGroupId(groupName),
+    amount: amount,
+    type: type
+  };
+};
+
+const createJournalItemWithAccountId = async (journalId, accountName, groupName, amount, type) => {
+  return {
+    journal_id: journalId,
+    account_id: await getAccountId(accountName),
+    group_id: await getGroupIdFromAccountName(groupName),
+    amount: amount,
+    type: type
+  };
+};
+
+const cleanAccountName = (name) => {
+  return name.replace(/[0-9%]/g, '').trim()
+             .replace(/\s+/g, ' ')
+             .replace(/^\.+|\.+$/g, '')
+             .replace(/RCM\s+/g, 'RCM ')
+             .replace(/\s+\./g, '')
+             .replace(/\.\s+/g, '')
+             .replace(/^\s+|\s+$/g, '');
+};
+
 exports.updateEntry = async (req, res) => {
   const { id } = req.params;
   const { entry, dynamicFields } = req.body;
-  console.log("entering");
+
   try {
     const db = getDb();
     const t = await db.sequelize.transaction();
@@ -294,89 +398,24 @@ exports.updateEntry = async (req, res) => {
     await EntryField.bulkCreate(entryFields, { transaction: t });
 
     // Determine the amount based on exclude_from_total and field_category
-    let amount = entry.total_amount;
-    if (dynamicFields.some(field => field.field_category === 1 && field.exclude_from_total)) {
-      amount = entry.value;
-    }
-    console.log("reached here");
+    const amount = dynamicFields.some(field => field.field_category === 1 && field.exclude_from_total) ? entry.value : entry.total_amount;
 
     // Step 2: Update the journal entry
     const journalEntry = await JournalEntry.findOne({ where: { id: entry.journal_id }, transaction: t });
-    console.log("reached here1");
     if (journalEntry) {
       await journalEntry.update({
         journal_date: entry.entry_date,
-        description: entry.type === 1 ? 'Purchase Update' : 'Sale Update', // Description based on type
+        description: getDescription(entry.type, true),
         user_id: entry.user_id,
-        financial_year: entry.financial_year
+        financial_year: entry.financial_year,
+        type:entry.type
       }, { transaction: t });
 
       // Step 3: Delete existing journal items
       await JournalItem.destroy({ where: { journal_id: journalEntry.id }, transaction: t });
 
       // Step 4: Insert new journal items
-      const journalItems = [];
-
-      if (entry.type === 1) { // Purchase Entry
-        // First entry: Supplier Account (Credit)
-        journalItems.push({
-          journal_id: journalEntry.id,
-          account_id: entry.account_id,
-          group_id: await getGroupId('Sundary Creditors'),
-          amount: amount,
-          type: true // Credit
-        });
-
-        // Second entry: Purchase Account (Debit)
-        journalItems.push({
-          journal_id: journalEntry.id,
-          account_id: await getAccountId('Purchase Account'),
-          group_id: await getGroupIdFromAccountName('Purchase Account'),
-          amount: entry.value,
-          type: false // Debit
-        });
-      } else { // Sale Entry
-        // First entry: Customer Account (Debit)
-        journalItems.push({
-          journal_id: journalEntry.id,
-          account_id: entry.account_id,
-          group_id: await getGroupId('Sundary Debtors'),
-          amount: amount,
-          type: false // Debit
-        });
-
-        // Second entry: Sales Account (Credit)
-        journalItems.push({
-          journal_id: journalEntry.id,
-          account_id: await getAccountId('Sales Account'),
-          group_id: await getGroupIdFromAccountName('Sales Account'),
-          amount: entry.value,
-          type: true // Credit
-        });
-      }
-
-      // Other entries based on dynamic fields
-      for (const field of dynamicFields) {
-        if (field.field_category === 1) {
-          let accountName = field.field_name.replace(/[0-9%]/g, '').trim();
-          accountName = accountName.replace(/\s+/g, ' '); // Remove extra spaces
-          accountName = accountName.replace(/^\.+|\.+$/g, ''); // Remove leading and trailing periods
-          accountName = accountName.replace(/RCM\s+/g, 'RCM '); // Handle "RCM 2.5% SGST" -> "RCM SGST"
-          accountName = accountName.replace(/\s+\./g, ''); // Remove spaces before periods
-          accountName = accountName.replace(/\.\s+/g, ''); // Remove periods before spaces
-          accountName = accountName.replace(/^\s+|\s+$/g, ''); // Remove leading and trailing spaces
-          console.log(accountName);
-          const groupId = await getGroupIdFromAccountName(accountName);
-          const type = entry.type === 1 ? (field.exclude_from_total ? true : false) : (field.exclude_from_total ? false : true); // Adjust type based on entry type
-          journalItems.push({
-            journal_id: journalEntry.id,
-            account_id: await getAccountId(accountName),
-            group_id: groupId,
-            amount: field.field_value,
-            type: type
-          });
-        }
-      }
+      const journalItems = await getJournalItems(entry, dynamicFields, journalEntry.id, amount);
 
       await JournalItem.bulkCreate(journalItems, {
         fields: ['journal_id', 'account_id', 'group_id', 'amount', 'type', 'createdAt', 'updatedAt'],
@@ -384,13 +423,23 @@ exports.updateEntry = async (req, res) => {
         transaction: t
       });
     }
+    const fullEntry = await fetchFullEntry(newEntry.id);
 
     await t.commit();
-    res.status(200).json({ message: 'Entry updated successfully' });
+
+    // Broadcast the updated entry along with journal entries, items, and dynamic fields
+    const broadcastData = {
+      entry: fullEntry,
+      journalEntry: journalEntry,
+      journalItems: journalItems,
+    };
+    broadcast({ type: 'UPDATE', data: broadcastData, entryType: 'entry', user_id: entry.user_id, financial_year: entry.financial_year });
+
+    res.status(200).json({ message: 'Entry updated successfully' }); // Simplified response
   } catch (error) {
     console.log(error);
     await t.rollback();
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: 'Internal server error' });
   }
 };
 
@@ -411,7 +460,7 @@ exports.deleteEntry = async (req, res) => {
       const entryType = entry.type; // Optional: Check the entry type
 
       // Optional: Validate entry type if needed
-      if (![1, 2,3,4].includes(entryType)) {
+      if (![1, 2, 3, 4, 5, 6].includes(entryType)) {
         throw new Error('Invalid entry type');
       }
 
@@ -429,10 +478,88 @@ exports.deleteEntry = async (req, res) => {
     }
 
     await t.commit();
-    res.status(200).json({ message: 'Entry deleted successfully' });
+
+    // Broadcast the deletion event
+    broadcast({ type: 'DELETE', data: { id }, entryType: 'entry', user_id: entry.user_id, financial_year: entry.financial_year });
+
+    res.status(204).send(); // Simplified response
   } catch (error) {
     await t.rollback();
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: 'Internal server error' });
   }
 };
 
+async function fetchFullEntry(entryId) {
+  const db = getDb();
+  const Entry = db.entry;
+  const EntryField = db.entryField;
+  const Categories = db.categories;
+  const Account = db.account;
+  const Units = db.units;
+  const Fields = db.fields;
+  const Items = db.items;
+
+  return await Entry.findOne({
+    where: { id: entryId },
+    attributes: [
+      'id',
+      'category_id',
+      'entry_date',
+      'account_id',
+      'item_id',
+      'quantity',
+      'unit_price',
+      'total_amount',
+      'user_id',
+      'financial_year',
+      'value',
+      'journal_id',
+      'type',
+      [db.sequelize.col('category.name'), 'category_name'],
+      [db.sequelize.col('account.name'), 'account_name'],
+      [db.sequelize.col('unit.name'), 'unit_name'],
+      [db.sequelize.col('unit.id'), 'unit_id'],
+      [db.sequelize.col('item.name'), 'item_name']
+    ],
+    include: [
+      {
+        model: EntryField,
+        as: 'fields',
+        attributes: [
+          'id',
+          'entry_id',
+          'field_id',
+          'field_value',
+          [db.sequelize.literal('"fields->field"."field_name"'), 'field_name']
+        ],
+        include: [
+          {
+            model: Fields,
+            as: 'field',
+            attributes: []
+          }
+        ]
+      },
+      {
+        model: Categories,
+        as: 'category',
+        attributes: []
+      },
+      {
+        model: Account,
+        as: 'account',
+        attributes: []
+      },
+      {
+        model: Units,
+        as: 'unit',
+        attributes: []
+      },
+      {
+        model: Items,
+        as: 'item',
+        attributes: []
+      }
+    ]
+  });
+}
