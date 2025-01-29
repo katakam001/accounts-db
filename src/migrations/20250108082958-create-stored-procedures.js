@@ -113,10 +113,7 @@ module.exports = {
         END;
         $procedure$
       `);
-        await queryInterface.sequelize.query(`
-        -- Drop the existing procedure
-        DROP PROCEDURE IF EXISTS public.generate_stock_register(int4, int4, text);
-  
+        await queryInterface.sequelize.query(` 
         -- Create the new procedure
         CREATE OR REPLACE PROCEDURE public.generate_stock_register(
           IN p_item_id integer,
@@ -324,9 +321,42 @@ AS $procedure$
       closing_balance = tsr.closing_balance
   FROM temp_stock_register tsr
   WHERE sr.id = tsr.id;
+    WITH consolidated_data AS (
+        SELECT item_id, 
+               SUM(purchase) AS total_purchase,
+               SUM(sales) AS total_sales,
+               SUM(sale_return) AS total_sale_return,
+               SUM(purchase_return) AS total_purchase_return,
+               SUM(quantity) AS total_quantity,
+               (SELECT closing_balance
+                FROM public.stock_register
+                WHERE user_id = p_user_id AND financial_year = p_financial_year AND item_id = p_item_id
+                ORDER BY entry_date DESC
+                LIMIT 1) AS total_closing_balance, -- Get the last day's closing balance
+               SUM(Dispatch_To_process) AS total_dispatch_to_process,
+               SUM(Received_From_process) AS total_received_from_process,
+               user_id,
+               financial_year
+        FROM public.stock_register
+        WHERE user_id = p_user_id AND financial_year = p_financial_year AND item_id = p_item_id
+        GROUP BY item_id, user_id, financial_year
+    )
+
+    INSERT INTO public.consolidated_stock_register (item_id, total_purchase, total_sales, total_sale_return, total_purchase_return, total_quantity, total_closing_balance, total_dispatch_to_process, total_received_from_process, user_id, financial_year)
+    SELECT item_id, total_purchase, total_sales, total_sale_return, total_purchase_return, total_quantity, total_closing_balance, total_dispatch_to_process, total_received_from_process, user_id, financial_year
+    FROM consolidated_data
+    ON CONFLICT (item_id, user_id, financial_year) DO UPDATE
+    SET total_purchase = EXCLUDED.total_purchase,
+        total_sales = EXCLUDED.total_sales,
+        total_sale_return = EXCLUDED.total_sale_return,
+        total_purchase_return = EXCLUDED.total_purchase_return,
+        total_quantity = EXCLUDED.total_quantity,
+        total_closing_balance = EXCLUDED.total_closing_balance,
+        total_dispatch_to_process = EXCLUDED.total_dispatch_to_process,
+        total_received_from_process = EXCLUDED.total_received_from_process;
   END;
 
-        $procedure$
+        $procedure$;
         `);
     },
 
