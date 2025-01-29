@@ -233,18 +233,28 @@ exports.addEntry = async (req, res) => {
       returning: ['journal_id', 'account_id', 'group_id', 'amount', 'type', 'createdAt', 'updatedAt'],
       transaction: t
     });
-    const fullEntry = await fetchFullEntry(newEntry.id);
-
+    const fullEntry = await fetchFullEntry(newEntry.id,t);
     await t.commit();
+
 
     // Fetch additional attributes for the new entry
 
     // Broadcast the new entry along with journal entries and items (excluding entryFields)
     const broadcastData = {
       entry: fullEntry,
-      journalEntry: journalEntry,
-      journalItems: journalItems
+      journalEntry: {
+        id: journalEntry.id,
+        journal_date: journalEntry.journal_date,
+        description: journalEntry.description,
+        user_id: journalEntry.user_id,
+        financial_year: journalEntry.financial_year,
+        type: journalEntry.type,
+        createdAt: journalEntry.createdAt,
+        updatedAt: journalEntry.updatedAt,
+        items: journalItems
+      }
     };
+
     broadcast({ type: 'INSERT', data: broadcastData, entryType: 'entry', user_id: entry.user_id, financial_year: entry.financial_year });
 
     res.status(201).json({ message: 'Entry created successfully' }); // Simplified response
@@ -396,14 +406,14 @@ exports.updateEntry = async (req, res) => {
       field_value: field.field_value
     }));
     await EntryField.bulkCreate(entryFields, { transaction: t });
-
+    let journalItemsUpdate;
     // Determine the amount based on exclude_from_total and field_category
     const amount = dynamicFields.some(field => field.field_category === 1 && field.exclude_from_total) ? entry.value : entry.total_amount;
 
     // Step 2: Update the journal entry
-    const journalEntry = await JournalEntry.findOne({ where: { id: entry.journal_id }, transaction: t });
-    if (journalEntry) {
-      await journalEntry.update({
+    const journalEntryExist = await JournalEntry.findOne({ where: { id: entry.journal_id }, transaction: t });
+    if (journalEntryExist) {
+      await journalEntryExist.update({
         journal_date: entry.entry_date,
         description: getDescription(entry.type, true),
         user_id: entry.user_id,
@@ -412,26 +422,37 @@ exports.updateEntry = async (req, res) => {
       }, { transaction: t });
 
       // Step 3: Delete existing journal items
-      await JournalItem.destroy({ where: { journal_id: journalEntry.id }, transaction: t });
+      await JournalItem.destroy({ where: { journal_id: journalEntryExist.id }, transaction: t });
 
       // Step 4: Insert new journal items
-      const journalItems = await getJournalItems(entry, dynamicFields, journalEntry.id, amount);
+      journalItemsUpdate = await getJournalItems(entry, dynamicFields, journalEntryExist.id, amount);
 
-      await JournalItem.bulkCreate(journalItems, {
+      console.log(journalItemsUpdate);
+
+      await JournalItem.bulkCreate(journalItemsUpdate, {
         fields: ['journal_id', 'account_id', 'group_id', 'amount', 'type', 'createdAt', 'updatedAt'],
         returning: ['journal_id', 'account_id', 'group_id', 'amount', 'type', 'createdAt', 'updatedAt'],
         transaction: t
       });
     }
-    const fullEntry = await fetchFullEntry(newEntry.id);
+    const fullEntry = await fetchFullEntry(id,t);
 
     await t.commit();
 
     // Broadcast the updated entry along with journal entries, items, and dynamic fields
     const broadcastData = {
       entry: fullEntry,
-      journalEntry: journalEntry,
-      journalItems: journalItems,
+      journalEntry: {
+        id: journalEntryExist.id,
+        journal_date: journalEntryExist.journal_date,
+        description: journalEntryExist.description,
+        user_id: journalEntryExist.user_id,
+        financial_year: journalEntryExist.financial_year,
+        type: journalEntryExist.type,
+        createdAt: journalEntryExist.createdAt,
+        updatedAt: journalEntryExist.updatedAt,
+        items: journalItemsUpdate
+      }
     };
     broadcast({ type: 'UPDATE', data: broadcastData, entryType: 'entry', user_id: entry.user_id, financial_year: entry.financial_year });
 
@@ -479,8 +500,12 @@ exports.deleteEntry = async (req, res) => {
 
     await t.commit();
 
+    const broadcastData = {
+      entry: { id:entry.id,type:entry.type,journal_id:entry.journal_id },
+    };
+
     // Broadcast the deletion event
-    broadcast({ type: 'DELETE', data: { id }, entryType: 'entry', user_id: entry.user_id, financial_year: entry.financial_year });
+    broadcast({ type: 'DELETE', data: broadcastData, entryType: 'entry', user_id: entry.user_id, financial_year: entry.financial_year });
 
     res.status(204).send(); // Simplified response
   } catch (error) {
@@ -489,7 +514,7 @@ exports.deleteEntry = async (req, res) => {
   }
 };
 
-async function fetchFullEntry(entryId) {
+async function fetchFullEntry(entryId, transaction) {
   const db = getDb();
   const Entry = db.entry;
   const EntryField = db.entryField;
@@ -560,6 +585,7 @@ async function fetchFullEntry(entryId) {
         as: 'item',
         attributes: []
       }
-    ]
+    ],
+    transaction: transaction
   });
 }

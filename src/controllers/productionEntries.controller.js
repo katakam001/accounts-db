@@ -215,7 +215,7 @@ exports.deleteProductionEntry = async (req, res) => {
       await transaction.commit();
 
       // Broadcast the deletion event
-      broadcast({ type: 'DELETE', data: { id }, entryType: 'productionEntry', user_id, financial_year });
+      broadcast({ type: 'DELETE', data: { id: entry.production_entry_id }, entryType: 'productionEntry', user_id, financial_year });
 
       res.status(204).send(); // Simplified response
     } else {

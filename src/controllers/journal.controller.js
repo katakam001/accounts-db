@@ -1,87 +1,569 @@
 const { getDb } = require("../utils/getDb");
 const { broadcast } = require('../websocket'); // Import the broadcast function
-
-
-exports.journalBookListForDayBook = async (req, res) => {
+const pdf = require('pdf-creator-node');
+const fs = require('fs');
+const path = require('path');
+const ExcelJS = require('exceljs');
+const moment = require('moment'); // Add moment.js for date formatting
+exports.combinedBookListForDayBook = async (req, res) => {
   try {
     const db = getDb();
     const userid = req.query.userId;
     const financial_year = req.query.financialYear;
-    const limit = parseInt(req.query.limit) || 50;
-    const cursorDate = req.query.cursorDate || null;
-    const cursorId = req.query.cursorId || null;
+    const limit = parseInt(req.query.limit) || 100;
+    const rowCursor = parseInt(req.query.rowCursor) || 0;
 
-    const query = `
-      SELECT 
-        je.id AS journal_id, 
-        je.journal_date, 
-        je.description, 
-        je.type AS journal_type,  
-        ji.account_id, 
-        ji.amount, 
-        ji.type AS item_type,  
-        e.id AS entry_id  
-      FROM 
-        journal_entries je
-      LEFT JOIN 
-        journal_items ji ON je.id = ji.journal_id
-      LEFT JOIN 
-        entries e ON je.id = e.journal_id  
-      WHERE 
-        je.user_id = :userid AND 
-        je.financial_year = :financial_year
-        ${cursorDate && cursorId ? 'AND (je.journal_date > :cursorDate OR (je.journal_date = :cursorDate AND je.id > :cursorId))' : ''}
-      ORDER BY 
-        je.journal_date ASC, je.id ASC
-      LIMIT :limit
+    const combinedQuery = `
+      -- Fetch records from journal_entries and cash_entries within the financial year
+      WITH combined_entries AS (
+        SELECT
+          DATE(je.journal_date) AS date,
+          je.id AS id,
+          je.description,
+          je."type" AS entry_type,
+          ji.account_id,
+          ji.amount,
+          ji.type,
+          COALESCE(e.id, je.id) AS entry_id
+        FROM
+          public.journal_entries je
+        JOIN
+          public.journal_items ji ON je.id = ji.journal_id
+        LEFT JOIN
+          public.entries e ON je.id = e.journal_id
+        WHERE
+          je.user_id = :userid AND
+          je.financial_year = :financial_year
+        UNION ALL
+        SELECT
+          DATE(ce.cash_date) AS date,
+          ce.id AS id,
+          ce.narration AS description,
+          7 AS entry_type,
+          ce.account_id,
+          ce.amount,
+          ce."type",
+          ce.id AS entry_id
+        FROM
+          public.cash_entries ce
+        WHERE
+          ce.user_id = :userid AND
+          ce.financial_year = :financial_year
+      ),
+      numbered_entries AS (
+        SELECT
+          *,
+          ROW_NUMBER() OVER (ORDER BY date, id) AS row_num
+        FROM
+          combined_entries
+      )
+      -- Combine and sort the results
+      SELECT
+        *
+      FROM
+        numbered_entries
+      WHERE
+        row_num > :rowCursor
+      ORDER BY
+        row_num
+      LIMIT :limit + 100; -- Fetch additional records to handle date splitting
     `;
 
-    const replacements = { userid, financial_year, limit };
-    if (cursorDate && cursorId) {
-      replacements.cursorDate = cursorDate;
-      replacements.cursorId = cursorId;
-    }
+    const replacements = { userid, financial_year, limit, rowCursor };
 
-    const journalEntries = await db.sequelize.query(query, {
+    const combinedResult = await db.sequelize.query(combinedQuery, {
       replacements,
       type: db.sequelize.QueryTypes.SELECT
     });
 
-    const transformedEntries = journalEntries.reduce((acc, entry) => {
-      const existingEntry = acc.find(e => e.journal_id === entry.journal_id);
-      if (existingEntry) {
-        existingEntry.items.push({
-          account_id: entry.account_id,
-          amount: entry.amount,
-          type: entry.item_type
-        });
-      } else {
-        acc.push({
-          journal_id: entry.journal_id,
-          journal_date: new Date(entry.journal_date),
-          description: entry.description,
-          type: entry.journal_type,
-          entry_id: entry.entry_id,
-          items: [{
-            account_id: entry.account_id,
-            amount: entry.amount,
-            type: entry.item_type
-          }]
-        });
+    // Group records by date
+    const groupedEntries = combinedResult.reduce((acc, entry) => {
+      if (!acc[entry.date]) {
+        acc[entry.date] = [];
       }
+      acc[entry.date].push(entry);
       return acc;
-    }, []);
+    }, {});
 
-    const nextCursorDate = journalEntries.length > 0 ? journalEntries[journalEntries.length - 1].journal_date : null;
-    const nextCursorId = journalEntries.length > 0 ? journalEntries[journalEntries.length - 1].journal_id : null;
+    // Flatten grouped entries and trim to fit within the limit
+    const paginatedEntries = [];
+    let count = 0;
+    let hasNextPage = false;
+    for (const date in groupedEntries) {
+      if (count + groupedEntries[date].length > limit) {
+        // If a single date has more than 100 records, include all records for that date
+        if (groupedEntries[date].length > limit) {
+          paginatedEntries.push(...groupedEntries[date]);
+          count += groupedEntries[date].length;
+        } else {
+          hasNextPage = true;
+        }
+        break;
+      }
+      paginatedEntries.push(...groupedEntries[date]);
+      count += groupedEntries[date].length;
+    }
 
-    res.json({ entries: transformedEntries, nextCursorDate, nextCursorId });
+    // Check if there are remaining records for the last date
+    const lastDate = Object.keys(groupedEntries).pop();
+    if (groupedEntries[lastDate] && groupedEntries[lastDate].length > count) {
+      hasNextPage = true;
+    }
+
+    // Extract rowCursor from the last record
+    const nextRowCursor = paginatedEntries.length > 0 ? paginatedEntries[paginatedEntries.length - 1].row_num : null;
+
+    res.json({ entries: paginatedEntries, nextRowCursor, hasNextPage });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Internal server error' });
   }
 };
 
+async function fetchBatchEntries(userid, financial_year, limit, rowCursor) {
+  const db = getDb();
+  const combinedQuery = `
+    -- Fetch records from journal_entries and cash_entries within the financial year
+    WITH combined_entries AS (
+      SELECT
+        DATE(je.journal_date) AS date,
+        je.id AS id,
+        je.description,
+        je."type" AS entry_type,
+        ji.account_id,
+        ji.amount,
+        ji.type,
+        COALESCE(e.id, je.id) AS entry_id,
+        al.name AS particular
+      FROM
+        public.journal_entries je
+      JOIN
+        public.journal_items ji ON je.id = ji.journal_id
+      LEFT JOIN
+        public.entries e ON je.id = e.journal_id
+      JOIN
+        public.account_list al ON ji.account_id = al.id
+      WHERE
+        je.user_id = :userid AND
+        je.financial_year = :financial_year
+      UNION ALL
+      SELECT
+        DATE(ce.cash_date) AS date,
+        ce.id AS id,
+        ce.narration AS description,
+        7 AS entry_type,
+        ce.account_id,
+        ce.amount,
+        ce."type",
+        ce.id AS entry_id,
+        al.name AS particular
+      FROM
+        public.cash_entries ce
+      JOIN
+        public.account_list al ON ce.account_id = al.id
+      WHERE
+        ce.user_id = :userid AND
+        ce.financial_year = :financial_year
+    ),
+    numbered_entries AS (
+      SELECT
+        *,
+        ROW_NUMBER() OVER (ORDER BY date, id) AS row_num
+      FROM
+        combined_entries
+    )
+    -- Combine and sort the results
+    SELECT
+      *
+    FROM
+      numbered_entries
+    WHERE
+      row_num > :rowCursor
+    ORDER BY
+      row_num
+    LIMIT :limit + 100; -- Fetch additional records to handle date splitting
+  `;
+
+  const replacements = { userid, financial_year, limit, rowCursor };
+
+  const combinedResult = await db.sequelize.query(combinedQuery, {
+    replacements,
+    type: db.sequelize.QueryTypes.SELECT
+  });
+
+  return combinedResult;
+}
+
+async function batchProcessingForDayBook(userid, financial_year, limit, rowCursor) {
+  let combinedResult = [];
+  let hasNextPage = false;
+  let nextRowCursor = rowCursor;
+
+  while (true) {
+    const batchEntries = await fetchBatchEntries(userid, financial_year, limit, nextRowCursor);
+    if (batchEntries.length === 0) {
+      break;
+    }
+
+    combinedResult = combinedResult.concat(batchEntries);
+    nextRowCursor = batchEntries[batchEntries.length - 1].row_num;
+
+    if (combinedResult.length >= limit) {
+      hasNextPage = true;
+      break;
+    }
+  }
+
+  // Group records by date
+  const groupedEntries = combinedResult.reduce((acc, entry) => {
+    if (!acc[entry.date]) {
+      acc[entry.date] = [];
+    }
+    acc[entry.date].push(entry);
+    return acc;
+  }, {});
+
+  // Flatten grouped entries and trim to fit within the limit
+  const paginatedEntries = [];
+  let count = 0;
+  for (const date in groupedEntries) {
+    if (count + groupedEntries[date].length > limit) {
+      // If a single date has more than 100 records, include all records for that date
+      if (groupedEntries[date].length > limit) {
+        paginatedEntries.push(...groupedEntries[date]);
+        count += groupedEntries[date].length;
+      } else {
+        hasNextPage = true;
+      }
+      break;
+    }
+    paginatedEntries.push(...groupedEntries[date]);
+    count += groupedEntries[date].length;
+  }
+
+  // Check if there are remaining records for the last date
+  const lastDate = Object.keys(groupedEntries).pop();
+  if (groupedEntries[lastDate] && groupedEntries[lastDate].length > count) {
+    hasNextPage = true;
+  }
+
+  return { entries: paginatedEntries, nextRowCursor, hasNextPage };
+}
+
+async function processData(daybookEntries) {
+  let totalCashCredit = 0;
+  let totalJournalCredit = 0;
+  let totalJournalDebit = 0;
+  let totalCashDebit = 0;
+  let processedEntries = [];
+
+  for (const entry of daybookEntries) {
+    const cashCredit = entry.entry_type === 7 && entry.type ? entry.amount : 0;
+    const cashDebit = entry.entry_type === 7 && !entry.type ? entry.amount : 0;
+    const journalCredit = entry.entry_type >= 0 && entry.entry_type <= 6 && entry.type ? entry.amount : 0;
+    const journalDebit = entry.entry_type >= 0 && entry.entry_type <= 6 && !entry.type ? entry.amount : 0;
+
+    totalCashCredit += cashCredit;
+    totalCashDebit += cashDebit;
+    totalJournalCredit += journalCredit;
+    totalJournalDebit += journalDebit;
+
+    processedEntries.push({
+      id: entry.entry_type === 7 ? entry.id : entry.entry_id,
+      date: entry.date,
+      cashCredit,
+      journalCredit,
+      particular: entry.particular,
+      account_id: entry.account_id,
+      journalDebit,
+      cashDebit,
+      type: entry.entry_type
+    });
+  }
+
+  // Sort entries by date
+  processedEntries.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+  // Group entries by date
+  const groupedEntries = groupByDate(processedEntries);
+
+  // Calculate totals and balance carry forward for each day
+  const groupedDayBookEntries = Object.keys(groupedEntries).map((date, index, array) => {
+    const entries = groupedEntries[date];
+    const totalCashCredit = entries.reduce((sum, entry) => sum + entry.cashCredit, 0);
+    const totalJournalCredit = entries.reduce((sum, entry) => sum + entry.journalCredit, 0);
+    const totalJournalDebit = entries.reduce((sum, entry) => sum + entry.journalDebit, 0);
+    const totalCashDebit = entries.reduce((sum, entry) => sum + entry.cashDebit, 0);
+    const balanceCarryForward = totalCashCredit - totalCashDebit;
+    const journalBalanceCarryForward = totalJournalCredit - totalJournalDebit;
+
+    // Add opening balance for the next day
+    if (index < array.length - 1) {
+      const nextDate = array[index + 1];
+      groupedEntries[nextDate].unshift({
+        date: nextDate,
+        cashCredit: balanceCarryForward,
+        journalCredit: 0,
+        particular: 'Opening Balance',
+        journalDebit: 0,
+        cashDebit: 0
+      });
+    }
+
+    return {
+      date,
+      entries,
+      totalCashCredit,
+      totalJournalCredit,
+      totalJournalDebit,
+      totalCashDebit,
+      balanceCarryForward,
+      journalBalanceCarryForward
+    };
+  });
+
+  return groupedDayBookEntries;
+}
+
+function groupByDate(entries) {
+  return entries.reduce((acc, entry) => {
+    const date = entry.date;
+    if (!acc[date]) {
+      acc[date] = [];
+    }
+    acc[date].push(entry);
+    return acc;
+  }, {});
+}
+
+// Function to fetch daybook entries (replace with your actual data fetching logic)
+const fetchDaybookEntries = async (userId, financialYear, limit, rowCursor) => {
+  // Replace this with your actual data fetching logic
+  const { entries, nextRowCursor, hasNextPage } = await batchProcessingForDayBook(userId, financialYear, limit, rowCursor);
+  return { entries, nextRowCursor, hasNextPage };
+};
+
+
+exports.exportDaybookToExcel = async (req, res) => {
+  try {
+    const { userId, financialYear } = req.query;
+    const limit = 1000; // Define the batch size
+    let rowCursor = 0;
+    let hasNextPage = true;
+
+    const exportsDir = path.join(__dirname, '..', 'exports');
+    if (!fs.existsSync(exportsDir)) {
+      fs.mkdirSync(exportsDir, { recursive: true });
+    }
+
+    const filteredEntries = [];
+
+    while (hasNextPage) {
+      const { entries, nextRowCursor, hasNextPage: nextPage } = await fetchDaybookEntries(userId, financialYear, limit, rowCursor);
+      const processedEntries = await processData(entries); // Process the data
+      filteredEntries.push(...processedEntries);
+      rowCursor = nextRowCursor;
+      hasNextPage = nextPage;
+    }
+
+    // Create a new workbook and add a worksheet
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Daybook');
+
+    // Add data
+    filteredEntries.forEach(day => {
+      const formattedDate = moment(day.date).format('DD-MM-YYYY (dddd)'); // Format the date
+      const startRow = worksheet.rowCount + 1; // Start row for the current date's data
+      const dateRow = worksheet.addRow(['', '', formattedDate, '', '']); // Add formatted date row
+      dateRow.getCell(3).alignment = { horizontal: 'center' }; // Center-align the formatted date
+      worksheet.addRow(['Cash Credit', 'Journal Credit', 'Particular', 'Journal Debit', 'Cash Debit']);
+      day.entries.forEach(entry => {
+        worksheet.addRow([
+          entry.cashCredit,
+          entry.journalCredit,
+          entry.particular,
+          entry.journalDebit,
+          entry.cashDebit,
+        ]);
+      });
+      worksheet.addRow([
+        day.totalCashCredit,
+        day.totalJournalCredit,
+        '',
+        day.totalJournalDebit,
+        day.totalCashDebit,
+      ]);
+      worksheet.addRow([
+        day.totalCashDebit,
+        day.totalJournalDebit,
+        '',
+        '',
+        '',
+      ]);
+      worksheet.addRow([
+        day.balanceCarryForward,
+        day.journalBalanceCarryForward,
+        'Balance Carry forward',
+        '',
+        '',
+      ]);
+
+      const endRow = worksheet.rowCount; // End row for the current date's data
+
+      // Add thin borders to the table for the current date
+      for (let rowNum = startRow; rowNum <= endRow; rowNum++) {
+        const row = worksheet.getRow(rowNum);
+        row.eachCell({ includeEmpty: true }, (cell) => {
+          cell.border = {
+            top: { style: 'thin' },
+            left: { style: 'thin' },
+            bottom: { style: 'thin' },
+            right: { style: 'thin' }
+          };
+        });
+      }
+
+      // Add thick borders around the entire range of the two specified rows
+      const bottomthickBorderStyle = {
+        top: { style: 'thin' },
+        left: { style: 'thin' },
+        bottom: { style: 'thick' },
+        right: { style: 'thin' }
+      };
+
+      const topthickBorderStyle = {
+        top: { style: 'thick' },
+        left: { style: 'thin' },
+        bottom: { style: 'thin' },
+        right: { style: 'thin' }
+      };
+      const totalRows = [endRow - 2, endRow - 1]; // Rows with totals
+      const firstRow = totalRows[0];
+      const lastRow = totalRows[1];
+
+      // Apply thick border around the entire range
+      for (let col = 1; col <= 5; col++) {
+        worksheet.getCell(startRow+1, 3).border = {
+          top: topthickBorderStyle.top,
+          left: topthickBorderStyle.left,
+          bottom: topthickBorderStyle.bottom,
+          right: topthickBorderStyle.right
+        };
+        worksheet.getCell(startRow+2, col).border = {
+          top: topthickBorderStyle.top,
+          left: topthickBorderStyle.left,
+          bottom: topthickBorderStyle.bottom,
+          right: topthickBorderStyle.right
+        };
+        worksheet.getCell(firstRow, col).border = {
+          top: topthickBorderStyle.top,
+          left: topthickBorderStyle.left,
+          bottom: topthickBorderStyle.bottom,
+          right: topthickBorderStyle.right
+        };
+        worksheet.getCell(lastRow, col).border = {
+          top: bottomthickBorderStyle.top,
+          left: bottomthickBorderStyle.left,
+          right: bottomthickBorderStyle.right,
+          bottom: bottomthickBorderStyle.bottom,
+        };
+        worksheet.getCell(endRow, col).border = {
+          top: bottomthickBorderStyle.top,
+          left: bottomthickBorderStyle.left,
+          right: bottomthickBorderStyle.right,
+          bottom: bottomthickBorderStyle.bottom,
+        };
+      }
+    });
+
+    // Set column widths
+    worksheet.columns = [
+      { width: 15 }, // Cash Credit
+      { width: 15 }, // Journal Credit
+      { width: 30 }, // Particular
+      { width: 15 }, // Journal Debit
+      { width: 15 }, // Cash Debit
+    ];
+
+    // Write the workbook to a file
+    const filePath = path.join(exportsDir, `daybook_${userId}_${financialYear}.xlsx`);
+    await workbook.xlsx.writeFile(filePath);
+
+    res.download(filePath);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+exports.exportDaybookToPDF = async (req, res) => {
+  try {
+    const { userId, financialYear } = req.query;
+    const limit = 1000; // Define the batch size
+    const rowsPerPage = 40; // Define the number of rows per page
+    let rowCursor = 0;
+    let hasNextPage = true;
+
+    const exportsDir = path.join(__dirname, '..', 'exports');
+    if (!fs.existsSync(exportsDir)) {
+      fs.mkdirSync(exportsDir, { recursive: true });
+    }
+
+    const filteredEntries = [];
+
+    while (hasNextPage) {
+      const { entries, nextRowCursor, hasNextPage: nextPage } = await fetchDaybookEntries(userId, financialYear, limit, rowCursor);
+      const processedEntries = await processData(entries); // Process the data
+      filteredEntries.push(...processedEntries);
+      rowCursor = nextRowCursor;
+      hasNextPage = nextPage;
+    }
+
+
+
+    // Read HTML Template
+    const html = fs.readFileSync(path.join(__dirname, 'templates', 'template.html'), 'utf8');
+
+    const data = {
+      userId: userId,
+      financialYear: financialYear,
+      filteredEntries: filteredEntries,
+    };
+
+    const options = {
+      format: 'A4',
+      orientation: 'portrait',
+      border: '10mm',
+      paginationOffset:10,
+      footer: {
+        height: '20mm',
+        contents: {
+          default: '<span style="color: #444;">{{page}}</span>/<span>{{pages}}</span>',
+        },
+      },
+    };
+
+    const document = {
+      html: html,
+      data: data,
+      path: path.join(exportsDir, `daybook_${userId}_${financialYear}.pdf`),
+      type: '',
+    };
+
+    // Create PDF
+    pdf.create(document, options)
+      .then((result) => {
+        res.download(result.filename);
+      })
+      .catch((error) => {
+        console.error(error);
+        res.status(500).json({ error: 'Internal server error' });
+      });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
 
 exports.getJournalEntries = async (req, res) => {
   try {
@@ -280,28 +762,30 @@ exports.deleteJournalEntry = async (req, res) => {
     const transaction = await db.sequelize.transaction();
     const JournalEntry = db.journalEntry;
     const JournalItem = db.journalItem;
-    // Delete journal entry and its associated items
-    const deleted = await JournalEntry.destroy({
-      where: { id: entryId },
-      include: [
-        {
-          model: JournalItem,
-          as: 'items',
-        },
-      ],
-      transaction
-    });
+    const journal = await JournalEntry.findByPk(entryId, { transaction });
 
-    if (!deleted) {
+    if (!journal) {
       await transaction.rollback();
       return res.status(404).json({ error: 'Journal entry not found' });
     }
+
+    // Delete associated journal items
+    await JournalItem.destroy({
+      where: { journal_id: entryId },
+      transaction
+    });
+
+    // Delete journal entry
+    await JournalEntry.destroy({
+      where: { id: entryId },
+      transaction
+    });
 
     // Commit the transaction
     await transaction.commit();
 
     // Broadcast the deletion event
-    broadcast({ type: 'DELETE', data: { id: entryId }, entryType: 'journal', user_id: req.body.user_id, financial_year: req.body.financial_year });
+    broadcast({ type: 'DELETE', data: { id: journal.id }, entryType: 'journal', user_id: journal.user_id, financial_year: journal.financial_year });
 
     res.status(204).send(); // Simplified response
   } catch (error) {
@@ -311,6 +795,7 @@ exports.deleteJournalEntry = async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 };
+
 
 exports.updateJournalEntry = async (req, res) => {
   const entryId = req.params.id;
@@ -332,7 +817,7 @@ exports.updateJournalEntry = async (req, res) => {
         user_id: updatedEntry.user_id,
         updatedAt: new Date(),
         financial_year: updatedEntry.financial_year,
-        type:0
+        type: 0
       },
       {
         where: { id: entryId },
@@ -440,7 +925,7 @@ exports.updateJournalEntry = async (req, res) => {
       return acc;
     }, []);
 
-    broadcast({ type: 'UPDATE', data: formattedEntries[0], entryType: 'journal', user_id: updatedEntry.user_id, financial_year: updatedEntry.financial_year }); // Emit WebSocket message
+    broadcast({ type: 'UPDATE', data: formattedEntries[0], entryType: 'journal', user_id: updated.user_id, financial_year: updated.financial_year }); // Emit WebSocket message
 
     res.status(200).json({ message: 'Journal entry updated successfully' }); // Simplified response
   } catch (error) {
@@ -471,7 +956,7 @@ exports.createJournalEntryWithItems = async (req, res) => {
       createdAt: new Date(),
       updatedAt: new Date(),
       financial_year: newEntry.financial_year,
-      type:0
+      type: 0
     }, { transaction });
 
     // Insert journal items

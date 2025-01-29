@@ -11,8 +11,10 @@ module.exports = function (app) {
   });
 
   app.get("/api/journal-entries", [authJwt.verifyToken], controller.getJournalEntries);
-  app.get("/api/journal-entries/daybook", [authJwt.verifyToken], controller.journalBookListForDayBook);
-  app.get("/api/journal-entries/:id", [authJwt.verifyToken], controller.getJournalEntryById); // New route to get journal entry by ID
+  app.get("/api/journal-entries/daybook", [authJwt.verifyToken], controller.combinedBookListForDayBook);
+  app.get("/api/journal-entries/exportDaybookToPDF", [authJwt.verifyToken], controller.exportDaybookToPDF);
+  app.get("/api/journal-entries/exportDaybookToExcel", [authJwt.verifyToken], controller.exportDaybookToExcel);
+  app.get("/api/journal-entries/:id", [authJwt.verifyToken], controller.getJournalEntryById);
   app.put("/api/journal-entries/:id", [authJwt.verifyToken], controller.updateJournalEntry);
   app.delete("/api/journal-entries/:id", [authJwt.verifyToken], controller.deleteJournalEntry);
   app.post("/api/journal-entries", [authJwt.verifyToken], controller.createJournalEntryWithItems);
