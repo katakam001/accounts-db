@@ -111,6 +111,7 @@ require("./routes/productionEntries.routes.js")(app); // Updated from purchaseEn
 require("./routes/stockRegister.routes.js")(app); // Updated from purchaseEntry.routes.js
 require("./routes/consolidateStockRegister.routes.js")(app); // Updated from purchaseEntry.routes.js
 require("./routes/balance.routes.js")(app); // Updated from purchaseEntry.routes.js
+require("./routes/ledger.routes.js")(app); // Updated from purchaseEntry.routes.js
 
 // Invoke the sync and inject function
 syncAndInjectData(db).then(() => {
