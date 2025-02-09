@@ -1,9 +1,16 @@
 const WebSocket = require('ws');
-const http = require('http');
+const https = require('https');
+const fs = require('fs');
+const config = require('./config/auth.config'); // Import the configuration
 
-// Create an HTTP server
-const server = http.createServer();
+// Load SSL/TLS certificates
+const options = {
+  key: fs.readFileSync(config.privateKeyPath, 'utf8'),
+  cert: fs.readFileSync(config.certificateKeyPath, 'utf8')
+};
 
+// Create an HTTPS server
+const server = https.createServer(options);
 // Set up WebSocket server
 const wss = new WebSocket.Server({ server });
 

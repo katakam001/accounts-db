@@ -8,7 +8,7 @@ const publicKey = fs.readFileSync(config.publicKeyPath, 'utf8');
 // Verify Access Token function
 function verifyAccessToken(token) {
   try {
-    const decoded = jwt.verify(token, publicKey, { algorithms: ['RS256'] });
+    const decoded = jwt.verify(token, publicKey, { algorithms: ['ES256'] });
     return decoded;
   } catch (error) {
     return null;

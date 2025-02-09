@@ -65,6 +65,7 @@ watcher.on('change', (path) => {
 app.use(
   cors({
     credentials: true,
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     origin: ["http://localhost:4200"],
   })
 );
@@ -116,11 +117,20 @@ require("./routes/ledger.routes.js")(app); // Updated from purchaseEntry.routes.
 // Invoke the sync and inject function
 syncAndInjectData(db).then(() => {
   // Start the application server
-  const PORT = process.env.PORT || 8080;
+  const PORT = process.env.PORT || 8443;
   server.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}.`);
   });
 });
 
-// Attach the Express app to the HTTP server
+// Attach the Express app to the HTTPS server
 server.on('request', app);
+
+// Redirect HTTP to HTTPS
+const http = require('http');
+http.createServer((req, res) => {
+  res.writeHead(301, { 'Location': 'https://' + req.headers.host + req.url });
+  res.end();
+}).listen(8080, () => {
+  console.log('HTTP server is redirecting to HTTPS');
+});

@@ -106,16 +106,16 @@ exports.signin = async (req, res) => {
     // Set HTTP-only and secure cookies
     res.cookie('accessToken', accessToken, {
       httpOnly: true,
-      secure: false, // Set to true if using HTTPS
-      sameSite: 'Strict', // Prevents CSRF attacks
+      secure: true, // Set to true if using HTTPS
+      sameSite: 'None', // Prevents CSRF attacks
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
       path: '/' // Ensure the path is set to root
     });
 
     res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
-      secure: false, // Set to true if using HTTPS
-      sameSite: 'Strict', // Prevents CSRF attacks
+      secure: true, // Set to true if using HTTPS
+      sameSite: 'None', // Prevents CSRF attacks
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
       path: '/' // Ensure the path is set to root
     });
@@ -141,7 +141,7 @@ exports.refreshtoken = async (req, res) => {
       return res.status(401).send({ message: 'Refresh Token not provided' });
     }
 
-    jwt.verify(refreshToken, privateKey, { algorithms: ['RS256'] }, (err, user) => {
+    jwt.verify(refreshToken, publicKey, { algorithms: ['ES256'] }, (err, user) => {
       if (err) {
         return res.status(403).send({ message: 'Invalid Refresh Token' });
       }
@@ -150,8 +150,8 @@ exports.refreshtoken = async (req, res) => {
 
       res.cookie('accessToken', newAccessToken, {
         httpOnly: true,
-        secure: false, // Set to true if using HTTPS
-        sameSite: 'Strict', // Prevents CSRF attacks
+        secure: true, // Set to true if using HTTPS
+        sameSite: 'None', // Prevents CSRF attacks
         maxAge: 24 * 60 * 60 * 1000, // 24 hours
         path: '/' // Ensure the path is set to root
       });
@@ -170,15 +170,15 @@ exports.signout = async (req, res) => {
     // Clear HTTP-only and secure cookies
     res.clearCookie('accessToken', {
       httpOnly: true,
-      secure: false, // Set to true if using HTTPS
-      sameSite: 'Strict',
+      secure: true, // Set to true if using HTTPS
+      sameSite: 'None',
       path: '/' // Ensure the path is set to root
     });
 
     res.clearCookie('refreshToken', {
       httpOnly: true,
-      secure: false, // Set to true if using HTTPS
-      sameSite: 'Strict',
+      secure: true, // Set to true if using HTTPS
+      sameSite: 'None',
       path: '/' // Ensure the path is set to root
     });
 
@@ -272,7 +272,7 @@ exports.confirmPasswordReset = async (req, res) => {
 // Generate Access Token
 function generateAccessToken(user) {
   return jwt.sign({ id: user.id }, privateKey, {
-    algorithm: 'RS256',
+    algorithm: 'ES256',
     expiresIn: '24h', // 24 hours
   });
 }
@@ -280,7 +280,7 @@ function generateAccessToken(user) {
 // Generate Refresh Token
 function generateRefreshToken(user) {
   return jwt.sign({ id: user.id }, privateKey, {
-    algorithm: 'RS256',
+    algorithm: 'ES256',
     expiresIn: '7d', // 7 days
   });
 }
