@@ -5,9 +5,16 @@ exports.getAllCategories = async (req, res) => {
   try {
     const db = getDb();
     const Categories = db.categories;
-    const { type } = req.query;
-    const whereClause = type ? { where: { type } } : {};
-    const categories = await Categories.findAll(whereClause);
+    const { type, userId, financialYear } = req.query;
+    
+    const whereClause = {
+      ...(type && { type }),
+      ...(userId && { user_id: userId }),
+      ...(financialYear && { financial_year: financialYear })
+    };
+    
+    const categories = await Categories.findAll({ where: whereClause });
+    
     res.json(categories);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -37,6 +44,7 @@ exports.createCategory = async (req, res) => {
   try {
     const db = getDb();
     const Categories = db.categories;
+    console.log(req.body);
     const category = await Categories.create(req.body);
     res.status(201).json(category);
   } catch (error) {

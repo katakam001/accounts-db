@@ -5,11 +5,18 @@ exports.getAllYields = async (req, res) => {
     const db = getDb();
     const RawItem = db.raw_items;
     const ProcessedItem = db.processed_items;
+    const { userId, financialYear } = req.query;
 
-    const rawItems = await RawItem.findAll({ include: [{ model: db.items, as: 'item' }, { model: db.units, as: 'unit' }] });
+    const rawItems = await RawItem.findAll({
+      where: { user_id: userId, financial_year: financialYear },
+      include: [{ model: db.items, as: 'item' }, { model: db.units, as: 'unit' }]
+    });
 
     const yieldList = await Promise.all(rawItems.map(async (rawItem) => {
-      const processedItems = await ProcessedItem.findAll({ where: { raw_item_id: rawItem.id }, include: [{ model: db.items, as: 'item' }, { model: db.units, as: 'unit' }] });
+      const processedItems = await ProcessedItem.findAll({
+        where: { raw_item_id: rawItem.id, user_id: userId, financial_year: financialYear },
+        include: [{ model: db.items, as: 'item' }, { model: db.units, as: 'unit' }]
+      });
 
       return {
         rawItem: {
@@ -18,27 +25,18 @@ exports.getAllYields = async (req, res) => {
           unit_id: rawItem.unit_id,
           user_id: rawItem.user_id,
           financial_year: rawItem.financial_year,
-          createdAt: rawItem.createdAt,
-          updatedAt: rawItem.updatedAt,
-          item_id: rawItem.item.id,
           item_name: rawItem.item.name,
-          unit_id: rawItem.unit.id,
           unit_name: rawItem.unit.name
         },
         processedItems: processedItems.map(item => ({
-          id: item.id,
           raw_item_id: item.raw_item_id,
           item_id: item.item_id,
           unit_id: item.unit_id,
           percentage: item.percentage,
-          conversion_id:item.conversion_id,
+          conversion_id: item.conversion_id,
           user_id: item.user_id,
           financial_year: item.financial_year,
-          createdAt: item.createdAt,
-          updatedAt: item.updatedAt,
-          item_id: item.item.id,
           item_name: item.item.name,
-          unit_id: item.unit.id,
           unit_name: item.unit.name
         }))
       };
@@ -50,7 +48,6 @@ exports.getAllYields = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
-
 
 
 exports.createYield = async (req, res) => {
@@ -82,7 +79,7 @@ exports.createYield = async (req, res) => {
       });
     }
 
-    res.status(201).json({ message: 'Yield data created successfully' });
+    res.status(201).json({ newRawItemId: newRawItem.id });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

@@ -4,12 +4,21 @@ exports.getAllBrokers = async (req, res) => {
   try {
     const db = getDb();
     const Broker = db.brokers;
-    const brokers = await Broker.findAll();
+    const { userId, financialYear } = req.query;
+    
+    const whereClause = {
+      ...(userId && { user_id: userId }),
+      ...(financialYear && { financial_year: financialYear })
+    };
+    
+    const brokers = await Broker.findAll({ where: whereClause });
+    
     res.json(brokers);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 };
+
 
 exports.createBroker = async (req, res) => {
   try {

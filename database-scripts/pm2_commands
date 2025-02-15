@@ -1,0 +1,63 @@
+Sure! Here are some common PM2 commands that you might find useful:
+
+### Basic Commands
+- **Start an Application**:
+  ```sh
+  pm2 start app.js
+  ```
+- **Stop an Application**:
+  ```sh
+  pm2 stop app_name
+  ```
+- **Restart an Application**:
+  ```sh
+  pm2 restart app_name
+  ```
+- **Delete an Application**:
+  ```sh
+  pm2 delete app_name
+  ```
+- **List Running Applications**:
+  ```sh
+  pm2 list
+  ```
+- **Check Status of Applications**:
+  ```sh
+  pm2 status
+  ```
+- **View Logs**:
+  ```sh
+  pm2 logs app_name
+  ```
+
+### Advanced Commands
+- **Start an Application in Cluster Mode**:
+  ```sh
+  pm2 start app.js -i max
+  ```
+- **Specify an Application Name**:
+  ```sh
+  pm2 start app.js --name "my-app"
+  ```
+- **Set Environment Variables**:
+  ```sh
+  pm2 start app.js --env production
+  ```
+- **Generate Startup Script**:
+  ```sh
+  pm2 startup
+  ```
+- **Save Current Process List**:
+  ```sh
+  pm2 save
+  ```
+- **Monitor CPU and Memory Usage**:
+  ```sh
+  pm2 monit
+  ```
+- **Create an Ecosystem File**:
+  ```sh
+  pm2 ecosystem
+  ```
+
+These commands should help you manage your Node.js applications effectively with PM2. If you have any specific questions or need further assistance, feel free to ask!

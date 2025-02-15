@@ -4,7 +4,15 @@ exports.getAllAreas = async (req, res) => {
   try {
     const db = getDb();
     const Area = db.areas;
-    const areas = await Area.findAll();
+    const { userId, financialYear } = req.query;
+    
+    const whereClause = {
+      ...(userId && { user_id: userId }),
+      ...(financialYear && { financial_year: financialYear })
+    };
+    
+    const areas = await Area.findAll({ where: whereClause });
+    
     res.json(areas);
   } catch (error) {
     console.log(error);

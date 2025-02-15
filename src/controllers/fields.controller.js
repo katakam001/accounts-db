@@ -4,7 +4,15 @@ exports.getFields = async (req, res) => {
   try {
     const db = getDb();
     const Fields = db.fields;
-    const fields = await Fields.findAll();
+    const { userId, financialYear } = req.query;
+    
+    const whereClause = {
+      ...(userId && { user_id: userId }),
+      ...(financialYear && { financial_year: financialYear })
+    };
+    
+    const fields = await Fields.findAll({ where: whereClause });
+    
     res.json(fields);
   } catch (error) {
     res.status(500).json({ error: error.message });

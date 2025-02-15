@@ -4,7 +4,15 @@ exports.getAllConversions = async (req, res) => {
   try {
     const db = getDb();
     const Conversion = db.conversions;
+    const { userId, financialYear } = req.query;
+
+    const whereCondition = {
+      ...(userId && { user_id: userId }),
+      ...(financialYear && { financial_year: financialYear })
+    };
+
     const conversions = await Conversion.findAll({
+      where: whereCondition,
       include: [
         { model: db.units, as: 'fromUnit' },
         { model: db.units, as: 'toUnit' }
@@ -20,8 +28,6 @@ exports.getAllConversions = async (req, res) => {
       rate: conversion.rate,
       user_id: conversion.user_id,
       financial_year: conversion.financial_year,
-      createdAt: conversion.createdAt,
-      updatedAt: conversion.updatedAt
     }));
 
     res.json(formattedConversions);
@@ -50,8 +56,6 @@ exports.createConversion = async (req, res) => {
       rate: conversion.rate,
       user_id: conversion.user_id,
       financial_year: conversion.financial_year,
-      createdAt: conversion.createdAt,
-      updatedAt: conversion.updatedAt
     };
 
     res.status(201).json(formattedConversion);
@@ -82,8 +86,6 @@ exports.updateConversion = async (req, res) => {
         rate: updatedConversion.rate,
         user_id: updatedConversion.user_id,
         financial_year: updatedConversion.financial_year,
-        createdAt: updatedConversion.createdAt,
-        updatedAt: updatedConversion.updatedAt
       };
 
       res.status(200).json(formattedConversion);

@@ -4,12 +4,21 @@ exports.getAllUnits = async (req, res) => {
   try {
     const db = getDb();
     const Units = db.units;
-    const units = await Units.findAll();
+    const { userId, financialYear } = req.query;
+    
+    const whereClause = {
+      ...(userId && { user_id: userId }),
+      ...(financialYear && { financial_year: financialYear })
+    };
+    
+    const units = await Units.findAll({ where: whereClause });
+    
     res.json(units);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 };
+
 
 exports.createUnit = async (req, res) => {
   try {
