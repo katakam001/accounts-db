@@ -9,6 +9,7 @@ const fs = require('fs');
 
 const privateKey = fs.readFileSync(config.privateKeyPath, 'utf8');
 const publicKey = fs.readFileSync(config.publicKeyPath, 'utf8');
+const algorithm =config.algorithm;
 
 
 
@@ -141,7 +142,7 @@ exports.refreshtoken = async (req, res) => {
       return res.status(401).send({ message: 'Refresh Token not provided' });
     }
 
-    jwt.verify(refreshToken, publicKey, { algorithms: ['ES256'] }, (err, user) => {
+    jwt.verify(refreshToken, publicKey, { algorithms: [algorithm] }, (err, user) => {
       if (err) {
         return res.status(403).send({ message: 'Invalid Refresh Token' });
       }
@@ -269,10 +270,41 @@ exports.confirmPasswordReset = async (req, res) => {
   }
 };
 
+// Change Password
+exports.changePassword = async (req, res) => {
+  try {
+    const db = getDb();
+    const User = db.user;
+    const { currentPassword, newPassword } = req.body;
+    const userId = req.userId; // Assuming userId is stored in req object by some middleware (e.g., JWT middleware)
+
+    // Find the user by ID
+    const user = await User.findByPk(userId);
+    if (!user) {
+      return res.status(404).send({ message: 'User not found' });
+    }
+
+    // Check if the current password is correct
+    const passwordIsValid = bcrypt.compareSync(currentPassword, user.password);
+    if (!passwordIsValid) {
+      return res.status(401).send({ message: 'Invalid current password' });
+    }
+
+    // Update the password
+    const hashedPassword = bcrypt.hashSync(newPassword, 8);
+    user.password = hashedPassword;
+    await user.save();
+
+    res.status(201).send({ message: 'Password changed successfully' });
+  } catch (error) {
+    res.status(500).send({ message: 'An error occurred', error: error.message });
+  }
+};
+
 // Generate Access Token
 function generateAccessToken(user) {
   return jwt.sign({ id: user.id }, privateKey, {
-    algorithm: 'ES256',
+    algorithm: algorithm,
     expiresIn: '24h', // 24 hours
   });
 }
@@ -280,7 +312,7 @@ function generateAccessToken(user) {
 // Generate Refresh Token
 function generateRefreshToken(user) {
   return jwt.sign({ id: user.id }, privateKey, {
-    algorithm: 'ES256',
+    algorithm: algorithm,
     expiresIn: '7d', // 7 days
   });
 }

@@ -4,11 +4,12 @@ const {getDb} = require("../utils/getDb");
 const fs = require('fs');
 
 const publicKey = fs.readFileSync(config.publicKeyPath, 'utf8');
+const algorithm =config.algorithm;
 
 // Verify Access Token function
 function verifyAccessToken(token) {
   try {
-    const decoded = jwt.verify(token, publicKey, { algorithms: ['ES256'] });
+    const decoded = jwt.verify(token, publicKey, { algorithms: [algorithm] });
     return decoded;
   } catch (error) {
     return null;
