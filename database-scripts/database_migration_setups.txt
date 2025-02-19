@@ -55,3 +55,19 @@ Parsed url postgres://postgres:*****@localhost:5432/account_db
 
 == 20250108082956-initial-setup-no-references: reverting =======
 == 20250108082956-initial-setup-no-references: reverted (0.047s)
+
+C:\Software\accounts-db>npx sequelize db:seed:all --url postgres://postgres:xxxxx@localhost:5432/account_db --seeders-path src/seeders --debug
+
+Sequelize CLI [Node: 22.11.0, CLI: 6.6.2, ORM: 6.37.5]
+
+Parsed url postgres://postgres:*****@localhost:5432/account_db
+== 20250129162005-insert-default-initial-data: migrating =======
+== 20250129162005-insert-default-initial-data: migrated (0.015s)
+
+C:\Software\accounts-db>npx sequelize db:seed:undo:all --url postgres://postgres:xxxxx@localhost:5432/account_db --seeders-path src/seeders
+
+Sequelize CLI [Node: 22.11.0, CLI: 6.6.2, ORM: 6.37.5]
+
+Parsed url postgres://postgres:*****@localhost:5432/account_db
+== 20250129162005-insert-default-initial-data: reverting =======
+== 20250129162005-insert-default-initial-data: reverted (0.014s)
