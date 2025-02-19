@@ -6,114 +6,105 @@ const fs = require('fs');
 const publicKey = fs.readFileSync(config.publicKeyPath, 'utf8');
 const algorithm =config.algorithm;
 
-// Verify Access Token function
-function verifyAccessToken(token) {
+
+const verifyToken = (token, role) => {
   try {
     const decoded = jwt.verify(token, publicKey, { algorithms: [algorithm] });
+    if (decoded.role !== role) {
+      throw new Error("Invalid role");
+    }
     return decoded;
   } catch (error) {
     return null;
   }
-}
-
-const verifyToken = (req, res, next) => {
-  let token = req.cookies.accessToken;
-
-  if (!token) {
-    return res.status(403).send({
-      message: "No token provided!",
-    });
-  }
-
-  const decoded = verifyAccessToken(token);
-  if (!decoded) {
-    return res.status(401).send({
-      message: "Unauthorized!",
-    });
-  }
-
-  req.userId = decoded.id;
-  next();
-};
-
-
-isAdmin = async (req, res, next) => {
-  try {
-    const db = getDb();
-    const User = db.user;
-    const user = await User.findByPk(req.userId);
-    const roles = await user.getRoles();
-
-    for (let i = 0; i < roles.length; i++) {
-      if (roles[i].name === "admin") {
-        return next();
-      }
-    }
-
-    return res.status(403).send({
-      message: "Require Admin Role!",
-    });
-  } catch (error) {
-    return res.status(500).send({
-      message: "Unable to validate User role!",
-    });
-  }
-};
-
-isModerator = async (req, res, next) => {
-  try {
-    const db = getDb();
-    const User = db.user;
-    const user = await User.findByPk(req.userId);
-    const roles = await user.getRoles();
-
-    for (let i = 0; i < roles.length; i++) {
-      if (roles[i].name === "moderator") {
-        return next();
-      }
-    }
-
-    return res.status(403).send({
-      message: "Require Moderator Role!",
-    });
-  } catch (error) {
-    return res.status(500).send({
-      message: "Unable to validate Moderator role!",
-    });
-  }
-};
-
-isModeratorOrAdmin = async (req, res, next) => {
-  try {
-    const db = getDb();
-    const User = db.user;
-    const user = await User.findByPk(req.userId);
-    const roles = await user.getRoles();
-
-    for (let i = 0; i < roles.length; i++) {
-      if (roles[i].name === "moderator") {
-        return next();
-      }
-
-      if (roles[i].name === "admin") {
-        return next();
-      }
-    }
-
-    return res.status(403).send({
-      message: "Require Moderator or Admin Role!",
-    });
-  } catch (error) {
-    return res.status(500).send({
-      message: "Unable to validate Moderator or Admin role!",
-    });
-  }
 };
 
 const authJwt = {
-  verifyToken,
-  isAdmin,
-  isModerator,
-  isModeratorOrAdmin,
+  verifyAdminToken: (req, res, next) => {
+    const token = req.cookies.accessToken;
+    if (!token) {
+      return res.status(403).send({ message: "No token provided" });
+    }
+
+    const decoded = verifyToken(token, "admin");
+    if (!decoded) {
+      return res.status(401).send({ message: "Unauthorized" });
+    }
+
+    req.userId = decoded.id;
+    next();
+  },
+
+  verifyUserToken: (req, res, next) => {
+    const token = req.cookies.userAccessToken;
+    if (!token) {
+      return res.status(403).send({ message: "No token provided" });
+    }
+
+    const decoded = verifyToken(token, "user");
+    if (!decoded) {
+      return res.status(401).send({ message: "Unauthorized" });
+    }
+
+    req.userId = decoded.id;
+    next();
+  },
+
+  verifyToken: (req, res, next) => {
+    const adminToken = req.cookies.accessToken;
+    const userToken = req.cookies.userAccessToken;
+    
+    if (!adminToken && !userToken) {
+      return res.status(403).send({ message: "No token provided" });
+    }
+
+    const adminDecoded = adminToken ? verifyToken(adminToken, "admin") : null;
+    const userDecoded = userToken ? verifyToken(userToken, "user") : null;
+
+    if (!adminDecoded && !userDecoded) {
+      return res.status(401).send({ message: "Unauthorized" });
+    }
+
+    req.userId = adminDecoded ? adminDecoded.id : userDecoded.id;
+    req.role = adminDecoded ? 'admin' : 'user';
+    next();
+  }
 };
+
+// Verify Access Token function
+// function verifyAccessToken(token) {
+//   try {
+//     const decoded = jwt.verify(token, publicKey, { algorithms: [algorithm] });
+//     return decoded;
+//   } catch (error) {
+//     return null;
+//   }
+// }
+
+// const verifyToken = (req, res, next) => {
+//   let token = req.cookies.accessToken;
+
+//   if (!token) {
+//     return res.status(403).send({
+//       message: "No token provided!",
+//     });
+//   }
+
+//   const decoded = verifyAccessToken(token);
+//   if (!decoded) {
+//     return res.status(401).send({
+//       message: "Unauthorized!",
+//     });
+//   }
+
+//   req.userId = decoded.id;
+//   next();
+// };
+
+
+
+
+// const authJwt = {
+//   verifyToken,
+// };
 module.exports = authJwt;

@@ -27,6 +27,8 @@ db.Sequelize = Sequelize;
 db.sequelize = sequelize;
 
 db.user = require("../models/user.model.js")(sequelize, Sequelize);
+db.financial_year_tracking= require("../models/financialYearTracking.model.js")(sequelize, Sequelize);
+db.admin_user = require("../models/adminUser.model.js")(sequelize, Sequelize,db.user);
 db.role = require("../models/role.model.js")(sequelize, Sequelize);
 db.account = require("../models/account.model.js")(sequelize, Sequelize);
 db.group = require("../models/group.model.js")(sequelize, Sequelize);
@@ -67,6 +69,10 @@ db.role.belongsToMany(db.user, {
 db.user.belongsToMany(db.role, {
   through: "user_roles"
 });
+
+db.user.belongsToMany(db.user, { as: 'Users', through: db.admin_user, foreignKey: 'admin_id' });
+db.user.belongsToMany(db.user, { as: 'Admins', through: db.admin_user, foreignKey: 'user_id' });
+db.admin_user.belongsTo(db.user, { foreignKey: "user_id", as: "user" });
 
 db.journalEntry.hasMany(db.journalItem, { as: 'items', foreignKey: 'journal_id' });
 

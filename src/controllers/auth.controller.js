@@ -22,15 +22,17 @@ const oAuth2Client = new google.auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_U
 oAuth2Client.setCredentials({ refresh_token: REFRESH_TOKEN });
 
 exports.signup = async (req, res) => {
-
-  // Save User to Database
   try {
     const db = getDb();
     const User = db.user;
     const Role = db.role;
-    const Op = db.Sequelize.Op;
+    const AdminUser = db.admin_user;
+    const { adminId, role } = req.body; // Assuming adminId and role are passed in the request body
+
+    // Create new user
     const user = await User.create({
       firstname: req.body.firstname,
+    
       middlename: req.body.middlename,
       lastname: req.body.lastname,
       username: req.body.username,
@@ -38,24 +40,18 @@ exports.signup = async (req, res) => {
       email: req.body.email
     });
 
-    if (req.body.roles) {
-      const roles = await Role.findAll({
-        where: {
-          name: {
-            [Op.or]: req.body.roles,
-          },
-        },
-      });
+    // Assign the selected role
+    const roleInstance = await Role.findOne({ where: { name: role } });
+    await user.setRoles([roleInstance]);
 
-      const result = user.setRoles(roles);
-      if (result) res.status(201).send({ message: "User registered successfully!" });
-    } else {
-      // user has role = 1
-      const result = user.setRoles([1]);
-      if (result) res.status(201).send({ message: "User registered successfully!" });
+    // Assign user to admin if adminId is provided (for automated assignment use case)
+    if (adminId) {
+      await AdminUser.create({ admin_id: adminId, user_id: user.id });
     }
+
+    return res.status(201).send({ message: "User registered successfully!" });
   } catch (error) {
-    res.status(500).send({ message: error.message });
+    return res.status(500).send({ message: error.message });
   }
 };
 
@@ -73,10 +69,7 @@ exports.signin = async (req, res) => {
       return res.status(404).send({ message: "User Not found." });
     }
 
-    const passwordIsValid = bcrypt.compareSync(
-      req.body.password,
-      user.password
-    );
+    const passwordIsValid = bcrypt.compareSync(req.body.password, user.password);
 
     if (!passwordIsValid) {
       user.loginAttempts += 1;
@@ -86,40 +79,61 @@ exports.signin = async (req, res) => {
         return res.status(403).send({ message: "Account is locked due to multiple failed login attempts." });
       }
       await user.save();
-      return res.status(401).send({
-        message: "Invalid Password!",
-      });
+      return res.status(401).send({ message: "Invalid Password!" });
     }
-
-    const accessToken = generateAccessToken({ id: user.id });
-    const refreshToken = generateRefreshToken({ id: user.id });
 
     let authorities = [];
     const roles = await user.getRoles();
     for (let i = 0; i < roles.length; i++) {
       authorities.push("ROLE_" + roles[i].name.toUpperCase());
     }
+
+    const role = roles[0]; // Assuming each user has one role for simplicity
+    const accessToken = generateAccessToken(user.id, role.name);
+    const refreshToken = generateRefreshToken(user.id, role.name);
+
     // Reset login attempts on successful login
     user.loginAttempts = 0;
     user.status = true; // Set status to true (unlocked)
     user.last_login = new Date();
     await user.save();
-    // Set HTTP-only and secure cookies
-    res.cookie('accessToken', accessToken, {
-      httpOnly: true,
-      secure: true, // Set to true if using HTTPS
-      sameSite: 'None', // Prevents CSRF attacks
-      maxAge: 24 * 60 * 60 * 1000, // 24 hours
-      path: '/' // Ensure the path is set to root
-    });
 
-    res.cookie('refreshToken', refreshToken, {
-      httpOnly: true,
-      secure: true, // Set to true if using HTTPS
-      sameSite: 'None', // Prevents CSRF attacks
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-      path: '/' // Ensure the path is set to root
-    });
+    // Set tokens based on role
+    if (role.name === 'admin') {
+      // Admin tokens
+      res.cookie('accessToken', accessToken, {
+        httpOnly: true,
+        secure: true, // Set to true if using HTTPS
+        sameSite: 'None', // Prevents CSRF attacks
+        maxAge: 24 * 60 * 60 * 1000, // 24 hours
+        path: '/' // Ensure the path is set to root
+      });
+
+      res.cookie('refreshToken', refreshToken, {
+        httpOnly: true,
+        secure: true, // Set to true if using HTTPS
+        sameSite: 'None', // Prevents CSRF attacks
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+        path: '/' // Ensure the path is set to root
+      });
+    } else {
+      // Regular user tokens
+      res.cookie('userAccessToken', accessToken, {
+        httpOnly: true,
+        secure: true, // Set to true if using HTTPS
+        sameSite: 'None', // Prevents CSRF attacks
+        maxAge: 24 * 60 * 60 * 1000, // 24 hours
+        path: '/' // Ensure the path is set to root
+      });
+
+      res.cookie('userRefreshToken', refreshToken, {
+        httpOnly: true,
+        secure: true, // Set to true if using HTTPS
+        sameSite: 'None', // Prevents CSRF attacks
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+        path: '/' // Ensure the path is set to root
+      });
+    }
 
     return res.status(200).send({
       id: user.id,
@@ -136,20 +150,24 @@ exports.signin = async (req, res) => {
 // Refresh Token Endpoint
 exports.refreshtoken = async (req, res) => {
   try {
-    const refreshToken = req.cookies.refreshToken;
+    const adminRefreshToken = req.cookies.refreshToken;
+    const userRefreshToken = req.cookies.userRefreshToken;
 
-    if (!refreshToken) {
+    if (!adminRefreshToken && !userRefreshToken) {
       return res.status(401).send({ message: 'Refresh Token not provided' });
     }
 
-    jwt.verify(refreshToken, publicKey, { algorithms: [algorithm] }, (err, user) => {
+    const refreshToken = adminRefreshToken || userRefreshToken;
+
+    jwt.verify(refreshToken, publicKey, { algorithms: [algorithm] }, (err, decoded) => {
       if (err) {
         return res.status(403).send({ message: 'Invalid Refresh Token' });
       }
 
-      const newAccessToken = generateAccessToken({ id: user.id });
+      const newAccessToken = generateAccessToken(decoded.id, decoded.role);
+      const accessTokenCookieName = decoded.role === 'admin' ? 'accessToken' : 'userAccessToken';
 
-      res.cookie('accessToken', newAccessToken, {
+      res.cookie(accessTokenCookieName, newAccessToken, {
         httpOnly: true,
         secure: true, // Set to true if using HTTPS
         sameSite: 'None', // Prevents CSRF attacks
@@ -168,29 +186,56 @@ exports.refreshtoken = async (req, res) => {
 
 exports.signout = async (req, res) => {
   try {
-    // Clear HTTP-only and secure cookies
-    res.clearCookie('accessToken', {
-      httpOnly: true,
-      secure: true, // Set to true if using HTTPS
-      sameSite: 'None',
-      path: '/' // Ensure the path is set to root
-    });
+    // Check if admin tokens exist
+    const adminAccessToken = req.cookies.accessToken;
+    const adminRefreshToken = req.cookies.refreshToken;
 
-    res.clearCookie('refreshToken', {
-      httpOnly: true,
-      secure: true, // Set to true if using HTTPS
-      sameSite: 'None',
-      path: '/' // Ensure the path is set to root
-    });
+    // Check if user tokens exist
+    const userAccessToken = req.cookies.userAccessToken;
+    const userRefreshToken = req.cookies.userRefreshToken;
 
-    // Clear session
-    req.session = null;
+    // Clear admin tokens if they exist
+    if (adminAccessToken) {
+      res.clearCookie('accessToken', {
+        httpOnly: true,
+        secure: true, // Set to true if using HTTPS
+        sameSite: 'None',
+        path: '/' // Ensure the path is set to root
+      });
+    }
 
-    return res.status(200).send({
-      message: "You've been signed out!"
-    });
+    if (adminRefreshToken) {
+      res.clearCookie('refreshToken', {
+        httpOnly: true,
+        secure: true, // Set to true if using HTTPS
+        sameSite: 'None',
+        path: '/' // Ensure the path is set to root
+      });
+    }
+
+    // Clear user tokens if they exist
+    if (userAccessToken) {
+      res.clearCookie('userAccessToken', {
+        httpOnly: true,
+        secure: true, // Set to true if using HTTPS
+        sameSite: 'None',
+        path: '/' // Ensure the path is set to root
+      });
+    }
+
+    if (userRefreshToken) {
+      res.clearCookie('userRefreshToken', {
+        httpOnly: true,
+        secure: true, // Set to true if using HTTPS
+        sameSite: 'None',
+        path: '/' // Ensure the path is set to root
+      });
+    }
+
+    // Send response indicating sign out success
+    return res.status(200).send({ message: "You've been signed out!" });
   } catch (err) {
-    this.next(err);
+    return res.status(500).send({ message: err.message });
   }
 };
 
@@ -301,18 +346,16 @@ exports.changePassword = async (req, res) => {
   }
 };
 
-// Generate Access Token
-function generateAccessToken(user) {
-  return jwt.sign({ id: user.id }, privateKey, {
+function generateAccessToken(id, role) {
+  return jwt.sign({ id: id, role: role }, privateKey, {
     algorithm: algorithm,
-    expiresIn: '24h', // 24 hours
+    expiresIn: "24h" // 24 hours
   });
 }
 
-// Generate Refresh Token
-function generateRefreshToken(user) {
-  return jwt.sign({ id: user.id }, privateKey, {
+function generateRefreshToken(id, role) {
+  return jwt.sign({ id: id, role: role }, privateKey, {
     algorithm: algorithm,
-    expiresIn: '7d', // 7 days
+    expiresIn: "7d" // 7 days
   });
 }

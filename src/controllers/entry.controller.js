@@ -267,18 +267,18 @@ exports.addEntry = async (req, res) => {
 
 
 // Helper functions to get account and group IDs
-async function getAccountId(accountName) {
+async function getAccountId(accountName, userId, financialYear) {
   const db = getDb();
   const Account = db.account;
-  const account = await Account.findOne({ where: { name: accountName } });
+  const account = await Account.findOne({ where: { name: accountName, user_id: userId, financial_year: financialYear } });
   return account ? account.id : null;
 }
 
-async function getGroupIdFromAccountName(accountName) {
+async function getGroupIdFromAccountName(accountName, userId, financialYear) {
   const db = getDb();
   const Account = db.account;
   const AccountGroup = db.accountGroup;
-  const account = await Account.findOne({ where: { name: accountName } });
+  const account = await Account.findOne({ where: { name: accountName, user_id: userId, financial_year: financialYear } });
   if (account) {
     const accountGroup = await AccountGroup.findOne({ where: { account_id: account.id } });
     return accountGroup ? accountGroup.group_id : null;
@@ -287,10 +287,10 @@ async function getGroupIdFromAccountName(accountName) {
 }
 
 // Helper function to get group ID by group name
-async function getGroupId(groupName) {
+async function getGroupId(groupName, userId, financialYear) {
   const db = getDb();
   const Group = db.group;
-  const group = await Group.findOne({ where: { name: groupName } });
+  const group = await Group.findOne({ where: { name: groupName, user_id: userId, financial_year: financialYear } });
   return group ? group.id : null;
 }
 
@@ -311,28 +311,28 @@ const getJournalItems = async (entry, dynamicFields, journalId, amount) => {
 
   switch (entry.type) {
     case 1: // Purchase Entry
-      journalItems.push(await createJournalItem(journalId, entry.account_id, 'Sundary Creditors', amount, true));
-      journalItems.push(await createJournalItemWithAccountId(journalId, 'Purchase Account', 'Purchase Account', entry.value, false));
+      journalItems.push(await createJournalItem(journalId, entry.account_id, 'Sundary Creditors', amount, true, entry.user_id, entry.financial_year));
+      journalItems.push(await createJournalItemWithAccountId(journalId, 'Purchase Account', 'Purchase Account', entry.value, false, entry.user_id, entry.financial_year));
       break;
     case 2: // Sale Entry
-      journalItems.push(await createJournalItem(journalId, entry.account_id, 'Sundary Debtors', amount, false));
-      journalItems.push(await createJournalItemWithAccountId(journalId, 'Sales Account', 'Sales Account', entry.value, true));
+      journalItems.push(await createJournalItem(journalId, entry.account_id, 'Sundary Debtors', amount, false, entry.user_id, entry.financial_year));
+      journalItems.push(await createJournalItemWithAccountId(journalId, 'Sales Account', 'Sales Account', entry.value, true, entry.user_id, entry.financial_year));
       break;
     case 3: // Purchase Return
-      journalItems.push(await createJournalItem(journalId, entry.account_id, 'Sundary Creditors', amount, false));
-      journalItems.push(await createJournalItemWithAccountId(journalId, 'Purchase Account', 'Purchase Account', entry.value, true));
+      journalItems.push(await createJournalItem(journalId, entry.account_id, 'Sundary Creditors', amount, false, entry.user_id, entry.financial_year));
+      journalItems.push(await createJournalItemWithAccountId(journalId, 'Purchase Account', 'Purchase Account', entry.value, true, entry.user_id, entry.financial_year));
       break;
     case 4: // Sale Return
-      journalItems.push(await createJournalItem(journalId, entry.account_id, 'Sundary Debtors', amount, true));
-      journalItems.push(await createJournalItemWithAccountId(journalId, 'Sales Account', 'Sales Account', entry.value, false));
+      journalItems.push(await createJournalItem(journalId, entry.account_id, 'Sundary Debtors', amount, true, entry.user_id, entry.financial_year));
+      journalItems.push(await createJournalItemWithAccountId(journalId, 'Sales Account', 'Sales Account', entry.value, false, entry.user_id, entry.financial_year));
       break;
     case 5: // Credit Note
-      journalItems.push(await createJournalItem(journalId, entry.account_id, 'Sundary Creditors', amount, false));
-      journalItems.push(await createJournalItemWithAccountId(journalId, 'Discount Received', 'Discount Received', entry.value, true));
+      journalItems.push(await createJournalItem(journalId, entry.account_id, 'Sundary Creditors', amount, false, entry.user_id, entry.financial_year));
+      journalItems.push(await createJournalItemWithAccountId(journalId, 'Discount Received', 'Discount Received', entry.value, true, entry.user_id, entry.financial_year));
       break;
     case 6: // Debit Note
-      journalItems.push(await createJournalItem(journalId, entry.account_id, 'Sundary Creditors', amount, true));
-      journalItems.push(await createJournalItemWithAccountId(journalId, 'Discount Paid', 'Discount Paid', entry.value, false));
+      journalItems.push(await createJournalItem(journalId, entry.account_id, 'Sundary Creditors', amount, true, entry.user_id, entry.financial_year));
+      journalItems.push(await createJournalItemWithAccountId(journalId, 'Discount Paid', 'Discount Paid', entry.value, false, entry.user_id, entry.financial_year));
       break;
   }
 
@@ -340,11 +340,11 @@ const getJournalItems = async (entry, dynamicFields, journalId, amount) => {
   for (const field of dynamicFields) {
     if (field.field_category === 1) {
       const accountName = cleanAccountName(field.field_name);
-      const groupId = await getGroupIdFromAccountName(accountName);
+      const groupId = await getGroupIdFromAccountName(accountName, entry.user_id, entry.financial_year);
       const type = entry.type === 1 || entry.type === 4 || entry.type === 6 ? field.exclude_from_total : !field.exclude_from_total;
       journalItems.push({
         journal_id: journalId,
-        account_id: await getAccountId(accountName),
+        account_id: await getAccountId(accountName, entry.user_id, entry.financial_year),
         group_id: groupId,
         amount: field.field_value,
         type: type
@@ -355,21 +355,21 @@ const getJournalItems = async (entry, dynamicFields, journalId, amount) => {
   return journalItems;
 };
 
-const createJournalItem = async (journalId, accountId, groupName, amount, type) => {
+const createJournalItem = async (journalId, accountId, groupName, amount, type, userId, financialYear) => {
   return {
     journal_id: journalId,
     account_id: accountId,
-    group_id: await getGroupId(groupName),
+    group_id: await getGroupId(groupName, userId, financialYear),
     amount: amount,
     type: type
   };
 };
 
-const createJournalItemWithAccountId = async (journalId, accountName, groupName, amount, type) => {
+const createJournalItemWithAccountId = async (journalId, accountName, groupName, amount, type, userId, financialYear) => {
   return {
     journal_id: journalId,
-    account_id: await getAccountId(accountName),
-    group_id: await getGroupIdFromAccountName(groupName),
+    account_id: await getAccountId(accountName, userId, financialYear),
+    group_id: await getGroupIdFromAccountName(groupName, userId, financialYear),
     amount: amount,
     type: type
   };
@@ -509,6 +509,7 @@ exports.deleteEntry = async (req, res) => {
 
     res.status(204).send(); // Simplified response
   } catch (error) {
+    console.log(error);
     await t.rollback();
     res.status(500).json({ error: 'Internal server error' });
   }
