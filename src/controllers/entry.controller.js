@@ -21,11 +21,6 @@ exports.getEntries = async (req, res) => {
     const db = getDb();
     const Entry = db.entry;
     const EntryField = db.entryField;
-    const Categories = db.categories;
-    const Account = db.account;
-    const Units = db.units;
-    const Fields = db.fields; // Add this line
-    const Items = db.items; // Add this line
     const entries = await Entry.findAll({
       where: {
         user_id,
@@ -46,50 +41,16 @@ exports.getEntries = async (req, res) => {
         'value',
         'journal_id',
         'type',
-        [db.sequelize.col('category.name'), 'category_name'],
-        [db.sequelize.col('account.name'), 'account_name'],
-        [db.sequelize.col('unit.name'), 'unit_name'],
-        [db.sequelize.col('unit.id'), 'unit_id'],
-        [db.sequelize.col('item.name'), 'item_name'] // Add item_name
+        'unit_id'
       ],
       include: [
         {
           model: EntryField,
           as: 'fields',
           attributes: [
-            'id',
-            'entry_id',
             'field_id',
-            'field_value',
-            [db.sequelize.literal('"fields->field"."field_name"'), 'field_name']
-          ],
-          include: [
-            {
-              model: Fields,
-              as: 'field',
-              attributes: []
-            }
+            'field_value'
           ]
-        },
-        {
-          model: Categories,
-          as: 'category',
-          attributes: []
-        },
-        {
-          model: Account,
-          as: 'account',
-          attributes: []
-        },
-        {
-          model: Units,
-          as: 'unit',
-          attributes: []
-        },
-        {
-          model: Items, // Add this line
-          as: 'item', // Add this line
-          attributes: [] // Add this line
         }
       ]
     });
@@ -246,11 +207,7 @@ exports.addEntry = async (req, res) => {
         id: journalEntry.id,
         journal_date: journalEntry.journal_date,
         description: journalEntry.description,
-        user_id: journalEntry.user_id,
-        financial_year: journalEntry.financial_year,
         type: journalEntry.type,
-        createdAt: journalEntry.createdAt,
-        updatedAt: journalEntry.updatedAt,
         items: journalItems
       }
     };
@@ -446,11 +403,7 @@ exports.updateEntry = async (req, res) => {
         id: journalEntryExist.id,
         journal_date: journalEntryExist.journal_date,
         description: journalEntryExist.description,
-        user_id: journalEntryExist.user_id,
-        financial_year: journalEntryExist.financial_year,
         type: journalEntryExist.type,
-        createdAt: journalEntryExist.createdAt,
-        updatedAt: journalEntryExist.updatedAt,
         items: journalItemsUpdate
       }
     };
@@ -519,11 +472,6 @@ async function fetchFullEntry(entryId, transaction) {
   const db = getDb();
   const Entry = db.entry;
   const EntryField = db.entryField;
-  const Categories = db.categories;
-  const Account = db.account;
-  const Units = db.units;
-  const Fields = db.fields;
-  const Items = db.items;
 
   return await Entry.findOne({
     where: { id: entryId },
@@ -541,50 +489,16 @@ async function fetchFullEntry(entryId, transaction) {
       'value',
       'journal_id',
       'type',
-      [db.sequelize.col('category.name'), 'category_name'],
-      [db.sequelize.col('account.name'), 'account_name'],
-      [db.sequelize.col('unit.name'), 'unit_name'],
-      [db.sequelize.col('unit.id'), 'unit_id'],
-      [db.sequelize.col('item.name'), 'item_name']
+      'unit_id'
     ],
     include: [
       {
         model: EntryField,
         as: 'fields',
         attributes: [
-          'id',
-          'entry_id',
           'field_id',
           'field_value',
-          [db.sequelize.literal('"fields->field"."field_name"'), 'field_name']
-        ],
-        include: [
-          {
-            model: Fields,
-            as: 'field',
-            attributes: []
-          }
         ]
-      },
-      {
-        model: Categories,
-        as: 'category',
-        attributes: []
-      },
-      {
-        model: Account,
-        as: 'account',
-        attributes: []
-      },
-      {
-        model: Units,
-        as: 'unit',
-        attributes: []
-      },
-      {
-        model: Items,
-        as: 'item',
-        attributes: []
       }
     ],
     transaction: transaction

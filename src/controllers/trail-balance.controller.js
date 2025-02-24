@@ -29,7 +29,7 @@ exports.getTrailBalance = async (req, res) => {
       GroupedItems AS (
           SELECT 
               CASE 
-                  WHEN g.name IN ('Sundary Debtors', 'Sundary Creditors') THEN g.name 
+                  WHEN g.name IN ('Sundary Debtors', 'Sundary Creditors') THEN g.id::text 
                   ELSE g.id::text 
               END AS group_id,
               CASE 
@@ -55,7 +55,7 @@ exports.getTrailBalance = async (req, res) => {
               account_list al ON ji.account_id = al.id
           GROUP BY 
               CASE 
-                  WHEN g.name IN ('Sundary Debtors', 'Sundary Creditors') THEN g.name 
+                  WHEN g.name IN ('Sundary Debtors', 'Sundary Creditors') THEN g.id::text 
                   ELSE g.id::text 
               END,
               CASE 

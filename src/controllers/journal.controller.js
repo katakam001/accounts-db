@@ -570,8 +570,8 @@ exports.getJournalEntries = async (req, res) => {
     const db = getDb();
     const userId = req.query.userId;
     const financialYear = req.query.financialYear;
-    const accountName = req.query.accountName || null;
-    const groupName = req.query.groupName || null;
+    const accountId = req.query.accountId || null;
+    const groupId = req.query.groupId || null;
 
     if (!userId) {
       return res.status(400).json({ error: 'userId query parameter is required' });
@@ -585,24 +585,14 @@ SELECT
     "JournalEntry"."id" AS "journal_id", 
     "JournalEntry"."journal_date", 
     "JournalEntry"."description" AS "journal_description", 
-    "JournalEntry"."financial_year", 
-    "User"."username" AS "user_name", 
     "JournalItem"."account_id", 
-    "Account"."name" AS "account_name", 
     "JournalItem"."group_id", 
-    "Group"."name" AS "group_name", 
     "JournalItem"."amount", 
-    "JournalItem"."type", 
-    "JournalItem"."createdAt" AS "item_createdAt", 
-    "JournalItem"."updatedAt" AS "item_updatedat"
+    "JournalItem"."type"
 FROM 
     "journal_entries" AS "JournalEntry"
 LEFT JOIN 
     "journal_items" AS "JournalItem" ON "JournalEntry"."id" = "JournalItem"."journal_id"
-LEFT JOIN 
-    "account_list" AS "Account" ON "JournalItem"."account_id" = "Account"."id"
-LEFT JOIN 
-    "group_list" AS "Group" ON "JournalItem"."group_id" = "Group"."id"
 LEFT JOIN 
     "users" AS "User" ON "JournalEntry"."user_id" = "User"."id"
 WHERE 
@@ -610,17 +600,17 @@ WHERE
     AND "JournalEntry"."financial_year" = :financialYear
     `;
 
-    if (accountName) {
-      query += ` AND "Account"."name" = :accountName`;
+    if (accountId) {
+      query += ` AND "JournalItem"."account_id" = :accountId`;
     }
 
-    if (groupName) {
-      query += ` AND "Group"."name" = :groupName`;
+    if (groupId) {
+      query += ` AND "JournalItem"."group_id" = :groupId`;
     }
 
     const replacements = { userId, financialYear };
-    if (accountName) replacements.accountName = accountName;
-    if (groupName) replacements.groupName = groupName;
+    if (accountId) replacements.accountId = accountId;
+    if (groupId) replacements.groupId = groupId;
 
     const rawEntries = await db.sequelize.query(query, {
       replacements,
@@ -635,11 +625,7 @@ WHERE
         account_id: entry.account_id,
         group_id: entry.group_id,
         amount: entry.amount,
-        type: entry.type,
-        account_name: entry.account_name,
-        group_name: entry.group_name,
-        debit_amount: entry.type ? 0 : entry.amount,
-        credit_amount: entry.type ? entry.amount : 0,
+        type: entry.type
       };
 
       if (existingEntry) {
@@ -649,9 +635,6 @@ WHERE
           id: entry.journal_id,
           journal_date: entry.journal_date,
           description: entry.journal_description,
-          user_id: userId,
-          user_name: entry.user_name,
-          financial_year: entry.financial_year,
           items: [item]
         });
       }
@@ -857,32 +840,21 @@ exports.updateJournalEntry = async (req, res) => {
 
     // Fetch the updated journal entry with items
     const updatedJournalEntry = await db.sequelize.query(`
-      SELECT 
-        "JournalEntry"."id" AS "journal_id", 
-        "JournalEntry"."journal_date", 
-        "JournalEntry"."description" AS "journal_description", 
-        "JournalEntry"."financial_year", 
-        "User"."username" AS "user_name", 
-        "User"."id" AS "user_id", 
-        "JournalItem"."account_id", 
-        "Account"."name" AS "account_name", 
-        "JournalItem"."group_id", 
-        "Group"."name" AS "group_name", 
-        "JournalItem"."amount", 
-        "JournalItem"."type", 
-        "JournalItem"."createdAt" AS "item_createdAt", 
-        "JournalItem"."updatedAt" AS "item_updatedat"
-      FROM 
-        "journal_entries" AS "JournalEntry"
-      LEFT JOIN 
-        "journal_items" AS "JournalItem" ON "JournalEntry"."id" = "JournalItem"."journal_id"
-      LEFT JOIN 
-        "account_list" AS "Account" ON "JournalItem"."account_id" = "Account"."id"
-      LEFT JOIN 
-        "group_list" AS "Group" ON "JournalItem"."group_id" = "Group"."id"
-      LEFT JOIN 
-        "users" AS "User" ON "JournalEntry"."user_id" = "User"."id"
-      WHERE 
+SELECT 
+    "JournalEntry"."id" AS "journal_id", 
+    "JournalEntry"."journal_date", 
+    "JournalEntry"."description" AS "journal_description", 
+    "JournalItem"."account_id", 
+    "JournalItem"."group_id", 
+    "JournalItem"."amount", 
+    "JournalItem"."type"
+FROM 
+    "journal_entries" AS "JournalEntry"
+LEFT JOIN 
+    "journal_items" AS "JournalItem" ON "JournalEntry"."id" = "JournalItem"."journal_id"
+LEFT JOIN 
+    "users" AS "User" ON "JournalEntry"."user_id" = "User"."id"
+WHERE 
         "JournalEntry"."id" = :entryId
     `, {
       replacements: { entryId },
@@ -901,11 +873,7 @@ exports.updateJournalEntry = async (req, res) => {
         account_id: entry.account_id,
         group_id: entry.group_id,
         amount: entry.amount,
-        type: entry.type,
-        account_name: entry.account_name,
-        group_name: entry.group_name,
-        debit_amount: entry.type ? 0 : entry.amount,
-        credit_amount: entry.type ? entry.amount : 0,
+        type: entry.type
       };
 
       if (existingEntry) {
@@ -915,15 +883,14 @@ exports.updateJournalEntry = async (req, res) => {
           id: entry.journal_id,
           journal_date: entry.journal_date,
           description: entry.journal_description,
-          user_id: entry.user_id,
-          user_name: entry.user_name,
-          financial_year: entry.financial_year,
           items: [item]
         });
       }
 
       return acc;
     }, []);
+
+    console.log(formattedEntries[0]);
 
     broadcast({ type: 'UPDATE', data: formattedEntries[0], entryType: 'journal', user_id: updated.user_id, financial_year: updated.financial_year }); // Emit WebSocket message
 
@@ -980,32 +947,21 @@ exports.createJournalEntryWithItems = async (req, res) => {
 
     // Fetch the updated journal entry with items
     const updatedJournalEntry = await db.sequelize.query(`
-      SELECT 
-        "JournalEntry"."id" AS "journal_id", 
-        "JournalEntry"."journal_date", 
-        "JournalEntry"."description" AS "journal_description", 
-        "User"."username" AS "user_name", 
-        "User"."id" AS "user_id", 
-        "JournalEntry"."financial_year", 
-        "JournalItem"."account_id", 
-        "Account"."name" AS "account_name", 
-        "JournalItem"."group_id", 
-        "Group"."name" AS "group_name", 
-        "JournalItem"."amount", 
-        "JournalItem"."type", 
-        "JournalItem"."createdAt" AS "item_createdAt", 
-        "JournalItem"."updatedAt" AS "item_updatedat"
-      FROM 
-        "journal_entries" AS "JournalEntry"
-      LEFT JOIN 
-        "journal_items" AS "JournalItem" ON "JournalEntry"."id" = "JournalItem"."journal_id"
-      LEFT JOIN 
-        "account_list" AS "Account" ON "JournalItem"."account_id" = "Account"."id"
-      LEFT JOIN 
-        "group_list" AS "Group" ON "JournalItem"."group_id" = "Group"."id"
-      LEFT JOIN 
-        "users" AS "User" ON "JournalEntry"."user_id" = "User"."id"
-      WHERE 
+SELECT 
+    "JournalEntry"."id" AS "journal_id", 
+    "JournalEntry"."journal_date", 
+    "JournalEntry"."description" AS "journal_description", 
+    "JournalItem"."account_id", 
+    "JournalItem"."group_id", 
+    "JournalItem"."amount", 
+    "JournalItem"."type"
+FROM 
+    "journal_entries" AS "JournalEntry"
+LEFT JOIN 
+    "journal_items" AS "JournalItem" ON "JournalEntry"."id" = "JournalItem"."journal_id"
+LEFT JOIN 
+    "users" AS "User" ON "JournalEntry"."user_id" = "User"."id"
+WHERE 
         "JournalEntry"."id" = :entryId
     `, {
       replacements: { entryId },
@@ -1024,11 +980,7 @@ exports.createJournalEntryWithItems = async (req, res) => {
         account_id: entry.account_id,
         group_id: entry.group_id,
         amount: entry.amount,
-        type: entry.type,
-        account_name: entry.account_name,
-        group_name: entry.group_name,
-        debit_amount: entry.type ? 0 : entry.amount,
-        credit_amount: entry.type ? entry.amount : 0,
+        type: entry.type
       };
 
       if (existingEntry) {
@@ -1038,9 +990,6 @@ exports.createJournalEntryWithItems = async (req, res) => {
           id: entry.journal_id,
           journal_date: entry.journal_date,
           description: entry.journal_description,
-          user_id: entry.user_id,
-          user_name: entry.user_name,
-          financial_year: entry.financial_year,
           items: [item]
         });
       }
