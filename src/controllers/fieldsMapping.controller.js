@@ -1,7 +1,7 @@
 const { getDb } = require("../utils/getDb");
 
 exports.getFieldsMapping = async (req, res) => {
-  const { userId, financialYear, category_id } = req.query;
+  const { userId, financialYear, categoryId } = req.query;
   try {
     const db = getDb();
     const FieldsMapping = db.fieldsMapping;
@@ -15,8 +15,8 @@ exports.getFieldsMapping = async (req, res) => {
     if (financialYear) {
       whereCondition.financial_year = financialYear;
     }
-    if (category_id) {
-      whereCondition.category_id = category_id;
+    if (categoryId) {
+      whereCondition.category_id = categoryId;
     }
 
     const fieldsMapping = await FieldsMapping.findAll({
