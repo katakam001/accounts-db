@@ -1,0 +1,189 @@
+[
+    {
+        "id": 40,
+        "category_id": 20,
+        "field_id": 68,
+        "field_type": "text",
+        "required": true,
+        "field_category": 1,
+        "exclude_from_total": false,
+        "category_name": "FANCY ITEMS ALL TAXES",
+        "field_name": "2.5% CGST"
+    },
+    {
+        "id": 25,
+        "category_id": 16,
+        "field_id": 68,
+        "field_type": "number",
+        "required": true,
+        "field_category": 1,
+        "exclude_from_total": false,
+        "category_name": "FANCY ITEMS 5%",
+        "field_name": "2.5% CGST"
+    },
+    {
+        "id": 41,
+        "category_id": 20,
+        "field_id": 69,
+        "field_type": "text",
+        "required": true,
+        "field_category": 1,
+        "exclude_from_total": false,
+        "category_name": "FANCY ITEMS ALL TAXES",
+        "field_name": "2.5% SGST"
+    },
+    {
+        "id": 26,
+        "category_id": 16,
+        "field_id": 69,
+        "field_type": "number",
+        "required": true,
+        "field_category": 1,
+        "exclude_from_total": false,
+        "category_name": "FANCY ITEMS 5%",
+        "field_name": "2.5% SGST"
+    },
+    {
+        "id": 42,
+        "category_id": 20,
+        "field_id": 82,
+        "field_type": "text",
+        "required": true,
+        "field_category": 1,
+        "exclude_from_total": false,
+        "category_name": "FANCY ITEMS ALL TAXES",
+        "field_name": "SGST 6%"
+    },
+    {
+        "id": 27,
+        "category_id": 17,
+        "field_id": 82,
+        "field_type": "number",
+        "required": true,
+        "field_category": 1,
+        "exclude_from_total": false,
+        "category_name": "FANCY ITEMS 12%",
+        "field_name": "SGST 6%"
+    },
+    {
+        "id": 43,
+        "category_id": 20,
+        "field_id": 83,
+        "field_type": "text",
+        "required": true,
+        "field_category": 1,
+        "exclude_from_total": false,
+        "category_name": "FANCY ITEMS ALL TAXES",
+        "field_name": "CGST 6%"
+    },
+    {
+        "id": 28,
+        "category_id": 17,
+        "field_id": 83,
+        "field_type": "number",
+        "required": true,
+        "field_category": 1,
+        "exclude_from_total": false,
+        "category_name": "FANCY ITEMS 12%",
+        "field_name": "CGST 6%"
+    },
+    {
+        "id": 44,
+        "category_id": 20,
+        "field_id": 84,
+        "field_type": "text",
+        "required": true,
+        "field_category": 1,
+        "exclude_from_total": false,
+        "category_name": "FANCY ITEMS ALL TAXES",
+        "field_name": "SGST 9%"
+    },
+    {
+        "id": 29,
+        "category_id": 18,
+        "field_id": 84,
+        "field_type": "number",
+        "required": true,
+        "field_category": 1,
+        "exclude_from_total": false,
+        "category_name": "FANCY ITEMS 18%",
+        "field_name": "SGST 9%"
+    },
+    {
+        "id": 46,
+        "category_id": 20,
+        "field_id": 85,
+        "field_type": "text",
+        "required": true,
+        "field_category": 1,
+        "exclude_from_total": false,
+        "category_name": "FANCY ITEMS ALL TAXES",
+        "field_name": "CGST 9%"
+    },
+    {
+        "id": 30,
+        "category_id": 18,
+        "field_id": 85,
+        "field_type": "number",
+        "required": true,
+        "field_category": 1,
+        "exclude_from_total": false,
+        "category_name": "FANCY ITEMS 18%",
+        "field_name": "CGST 9%"
+    },
+    {
+        "id": 47,
+        "category_id": 20,
+        "field_id": 74,
+        "field_type": "text",
+        "required": true,
+        "field_category": 0,
+        "exclude_from_total": false,
+        "category_name": "FANCY ITEMS ALL TAXES",
+        "field_name": "invoice no."
+    },
+    {
+        "id": 39,
+        "category_id": 19,
+        "field_id": 74,
+        "field_type": "number",
+        "required": true,
+        "field_category": 0,
+        "exclude_from_total": false,
+        "category_name": "FANCY ITEMS ",
+        "field_name": "invoice no."
+    },
+    {
+        "id": 38,
+        "category_id": 18,
+        "field_id": 74,
+        "field_type": "text",
+        "required": true,
+        "field_category": 0,
+        "exclude_from_total": false,
+        "category_name": "FANCY ITEMS 18%",
+        "field_name": "invoice no."
+    },
+    {
+        "id": 37,
+        "category_id": 17,
+        "field_id": 74,
+        "field_type": "text",
+        "required": false,
+        "field_category": 0,
+        "exclude_from_total": false,
+        "category_name": "FANCY ITEMS 12%",
+        "field_name": "invoice no."
+    },
+    {
+        "id": 36,
+        "category_id": 16,
+        "field_id": 74,
+        "field_type": "text",
+        "required": true,
+        "field_category": 0,
+        "exclude_from_total": false,
+        "category_name": "FANCY ITEMS 5%",
+        "field_name": "invoice no."
+    }
+]

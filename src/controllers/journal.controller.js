@@ -443,13 +443,13 @@ exports.exportDaybookToExcel = async (req, res) => {
 
       // Apply thick border around the entire range
       for (let col = 1; col <= 5; col++) {
-        worksheet.getCell(startRow+1, 3).border = {
+        worksheet.getCell(startRow + 1, 3).border = {
           top: topthickBorderStyle.top,
           left: topthickBorderStyle.left,
           bottom: topthickBorderStyle.bottom,
           right: topthickBorderStyle.right
         };
-        worksheet.getCell(startRow+2, col).border = {
+        worksheet.getCell(startRow + 2, col).border = {
           top: topthickBorderStyle.top,
           left: topthickBorderStyle.left,
           bottom: topthickBorderStyle.bottom,
@@ -534,7 +534,7 @@ exports.exportDaybookToPDF = async (req, res) => {
       format: 'A4',
       orientation: 'portrait',
       border: '10mm',
-      paginationOffset:10,
+      paginationOffset: 10,
       footer: {
         height: '20mm',
         contents: {
@@ -572,6 +572,8 @@ exports.getJournalEntries = async (req, res) => {
     const financialYear = req.query.financialYear;
     const accountId = req.query.accountId || null;
     const groupId = req.query.groupId || null;
+    const pageSize = parseInt(req.query.pageSize) || 10;
+    const startRow = parseInt(req.query.nextStartRow) || 1;
 
     if (!userId) {
       return res.status(400).json({ error: 'userId query parameter is required' });
@@ -580,72 +582,108 @@ exports.getJournalEntries = async (req, res) => {
       return res.status(400).json({ error: 'financialYear query parameter is required' });
     }
 
-    let query = `
-SELECT 
-    "JournalEntry"."id" AS "journal_id", 
-    "JournalEntry"."journal_date", 
-    "JournalEntry"."description" AS "journal_description", 
-    "JournalItem"."account_id", 
-    "JournalItem"."group_id", 
-    "JournalItem"."amount", 
-    "JournalItem"."type"
-FROM 
-    "journal_entries" AS "JournalEntry"
-LEFT JOIN 
-    "journal_items" AS "JournalItem" ON "JournalEntry"."id" = "JournalItem"."journal_id"
-LEFT JOIN 
-    "users" AS "User" ON "JournalEntry"."user_id" = "User"."id"
-WHERE 
-    "JournalEntry"."user_id" = :userId
-    AND "JournalEntry"."financial_year" = :financialYear
+    const whereClause = `
+      WHERE je.user_id = :userId
+      AND je.financial_year = :financialYear
+      ${accountId ? "AND ji.account_id = :accountId" : ""}
+      ${groupId ? "AND ji.group_id = :groupId" : ""}
     `;
 
-    if (accountId) {
-      query += ` AND "JournalItem"."account_id" = :accountId`;
-    }
+    // Fetch raw entries with ROW_NUMBER() and pagination
+    const [rawEntries] = await db.sequelize.query(
+      `
+      WITH NumberedEntries AS (
+        SELECT
+          je.id,
+          je.journal_date,
+          je.description,
+          ji.journal_id,
+          ji.account_id,
+          ji.group_id,
+          ji.amount,
+          ji.type,
+          ROW_NUMBER() OVER (ORDER BY je.journal_date, je.id) AS row_num
+        FROM
+          journal_entries je
+        LEFT JOIN
+          journal_items ji ON je.id = ji.journal_id
+        ${whereClause}
+      )
+      SELECT
+        id,
+        journal_date,
+        description,
+        journal_id,
+        account_id,
+        group_id,
+        amount,
+        type
+      FROM NumberedEntries
+      WHERE row_num BETWEEN :startRow AND :endRow
+      `,
+      {
+        replacements: {
+          userId,
+          financialYear,
+          accountId,
+          groupId,
+          startRow: startRow,
+          endRow: startRow + pageSize + 10   // Fetch the records for the current page plus extra 10 records
+        }
+      }
+    );
 
-    if (groupId) {
-      query += ` AND "JournalItem"."group_id" = :groupId`;
-    }
+    const journalEntries = {};
+    const orderedJournalIds = [];
+    const lastJournalId = rawEntries[rawEntries.length - 1]?.journal_id;
+    const completedEntries = [];
+    let journalItemCount = 0;
 
-    const replacements = { userId, financialYear };
-    if (accountId) replacements.accountId = accountId;
-    if (groupId) replacements.groupId = groupId;
-
-    const rawEntries = await db.sequelize.query(query, {
-      replacements,
-      type: db.sequelize.QueryTypes.SELECT
-    });
-
-    // Format the results
-    const formattedEntries = rawEntries.reduce((acc, entry) => {
-      const existingEntry = acc.find(e => e.id === entry.journal_id);
-      const item = {
+    rawEntries.forEach(entry => {
+      if (!journalEntries[entry.journal_id]) {
+        journalEntries[entry.journal_id] = {
+          id: entry.id,
+          journal_date: entry.journal_date,
+          description: entry.description,
+          items: []
+        };
+        orderedJournalIds.push(entry.journal_id); // Store the order of journal IDs
+      }
+      journalEntries[entry.journal_id].items.push({
         journal_id: entry.journal_id,
         account_id: entry.account_id,
         group_id: entry.group_id,
         amount: entry.amount,
         type: entry.type
-      };
+      });
+    });
 
-      if (existingEntry) {
-        existingEntry.items.push(item);
-      } else {
-        acc.push({
-          id: entry.journal_id,
-          journal_date: entry.journal_date,
-          description: entry.journal_description,
-          items: [item]
-        });
+    // Iterate over orderedJournalIds array to maintain insertion order
+    orderedJournalIds.forEach(journalId => {
+      const entry = journalEntries[journalId];
+      // Ensure complete entries are added except for the last journal entry
+      if (journalId !== lastJournalId) {
+        completedEntries.push(entry);
+        journalItemCount += entry.items.length;
       }
+    });
 
-      return acc;
-    }, []);
+    // Include lastJournalId if rawEntries.length <= pageSize
+    if (rawEntries.length <= pageSize && lastJournalId) {
+      completedEntries.push(journalEntries[lastJournalId]);
+      journalItemCount += journalEntries[lastJournalId].items.length;
+    }
+    // Calculate the next start row
+    const nextStartRow = startRow + journalItemCount;
 
-    res.status(200).json(formattedEntries);
-  } catch (error) {
-    console.error('Error fetching journal entries:', error);
-    res.status(500).json({ error: 'Internal Server Error' });
+    return res.status(200).json({
+      journalEntries: Object.values(completedEntries),
+      hasMore: rawEntries.length > journalItemCount,
+      nextStartRow: nextStartRow
+    });
+
+  } catch (err) {
+    return res.status(500).json({ error: 'Internal server error' });
   }
 };
 
@@ -768,7 +806,7 @@ exports.deleteJournalEntry = async (req, res) => {
     await transaction.commit();
 
     // Broadcast the deletion event
-    broadcast({ type: 'DELETE', data: { id: journal.id }, entryType: 'journal', user_id: journal.user_id, financial_year: journal.financial_year });
+    broadcast({ type: 'DELETE', data: { id: journal.id ,journal_date:journal.journal_date}, entryType: 'journal', user_id: journal.user_id, financial_year: journal.financial_year });
 
     res.status(204).send(); // Simplified response
   } catch (error) {
@@ -839,60 +877,29 @@ exports.updateJournalEntry = async (req, res) => {
     });
 
     // Fetch the updated journal entry with items
-    const updatedJournalEntry = await db.sequelize.query(`
-SELECT 
-    "JournalEntry"."id" AS "journal_id", 
-    "JournalEntry"."journal_date", 
-    "JournalEntry"."description" AS "journal_description", 
-    "JournalItem"."account_id", 
-    "JournalItem"."group_id", 
-    "JournalItem"."amount", 
-    "JournalItem"."type"
-FROM 
-    "journal_entries" AS "JournalEntry"
-LEFT JOIN 
-    "journal_items" AS "JournalItem" ON "JournalEntry"."id" = "JournalItem"."journal_id"
-LEFT JOIN 
-    "users" AS "User" ON "JournalEntry"."user_id" = "User"."id"
-WHERE 
-        "JournalEntry"."id" = :entryId
-    `, {
-      replacements: { entryId },
-      type: db.sequelize.QueryTypes.SELECT,
+    const updatedJournalEntry = await JournalEntry.findAll({
+      attributes: [
+        'id',
+        'journal_date',
+        'description'
+      ],
+      include: [
+        {
+          model: JournalItem,
+          as: 'items',
+          attributes: ['journal_id', 'account_id', 'group_id', 'amount', 'type']
+        }
+      ],
+      where: {
+        id: entryId
+      },
       transaction
     });
 
     // Commit the transaction
     await transaction.commit();
 
-    // Format the results
-    const formattedEntries = updatedJournalEntry.reduce((acc, entry) => {
-      const existingEntry = acc.find(e => e.id === entry.journal_id);
-      const item = {
-        journal_id: entry.journal_id,
-        account_id: entry.account_id,
-        group_id: entry.group_id,
-        amount: entry.amount,
-        type: entry.type
-      };
-
-      if (existingEntry) {
-        existingEntry.items.push(item);
-      } else {
-        acc.push({
-          id: entry.journal_id,
-          journal_date: entry.journal_date,
-          description: entry.journal_description,
-          items: [item]
-        });
-      }
-
-      return acc;
-    }, []);
-
-    console.log(formattedEntries[0]);
-
-    broadcast({ type: 'UPDATE', data: formattedEntries[0], entryType: 'journal', user_id: updated.user_id, financial_year: updated.financial_year }); // Emit WebSocket message
+    broadcast({ type: 'UPDATE', data: updatedJournalEntry[0], entryType: 'journal', user_id: updated.user_id, financial_year: updated.financial_year }); // Emit WebSocket message
 
     res.status(200).json({ message: 'Journal entry updated successfully' }); // Simplified response
   } catch (error) {
@@ -946,58 +953,30 @@ exports.createJournalEntryWithItems = async (req, res) => {
     const entryId = createdJournalEntry.id;
 
     // Fetch the updated journal entry with items
-    const updatedJournalEntry = await db.sequelize.query(`
-SELECT 
-    "JournalEntry"."id" AS "journal_id", 
-    "JournalEntry"."journal_date", 
-    "JournalEntry"."description" AS "journal_description", 
-    "JournalItem"."account_id", 
-    "JournalItem"."group_id", 
-    "JournalItem"."amount", 
-    "JournalItem"."type"
-FROM 
-    "journal_entries" AS "JournalEntry"
-LEFT JOIN 
-    "journal_items" AS "JournalItem" ON "JournalEntry"."id" = "JournalItem"."journal_id"
-LEFT JOIN 
-    "users" AS "User" ON "JournalEntry"."user_id" = "User"."id"
-WHERE 
-        "JournalEntry"."id" = :entryId
-    `, {
-      replacements: { entryId },
-      type: db.sequelize.QueryTypes.SELECT,
+    // Fetch the updated journal entry with items
+    const updatedJournalEntry = await JournalEntry.findAll({
+      attributes: [
+        'id',
+        'journal_date',
+        'description'
+      ],
+      include: [
+        {
+          model: JournalItem,
+          as: 'items',
+          attributes: ['journal_id', 'account_id', 'group_id', 'amount', 'type']
+        }
+      ],
+      where: {
+        id: entryId
+      },
       transaction
     });
 
     // Commit the transaction
     await transaction.commit();
 
-    // Format the results
-    const formattedEntries = updatedJournalEntry.reduce((acc, entry) => {
-      const existingEntry = acc.find(e => e.id === entry.journal_id);
-      const item = {
-        journal_id: entry.journal_id,
-        account_id: entry.account_id,
-        group_id: entry.group_id,
-        amount: entry.amount,
-        type: entry.type
-      };
-
-      if (existingEntry) {
-        existingEntry.items.push(item);
-      } else {
-        acc.push({
-          id: entry.journal_id,
-          journal_date: entry.journal_date,
-          description: entry.journal_description,
-          items: [item]
-        });
-      }
-
-      return acc;
-    }, []);
-
-    broadcast({ type: 'INSERT', data: formattedEntries[0], entryType: 'journal', user_id: newEntry.user_id, financial_year: newEntry.financial_year }); // Emit WebSocket message
+    broadcast({ type: 'INSERT', data: updatedJournalEntry[0], entryType: 'journal', user_id: newEntry.user_id, financial_year: newEntry.financial_year }); // Emit WebSocket message
     res.status(201).json({ message: 'Journal entry created successfully' }); // Simplified response
   } catch (error) {
     // Rollback the transaction in case of error

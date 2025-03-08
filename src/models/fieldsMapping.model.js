@@ -1,4 +1,4 @@
-module.exports = (sequelize, Sequelize, Categories, Fields) => {
+module.exports = (sequelize, Sequelize, Categories, Fields,Account) => {
   const FieldsMapping = sequelize.define("FieldsMapping", {
     id: {
       allowNull: false,
@@ -43,6 +43,16 @@ module.exports = (sequelize, Sequelize, Categories, Fields) => {
       type: Sequelize.BOOLEAN,
       allowNull: false,
       defaultValue: false
+    },
+    account_id: {
+      type: Sequelize.INTEGER,
+      allowNull: true,
+      references: {
+        model: Account,
+        key: 'id'
+      },
+      onUpdate: 'CASCADE',
+      onDelete: 'SET NULL'
     },
     type: {
       type: Sequelize.INTEGER,

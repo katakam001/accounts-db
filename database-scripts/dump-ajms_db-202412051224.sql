@@ -346,8 +346,8 @@ COPY public.account_list (id, name, description, status, delete_flag, date_creat
 
 COPY public.group_list (id, name, description, status, delete_flag, date_created, date_updated, user_id) FROM stdin;
 8	BANKS		t	f	2024-05-26 13:51:20	2024-05-28 22:09:31	6
-9	Sundary Debtors		t	f	2024-05-26 13:54:31	2024-05-28 22:09:31	6
-10	Sundary Creditors		t	f	2024-05-26 19:17:48	2024-05-28 22:09:31	6
+9	Sundry Debtors		t	f	2024-05-26 13:54:31	2024-05-28 22:09:31	6
+10	Sundry Creditors		t	f	2024-05-26 19:17:48	2024-05-28 22:09:31	6
 11	Indirect Expenses		t	f	2024-05-26 19:21:15	2024-05-28 22:09:31	6
 12	CASH		t	t	2024-05-28 22:31:11	2024-05-28 22:36:00	6
 13	CASH1		t	t	2024-05-28 22:32:41	2024-05-28 22:36:05	6

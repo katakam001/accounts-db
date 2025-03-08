@@ -1,4 +1,4 @@
-module.exports = (sequelize, Sequelize,GroupMappings,Group) => {
+module.exports = (sequelize, Sequelize, GroupMappings, Group) => {
     const GroupMapping = sequelize.define("GroupMapping", {
         id: {
             type: Sequelize.INTEGER,
@@ -15,10 +15,17 @@ module.exports = (sequelize, Sequelize,GroupMappings,Group) => {
         group_id: {
             type: Sequelize.INTEGER,
             references: {
-              model: Group, // Reference to the group_list table
-              key: 'id',
+                model: Group, // Reference to the group_list table
+                key: 'id',
             },
-          },      
+        },
+        user_id: {
+            type: Sequelize.INTEGER,
+        },
+        financial_year: {
+            type: Sequelize.STRING,
+            allowNull: false,
+        },
     }, {
         tableName: 'group_mapping'
     });

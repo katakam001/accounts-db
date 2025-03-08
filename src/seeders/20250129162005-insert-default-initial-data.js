@@ -2,7 +2,7 @@
 
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
-    async up(sequelize, Sequelize) {
+  async up(sequelize, Sequelize) {
     // Create default_account_list table
     await sequelize.bulkInsert('default_account_list', [
       { name: 'Traveling', description: '', credit_balance: 0.0, debit_balance: 0.0, isDealer: false, type: 4 },
@@ -42,8 +42,8 @@ module.exports = {
       { name: 'Remuneration to Capital', description: null, credit_balance: 0.0, debit_balance: 0.0 },
       { name: 'Bank Account', description: null, credit_balance: 0.0, debit_balance: 0.0 },
       { name: 'God', description: null, credit_balance: 0.0, debit_balance: 0.0 },
-      { name: 'Sundary Debtors', description: null, credit_balance: 0.0, debit_balance: 0.0 },
-      { name: 'Sundary Creditors', description: null, credit_balance: 0.0, debit_balance: 0.0 },
+      { name: 'Sundry Debtors', description: null, credit_balance: 0.0, debit_balance: 0.0 },
+      { name: 'Sundry Creditors', description: null, credit_balance: 0.0, debit_balance: 0.0 },
       { name: 'Indirect Expenses', description: null, credit_balance: 0.0, debit_balance: 0.0 },
       { name: 'Capital Account', description: null, credit_balance: 0.0, debit_balance: 0.0 },
       { name: 'Current Assets', description: null, credit_balance: 0.0, debit_balance: 0.0 },
@@ -73,7 +73,16 @@ module.exports = {
       { name: 'Below 3 months', description: null, credit_balance: 0.0, debit_balance: 0.0 },
       { name: 'Advance For Expenses', description: null, credit_balance: 0.0, debit_balance: 0.0 },
       { name: 'Salaries', description: null, credit_balance: 0.0, debit_balance: 0.0 },
-      { name: 'Depreciation', description: null, credit_balance: 0.0, debit_balance: 0.0 }
+      { name: 'Depreciation', description: null, credit_balance: 0.0, debit_balance: 0.0 },
+      { name: 'Purchase Account', description: null, credit_balance: 0.0, debit_balance: 0.0 },
+      { name: 'Sale Account', description: null, credit_balance: 0.0, debit_balance: 0.0 },
+      { name: 'Purchase Return Account', description: null, credit_balance: 0.0, debit_balance: 0.0 },
+      { name: 'Sale Return Account', description: null, credit_balance: 0.0, debit_balance: 0.0 },
+      { name: 'Credit Note Account', description: null, credit_balance: 0.0, debit_balance: 0.0 },
+      { name: 'Debit Note Account', description: null, credit_balance: 0.0, debit_balance: 0.0 },
+      { name: 'CGST', description: null, credit_balance: 0.0, debit_balance: 0.0 },
+      { name: 'SGST', description: null, credit_balance: 0.0, debit_balance: 0.0 },
+      { name: 'IGST', description: null, credit_balance: 0.0, debit_balance: 0.0 }
     ]);
 
     // Insert data into default_fields table

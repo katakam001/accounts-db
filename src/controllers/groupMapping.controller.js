@@ -48,10 +48,16 @@ exports.groupMappingTree = async (req, res) => {
 
 exports.groupToAccountMappingTree = async (req, res) => {
   try {
+    const { userId, financialYear } = req.query; // Get user_id and financial_year from request query
     const db = getDb();
     const GroupMapping = db.groupMapping;
-    const Group=db.group;
+    const Group = db.group;
+
     const groups = await GroupMapping.findAll({
+      where: {
+        user_id: userId,
+        financial_year: financialYear
+      },
       include: [
         {
           model: GroupMapping,
@@ -76,9 +82,13 @@ exports.groupToAccountMappingTree = async (req, res) => {
       FROM 
         account_group ag
       JOIN 
-        account_list a ON ag.account_id = a.id;
+        account_list a ON ag.account_id = a.id
+      WHERE 
+        a.user_id = :user_id
+        AND a.financial_year = :financial_year;
     `, {
-      type: db.sequelize.QueryTypes.SELECT
+      type: db.sequelize.QueryTypes.SELECT,
+      replacements: { user_id: userId, financial_year: financialYear }
     });
 
     const hierarchicalData = buildTree(groups, accounts);
@@ -108,28 +118,27 @@ const buildTree = (data, accounts, parentId = null) => {
       return {
         id: item.id,
         parent_id: item.parent_id,
-        group_id: item.group_id,
-        createdAt: item.createdAt,
-        updatedAt: item.updatedAt,
         name: item.Group.name, // Use the name from Group
         children: [...children, ...groupAccounts] // Include both children and accounts
       };
     });
 };
 
-
-
-
-
 exports.addGroupMapping = async (req, res) => {
   try {
     const db = getDb();
     const GroupMapping = db.groupMapping;
-    const Group=db.group;
-    const { parent_id, group_name } = req.body;
+    const Group = db.group;
+    const { parent_id, group_name, user_id, financial_year } = req.body; // Get user_id and financial_year from request body
 
-    // Fetch the group_id from the group_list table based on the group name
-    const group = await Group.findOne({ where: { name: group_name } });
+    // Fetch the group_id from the group_list table based on the group name, user_id, and financial_year
+    const group = await Group.findOne({ 
+      where: { 
+        name: group_name,
+        user_id: user_id,
+        financial_year: financial_year
+      }
+    });
 
     if (!group) {
       return res.status(404).send('Group not found');
@@ -138,7 +147,9 @@ exports.addGroupMapping = async (req, res) => {
     // Create a new GroupMapping entry
     const newGroupMapping = await GroupMapping.create({
       parent_id,
-      group_id: group.id
+      group_id: group.id,
+      user_id,
+      financial_year
     });
 
     // Fetch the newly created GroupMapping entry along with the associated Group name
@@ -158,8 +169,6 @@ exports.addGroupMapping = async (req, res) => {
     res.status(500).send('Server Error');
   }
 };
-
-
 
 exports.updateGroupMapping = async (req, res) => {
   try {

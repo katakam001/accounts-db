@@ -23,12 +23,12 @@ const authJwt = {
   verifyAdminToken: (req, res, next) => {
     const token = req.cookies.accessToken;
     if (!token) {
-      return res.status(403).send({ message: "No token provided" });
+      return res.status(401).send({ message: "No token provided" });
     }
 
     const decoded = verifyToken(token, "admin");
     if (!decoded) {
-      return res.status(401).send({ message: "Unauthorized" });
+      return res.status(403).send({ message: "Unauthorized" });
     }
 
     req.userId = decoded.id;
@@ -38,12 +38,12 @@ const authJwt = {
   verifyUserToken: (req, res, next) => {
     const token = req.cookies.userAccessToken;
     if (!token) {
-      return res.status(403).send({ message: "No token provided" });
+      return res.status(401).send({ message: "No token provided" });
     }
 
     const decoded = verifyToken(token, "user");
     if (!decoded) {
-      return res.status(401).send({ message: "Unauthorized" });
+      return res.status(403).send({ message: "Unauthorized" });
     }
 
     req.userId = decoded.id;
@@ -55,14 +55,14 @@ const authJwt = {
     const userToken = req.cookies.userAccessToken;
     
     if (!adminToken && !userToken) {
-      return res.status(403).send({ message: "No token provided" });
+      return res.status(401).send({ message: "No token provided" });
     }
 
     const adminDecoded = adminToken ? verifyToken(adminToken, "admin") : null;
     const userDecoded = userToken ? verifyToken(userToken, "user") : null;
 
     if (!adminDecoded && !userDecoded) {
-      return res.status(401).send({ message: "Unauthorized" });
+      return res.status(403).send({ message: "Unauthorized" });
     }
 
     req.userId = adminDecoded ? adminDecoded.id : userDecoded.id;

@@ -87,7 +87,21 @@ module.exports = (sequelize, Sequelize, Category, Account, Units, JournalEntry, 
     type: {
       type: Sequelize.INTEGER,
       allowNull: false
-    }
+    },
+    invoiceNumber: {
+      type: Sequelize.STRING,
+      allowNull: false
+    },
+    category_account_id: {
+      type: Sequelize.INTEGER,
+      allowNull: true,
+      references: {
+        model: Account,
+        key: 'id'
+      },
+      onUpdate: 'CASCADE',
+      onDelete: 'SET NULL'
+    },
   }, {
     tableName: 'entries',
   });

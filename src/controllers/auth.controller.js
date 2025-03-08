@@ -154,7 +154,7 @@ exports.refreshtoken = async (req, res) => {
     const userRefreshToken = req.cookies.userRefreshToken;
 
     if (!adminRefreshToken && !userRefreshToken) {
-      return res.status(401).send({ message: 'Refresh Token not provided' });
+      return res.status(403).send({ message: 'Refresh Token not provided' });
     }
 
     const refreshToken = adminRefreshToken || userRefreshToken;

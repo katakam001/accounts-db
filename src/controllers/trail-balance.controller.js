@@ -1,7 +1,7 @@
 const {getDb} = require("../utils/getDb");
 
 exports.getTrailBalance = async (req, res) => {
-    const { userId, fromDate, toDate, financialYear } = req.body;
+    const { userId, fromDate, toDate } = req.body;
 
     const query = `
       WITH JournalEntries AS (
@@ -12,7 +12,6 @@ exports.getTrailBalance = async (req, res) => {
           WHERE 
               user_id = :userId 
               AND journal_date BETWEEN :fromDate AND :toDate
-              AND financial_year = :financialYear
       ),
       JournalItems AS (
           SELECT 
@@ -29,23 +28,23 @@ exports.getTrailBalance = async (req, res) => {
       GroupedItems AS (
           SELECT 
               CASE 
-                  WHEN g.name IN ('Sundary Debtors', 'Sundary Creditors') THEN g.id::text 
+                  WHEN g.name IN ('Sundry Debtors', 'Sundry Creditors') THEN g.id::text 
                   ELSE g.id::text 
               END AS group_id,
               CASE 
-                  WHEN g.name IN ('Sundary Debtors', 'Sundary Creditors') THEN g.name 
+                  WHEN g.name IN ('Sundry Debtors', 'Sundry Creditors') THEN g.name 
                   ELSE g.name 
               END AS group_name,
               CASE 
-                  WHEN g.name IN ('Sundary Debtors', 'Sundary Creditors') THEN NULL 
+                  WHEN g.name IN ('Sundry Debtors', 'Sundry Creditors') THEN NULL 
                   ELSE al.id 
               END AS account_id,
               CASE 
-                  WHEN g.name IN ('Sundary Debtors', 'Sundary Creditors') THEN NULL 
+                  WHEN g.name IN ('Sundry Debtors', 'Sundry Creditors') THEN NULL 
                   ELSE al.name 
               END AS account_name,
-              SUM(CASE WHEN ji.type THEN ji.amount ELSE 0 END) AS total_debit,
-              SUM(CASE WHEN NOT ji.type THEN ji.amount ELSE 0 END) AS total_credit,
+              SUM(CASE WHEN ji.type THEN ji.amount ELSE 0 END) AS total_credit,
+              SUM(CASE WHEN NOT ji.type THEN ji.amount ELSE 0 END) AS total_debit,
               SUM(CASE WHEN ji.type THEN ji.amount ELSE -ji.amount END) AS balance
           FROM 
               JournalItems ji
@@ -55,19 +54,19 @@ exports.getTrailBalance = async (req, res) => {
               account_list al ON ji.account_id = al.id
           GROUP BY 
               CASE 
-                  WHEN g.name IN ('Sundary Debtors', 'Sundary Creditors') THEN g.id::text 
+                  WHEN g.name IN ('Sundry Debtors', 'Sundry Creditors') THEN g.id::text 
                   ELSE g.id::text 
               END,
               CASE 
-                  WHEN g.name IN ('Sundary Debtors', 'Sundary Creditors') THEN g.name 
+                  WHEN g.name IN ('Sundry Debtors', 'Sundry Creditors') THEN g.name 
                   ELSE g.name 
               END,
               CASE 
-                  WHEN g.name IN ('Sundary Debtors', 'Sundary Creditors') THEN NULL 
+                  WHEN g.name IN ('Sundry Debtors', 'Sundry Creditors') THEN NULL 
                   ELSE al.id 
               END,
               CASE 
-                  WHEN g.name IN ('Sundary Debtors', 'Sundary Creditors') THEN NULL 
+                  WHEN g.name IN ('Sundry Debtors', 'Sundry Creditors') THEN NULL 
                   ELSE al.name 
               END
       )
@@ -83,7 +82,7 @@ exports.getTrailBalance = async (req, res) => {
           GroupedItems
       ORDER BY 
           CASE 
-              WHEN group_name IN ('Sundary Debtors', 'Sundary Creditors') THEN 1 
+              WHEN group_name IN ('Sundry Debtors', 'Sundry Creditors') THEN 1 
               ELSE 0 
           END,
           group_name,
@@ -93,7 +92,7 @@ exports.getTrailBalance = async (req, res) => {
     try {
         const db = getDb();
         const rawEntries = await db.sequelize.query(query, {
-            replacements: { userId, fromDate, toDate, financialYear },
+            replacements: { userId, fromDate, toDate },
             type: db.sequelize.QueryTypes.SELECT,
         });
 

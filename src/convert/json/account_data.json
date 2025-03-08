@@ -1,0 +1,3134 @@
+[
+    {
+        "id": 166,
+        "name": "Traveling",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": false,
+        "group": {
+            "id": 169,
+            "name": "Indirect Expenses",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 167,
+        "name": "Postage and Telephone",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": false,
+        "group": {
+            "id": 169,
+            "name": "Indirect Expenses",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 168,
+        "name": "Vehicle Maintenance",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": false,
+        "group": {
+            "id": 169,
+            "name": "Indirect Expenses",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 169,
+        "name": "Sadar",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": false,
+        "group": {
+            "id": 169,
+            "name": "Indirect Expenses",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 170,
+        "name": "Printing & Stationary",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": false,
+        "group": {
+            "id": 169,
+            "name": "Indirect Expenses",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 171,
+        "name": "Insurance",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": false,
+        "group": {
+            "id": 169,
+            "name": "Indirect Expenses",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 172,
+        "name": "Taxes & Licenses",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": false,
+        "group": {
+            "id": 169,
+            "name": "Indirect Expenses",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 173,
+        "name": "Audit Fees",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": false,
+        "group": {
+            "id": 169,
+            "name": "Indirect Expenses",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 174,
+        "name": "Commissions",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": false,
+        "group": {
+            "id": 169,
+            "name": "Indirect Expenses",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 175,
+        "name": "Advertisement",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": false,
+        "group": {
+            "id": 169,
+            "name": "Indirect Expenses",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 176,
+        "name": "Interest Paid",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": false,
+        "group": {
+            "id": 169,
+            "name": "Indirect Expenses",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 177,
+        "name": "Amc cess",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": false,
+        "group": {
+            "id": 182,
+            "name": "Direct Expenses",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 178,
+        "name": "Freight",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": false,
+        "group": {
+            "id": 182,
+            "name": "Direct Expenses",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 179,
+        "name": "Coolie",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": false,
+        "group": {
+            "id": 182,
+            "name": "Direct Expenses",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 180,
+        "name": "Electricity",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": false,
+        "group": {
+            "id": 182,
+            "name": "Direct Expenses",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 181,
+        "name": "Ginning & Pressing Charges",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": false,
+        "group": {
+            "id": 182,
+            "name": "Direct Expenses",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 182,
+        "name": "RCM SGST",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": false,
+        "group": {
+            "id": 169,
+            "name": "Indirect Expenses",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 183,
+        "name": "RCM CGST",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": false,
+        "group": {
+            "id": 169,
+            "name": "Indirect Expenses",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 184,
+        "name": "Lease Rent",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": false,
+        "group": {
+            "id": 182,
+            "name": "Direct Expenses",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 185,
+        "name": "Machine Repair",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": false,
+        "group": {
+            "id": 182,
+            "name": "Direct Expenses",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 186,
+        "name": "SGST",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": false,
+        "group": {
+            "id": 169,
+            "name": "Indirect Expenses",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 187,
+        "name": "CGST",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": false,
+        "group": {
+            "id": 169,
+            "name": "Indirect Expenses",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 188,
+        "name": "IGST",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": false,
+        "group": {
+            "id": 169,
+            "name": "Indirect Expenses",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 189,
+        "name": "RCM IGST",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": false,
+        "group": {
+            "id": 169,
+            "name": "Indirect Expenses",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 190,
+        "name": "Sample Testing Charges",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": false,
+        "group": {
+            "id": 182,
+            "name": "Direct Expenses",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 191,
+        "name": "Bank Charges",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": false,
+        "group": {
+            "id": 169,
+            "name": "Indirect Expenses",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 192,
+        "name": "Purchase Account",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": false,
+        "group": {
+            "id": 178,
+            "name": "Trading Account",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 193,
+        "name": "Sales Account",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": false,
+        "group": {
+            "id": 178,
+            "name": "Trading Account",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 194,
+        "name": "CASH",
+        "description": "cash on hand",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": false,
+        "group": {
+            "id": 197,
+            "name": "Salaries",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 195,
+        "name": "Venkata rao",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 196,
+        "name": "Lakshmi coffee",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 197,
+        "name": "lakshmi srinivasa traders",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 198,
+        "name": "Lakshmi durga stores",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 199,
+        "name": "Chennaiah fancy",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 200,
+        "name": "harsha vardhini G/S",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 202,
+        "name": "A prasad general stores",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 203,
+        "name": "AS kirana",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 204,
+        "name": "Sri venkata sai kirana merchants",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 205,
+        "name": "Kalyani fancy & kangan hall",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 206,
+        "name": "lakshmi venkateswara general stores",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 207,
+        "name": "Naga fancy",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 208,
+        "name": "Bhaskar fancy",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 209,
+        "name": "suraksha stores",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 210,
+        "name": "Sri venkateswara fancy & kangan hall",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 211,
+        "name": "Ramu fancy & kangan hall",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 212,
+        "name": "Rajshekar kirana",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 213,
+        "name": "Grandhi srinu",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 214,
+        "name": "Sri lakshmi sai kirana fancy",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 215,
+        "name": "Sri lakshmi sai general stores",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 216,
+        "name": "Venkata sai durga kirana merchant",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 217,
+        "name": "Sri vasavi medical corporation P& D",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 218,
+        "name": "Lakshmi ganpathi fancy & Kangan hall",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 219,
+        "name": "Venkata sai durga kirana merchant",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 220,
+        "name": "Pandu ranga medicals",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 221,
+        "name": "Sri lakshmi sai general stores",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 222,
+        "name": "Himalaya general stores",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 223,
+        "name": "Itha ramesh",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 224,
+        "name": "Raja general stores",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 225,
+        "name": "Sri uma maheswara general stores",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 226,
+        "name": "Vsk medicals",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 227,
+        "name": "Sri hemalatha fancy & General stores",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 228,
+        "name": "Sri hemanth medicals",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 229,
+        "name": "Poojita corporation",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 230,
+        "name": "Lakshmi general stores",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 231,
+        "name": "Gayathri kirana general stores",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 232,
+        "name": "Sri lakshmi srinivasa general stores",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 233,
+        "name": "Harish fancy mart",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 234,
+        "name": "Chandra stores",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 235,
+        "name": "Ravi teja general stores",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 236,
+        "name": "Krishna fancies",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 237,
+        "name": "Tava poornachandra rao",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 238,
+        "name": "Bhaskar general stores",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 239,
+        "name": "RS market",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 240,
+        "name": "Sri radha krishna fancy & general stores",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 241,
+        "name": "Ramesh",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 242,
+        "name": "Sravan kumar general stores",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 243,
+        "name": "Ananda medical agencies",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 244,
+        "name": "Sudhakar fancy",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 245,
+        "name": "Sri vasavi general stores",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 246,
+        "name": "Maddi shankar rao kirana merchant",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 247,
+        "name": "Sri venkateswara general stores",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 248,
+        "name": "Lakshmi surya medical agency",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 249,
+        "name": "Sujatha general stores",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 250,
+        "name": "Sri vijaya lakshmi kirana stores",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 251,
+        "name": "Lakshmi durga stores",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 252,
+        "name": "Sri tirumala traders",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 253,
+        "name": "Ravi teja general stores",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 254,
+        "name": "Sri lakshmi maheswara general stores",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 255,
+        "name": "Ramesh A",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 256,
+        "name": "Sri konark agencies",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 257,
+        "name": "Govind fancy",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 258,
+        "name": "Madhu medicals",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 259,
+        "name": "Krishna krishna",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 260,
+        "name": "Lakshmi ganpathi medical&fancy stores",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 261,
+        "name": "Venkata sai durga kirana merchant",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 262,
+        "name": "Maruthi general stores",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 263,
+        "name": "Nageswara general merchant",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 264,
+        "name": "Ushodaya medicals enterprises",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 265,
+        "name": "Prasad fancy mart",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 266,
+        "name": "Sri sai nadha medicls",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 267,
+        "name": "Durga kirana medicals",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 268,
+        "name": "Tirumala medicals",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 269,
+        "name": "Anithe medicls",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 270,
+        "name": "Sri hanuman selections",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 271,
+        "name": "Sri lakshmi ganpathi general stores",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 272,
+        "name": "Chnna manga rao",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 273,
+        "name": "Krishna murthy traders",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 274,
+        "name": "Madhava kirana merchant",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 275,
+        "name": "Lakshmi fancy stores",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 276,
+        "name": "Ganesh sai kirana merchant",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 277,
+        "name": "Sujatha general stores",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 280,
+        "name": "Yeshwanth kirana merchant",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 281,
+        "name": "K.Sambasiva rao kirana merchant",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 282,
+        "name": "Ravi Fancy",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 283,
+        "name": "AVR GENERAL STORES",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 284,
+        "name": "P.VENKATESWARLU FANCY(RK)",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 285,
+        "name": "VENKATA LAKSHMI SRAVANI GENERAL STORES",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 286,
+        "name": "GR PAINTS",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 287,
+        "name": "SRI LAKSHMI GENERAL STORES",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 288,
+        "name": "SRI LAKSHMI GANPATHI KIRANA GENERAL STORES",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 289,
+        "name": "KISHORE FANCY",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 290,
+        "name": "VD MART",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 291,
+        "name": "SRI SARADA FANCY & KANGANS",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 292,
+        "name": "VENKATA NAGA LAKSHMI GENERAL MERCHANT",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 293,
+        "name": "SRI DHANALAKSHMI GENERAL STORES",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 294,
+        "name": "QUALITY MEDICALS",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 295,
+        "name": "SRI LAKSHMI SRINIVASA GENERAL STORES",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 296,
+        "name": "CHINNA SHOPE",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 297,
+        "name": "PADMA VASAVI MEDICALS",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 298,
+        "name": "RAVIKINDI NAGESWARA RAO RICE&G/M",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 299,
+        "name": "SRI HEMALATHA FANCY& GENERAL STORES",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 300,
+        "name": "SS DRY FRUITS",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 301,
+        "name": "SWATHI MEDICALS",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 302,
+        "name": "VDS WHOLESALE MARKET",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 303,
+        "name": "RAVI FANCY",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 304,
+        "name": "JYOTHY LABS LTD",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 305,
+        "name": "SRESHTA HYPER MARKET",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 306,
+        "name": "SRI VENKATA SIVA SAI KIRANAGENERAL STORES",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 307,
+        "name": "SRI VASAVI MEDICAL CORPORATION P&D",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 308,
+        "name": "SRI HANUMAN GENERAL MEARCHENT",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 309,
+        "name": "SATEESH MEDICALS",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 310,
+        "name": "LASHMAIAH FANCY",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 311,
+        "name": "SANTHOSH MEDICALS & FANCY STORES",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 312,
+        "name": "VASU FANCY",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 313,
+        "name": "SRI SRINIVASA KIRANA STORES",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 314,
+        "name": "SIVA KUMARA GENERAL STORES",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 315,
+        "name": "VVS IMITATIONS & FANCY",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 316,
+        "name": "GOVARDHAN GENERAL STORES",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 317,
+        "name": "SURESH MEDICALS",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 318,
+        "name": "RAVI (RF)",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 319,
+        "name": "VENKATADRI TRADERS",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 320,
+        "name": "LAKSHMI NARASIMHA PROVISIONS",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 321,
+        "name": "MEENAKSHI TRADERS",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 322,
+        "name": "SRI VASAVI FANCY KIRANA & GENERAL STORES",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 323,
+        "name": "NAVEEN MEDICALS",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 324,
+        "name": "SRI LAKSHMI GANAPATHI MEDICALS ENTERPRISES",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 325,
+        "name": "SIVA PRAVATHI KIRANA MERCHANT",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 326,
+        "name": "VENKATA SIVA SAI PAVAN KIRANA",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 327,
+        "name": "AUTO SRINU",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 328,
+        "name": "SRI LAKSHMI GANPATHI KIRANA GENERAL STORES",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 329,
+        "name": "LUCKY MEDICAL& FANCY",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 330,
+        "name": "KUMAR GENERAL STORES",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 331,
+        "name": "RAMENJANEYA GENERAL MERCHANT",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 332,
+        "name": "A.VENKATESWARA RAO",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 333,
+        "name": "VINDO MEDICAL & GENERAL STORE",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 334,
+        "name": "SAI TEJA MEDICALS & FANCY STORES",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 335,
+        "name": "RAMA SAI ENTEPRISES",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 336,
+        "name": "SRI VENKATACHALA GENERAL STORES",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 337,
+        "name": "BHASKAR FANCY STORES",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 338,
+        "name": "MUSTHAFA WHOLESALE KIRANA & G/S",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 339,
+        "name": "LAKSHMI SAI FANCY & KANGAN HALL",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 340,
+        "name": "lakshmi narasimha enter prises",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 341,
+        "name": "tava purnachandrao g/s",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 342,
+        "name": "sri subrahmnyeswara medicals&fancy",
+        "description": "",
+        "user_id": 9,
+        "debit_balance": 0,
+        "credit_balance": 0,
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    }
+]

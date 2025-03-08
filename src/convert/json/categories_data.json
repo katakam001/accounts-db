@@ -1,0 +1,47 @@
+[
+    {
+        "id": 16,
+        "name": "FANCY ITEMS 5%",
+        "type": 2,
+        "user_id": 9,
+        "financial_year": "2024-2025",
+        "createdAt": "2025-02-24T06:23:49.817Z",
+        "updatedAt": "2025-02-24T06:24:02.296Z"
+    },
+    {
+        "id": 17,
+        "name": "FANCY ITEMS 12%",
+        "type": 2,
+        "user_id": 9,
+        "financial_year": "2024-2025",
+        "createdAt": "2025-02-24T06:24:33.449Z",
+        "updatedAt": "2025-02-24T06:24:33.449Z"
+    },
+    {
+        "id": 18,
+        "name": "FANCY ITEMS 18%",
+        "type": 2,
+        "user_id": 9,
+        "financial_year": "2024-2025",
+        "createdAt": "2025-02-24T06:24:47.084Z",
+        "updatedAt": "2025-02-24T06:24:47.084Z"
+    },
+    {
+        "id": 19,
+        "name": "FANCY ITEMS ",
+        "type": 2,
+        "user_id": 9,
+        "financial_year": "2024-2025",
+        "createdAt": "2025-02-24T12:26:58.447Z",
+        "updatedAt": "2025-02-24T12:30:42.134Z"
+    },
+    {
+        "id": 20,
+        "name": "FANCY ITEMS ALL TAXES",
+        "type": 2,
+        "user_id": 9,
+        "financial_year": "2024-2025",
+        "createdAt": "2025-02-26T14:32:21.253Z",
+        "updatedAt": "2025-02-26T14:32:21.253Z"
+    }
+]

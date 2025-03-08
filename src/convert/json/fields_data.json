@@ -1,0 +1,146 @@
+[
+    {
+        "id": 68,
+        "field_name": "2.5% CGST",
+        "user_id": 9,
+        "financial_year": "2024-2025",
+        "createdAt": "2025-02-24T06:22:59.973Z",
+        "updatedAt": "2025-02-24T06:22:59.973Z"
+    },
+    {
+        "id": 69,
+        "field_name": "2.5% SGST",
+        "user_id": 9,
+        "financial_year": "2024-2025",
+        "createdAt": "2025-02-24T06:22:59.973Z",
+        "updatedAt": "2025-02-24T06:22:59.973Z"
+    },
+    {
+        "id": 70,
+        "field_name": "5% IGST",
+        "user_id": 9,
+        "financial_year": "2024-2025",
+        "createdAt": "2025-02-24T06:22:59.973Z",
+        "updatedAt": "2025-02-24T06:22:59.973Z"
+    },
+    {
+        "id": 71,
+        "field_name": "amc no.",
+        "user_id": 9,
+        "financial_year": "2024-2025",
+        "createdAt": "2025-02-24T06:22:59.973Z",
+        "updatedAt": "2025-02-24T06:22:59.973Z"
+    },
+    {
+        "id": 72,
+        "field_name": "Area",
+        "user_id": 9,
+        "financial_year": "2024-2025",
+        "createdAt": "2025-02-24T06:22:59.973Z",
+        "updatedAt": "2025-02-24T06:22:59.973Z"
+    },
+    {
+        "id": 73,
+        "field_name": "broker",
+        "user_id": 9,
+        "financial_year": "2024-2025",
+        "createdAt": "2025-02-24T06:22:59.973Z",
+        "updatedAt": "2025-02-24T06:22:59.973Z"
+    },
+    {
+        "id": 75,
+        "field_name": "Quality",
+        "user_id": 9,
+        "financial_year": "2024-2025",
+        "createdAt": "2025-02-24T06:22:59.973Z",
+        "updatedAt": "2025-02-24T06:22:59.973Z"
+    },
+    {
+        "id": 76,
+        "field_name": "RCM 2.5% CGST",
+        "user_id": 9,
+        "financial_year": "2024-2025",
+        "createdAt": "2025-02-24T06:22:59.973Z",
+        "updatedAt": "2025-02-24T06:22:59.973Z"
+    },
+    {
+        "id": 77,
+        "field_name": "RCM 2.5% SGST",
+        "user_id": 9,
+        "financial_year": "2024-2025",
+        "createdAt": "2025-02-24T06:22:59.973Z",
+        "updatedAt": "2025-02-24T06:22:59.973Z"
+    },
+    {
+        "id": 78,
+        "field_name": "RCM 5% CGST",
+        "user_id": 9,
+        "financial_year": "2024-2025",
+        "createdAt": "2025-02-24T06:22:59.973Z",
+        "updatedAt": "2025-02-24T06:22:59.973Z"
+    },
+    {
+        "id": 79,
+        "field_name": "RCM 5% SGST",
+        "user_id": 9,
+        "financial_year": "2024-2025",
+        "createdAt": "2025-02-24T06:22:59.973Z",
+        "updatedAt": "2025-02-24T06:22:59.973Z"
+    },
+    {
+        "id": 80,
+        "field_name": "way bill no.",
+        "user_id": 9,
+        "financial_year": "2024-2025",
+        "createdAt": "2025-02-24T06:22:59.973Z",
+        "updatedAt": "2025-02-24T06:22:59.973Z"
+    },
+    {
+        "id": 81,
+        "field_name": "lorry no.",
+        "user_id": 9,
+        "financial_year": "2024-2025",
+        "createdAt": "2025-02-24T06:22:59.973Z",
+        "updatedAt": "2025-02-24T06:22:59.973Z"
+    },
+    {
+        "id": 82,
+        "field_name": "SGST 6%",
+        "user_id": 9,
+        "financial_year": "2024-2025",
+        "createdAt": "2025-02-24T06:29:26.276Z",
+        "updatedAt": "2025-02-24T06:29:26.276Z"
+    },
+    {
+        "id": 83,
+        "field_name": "CGST 6%",
+        "user_id": 9,
+        "financial_year": "2024-2025",
+        "createdAt": "2025-02-24T06:29:37.218Z",
+        "updatedAt": "2025-02-24T06:29:37.218Z"
+    },
+    {
+        "id": 84,
+        "field_name": "SGST 9%",
+        "user_id": 9,
+        "financial_year": "2024-2025",
+        "createdAt": "2025-02-24T06:29:52.832Z",
+        "updatedAt": "2025-02-24T06:29:52.832Z"
+    },
+    {
+        "id": 85,
+        "field_name": "CGST 9%",
+        "user_id": 9,
+        "financial_year": "2024-2025",
+        "createdAt": "2025-02-24T06:29:59.947Z",
+        "updatedAt": "2025-02-24T06:29:59.947Z"
+    },
+    {
+        "id": 74,
+        "field_name": "invoice no.",
+        "user_id": 9,
+        "financial_year": "2024-2025",
+        "createdAt": "2025-02-24T06:22:59.973Z",
+        "updatedAt": "2025-02-24T07:30:43.645Z"
+    }
+]

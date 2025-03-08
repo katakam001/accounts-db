@@ -64,7 +64,7 @@ module.exports = {
 
   async down(sequelize, Sequelize) {
     // Drop tables in reverse order
-    await queryInterface.dropTable('financial_year_tracking');
-    await queryInterface.dropTable('admin_users');
+    await sequelize.dropTable('financial_year_tracking');
+    await sequelize.dropTable('admin_users');
   }
 };

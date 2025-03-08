@@ -28,6 +28,7 @@ exports.getFieldsMapping = async (req, res) => {
         'field_type',
         'required',
         'field_category', // Include field_category
+        'account_id', // Include field_category
         'exclude_from_total', // Include exclude_from_total
         [db.sequelize.col('category.name'), 'category_name'],
         [db.sequelize.col('field.field_name'), 'field_name']

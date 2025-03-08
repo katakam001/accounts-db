@@ -1,0 +1,26 @@
+[
+    {
+        "id": 8,
+        "name": "FANCY ITEMS 5%",
+        "user_id": 9,
+        "financial_year": "2024-2025"
+    },
+    {
+        "id": 9,
+        "name": "FANCY ITEMS 12%",
+        "user_id": 9,
+        "financial_year": "2024-2025"
+    },
+    {
+        "id": 10,
+        "name": "FANCY ITEMS 18%",
+        "user_id": 9,
+        "financial_year": "2024-2025"
+    },
+    {
+        "id": 11,
+        "name": "FANCY ITEMS 0%",
+        "user_id": 9,
+        "financial_year": "2024-2025"
+    }
+]
