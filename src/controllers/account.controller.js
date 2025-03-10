@@ -53,7 +53,7 @@ exports.accountList = async (req, res) => {
       return {
         id: account.id,
         name: account.name,
-        description: account.description,
+        gst_no: account.gst_no,
         user_id: account.user_id,
         debit_balance: account.debit_balance,
         credit_balance: account.credit_balance,
@@ -128,7 +128,7 @@ exports.getAccount = async (req, res) => {
       const transformedAccount = {
         id: account.id,
         name: account.name,
-        description: account.description,
+        gst_no: account.gst_no,
         user_id: account.user_id,
         debit_balance: account.debit_balance,
         credit_balance: account.credit_balance,
@@ -168,13 +168,13 @@ exports.accountUpdate = async (req, res) => {
     const Address = db.address;
     const AccountGroup = db.accountGroup;
     const { id } = req.params;
-    const { name, description, user_id, debit_balance, credit_balance, financial_year, isDealer, group, address } = req.body;  
+    const { name, gst_no, user_id, debit_balance, credit_balance, financial_year, isDealer, group, address } = req.body;  
     const account = await Account.findByPk(id);
     if (!account) {
       return res.status(404).send('Account not found');
     }
     account.name = name;
-    account.description = description;
+    account.gst_no = gst_no;
     account.date_updated = new Date();
     account.user_id = user_id;
     account.debit_balance = debit_balance;
@@ -230,7 +230,7 @@ exports.accountUpdate = async (req, res) => {
     const response = {
       id: account.id,
       name: account.name,
-      description: account.description,
+      gst_no: account.gst_no,
       user_id: account.user_id,
       debit_balance: account.debit_balance,
       credit_balance: account.credit_balance,
@@ -298,10 +298,10 @@ exports.accountCreate = async (req, res) => {
     const Group = db.group;
     const Address = db.address;
     const AccountGroup = db.accountGroup;
-    const { name, description, user_id, debit_balance, credit_balance, financial_year, isDealer, group, address } = req.body;  
+    const { name, gst_no, user_id, debit_balance, credit_balance, financial_year, isDealer, group, address } = req.body;  
     const newAccount = await Account.create({
       name,
-      description,
+      gst_no,
       user_id,
       debit_balance,
       credit_balance,
@@ -346,7 +346,7 @@ exports.accountCreate = async (req, res) => {
     const response = {
       id: newAccount.id,
       name: newAccount.name,
-      description: newAccount.description,
+      gst_no: newAccount.gst_no,
       user_id: newAccount.user_id,
       debit_balance: newAccount.debit_balance,
       credit_balance: newAccount.credit_balance,

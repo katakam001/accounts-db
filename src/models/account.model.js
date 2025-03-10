@@ -9,8 +9,9 @@ module.exports = (sequelize, Sequelize) => {
             type: Sequelize.STRING,
             allowNull: false,
         },
-        description: {
-            type: Sequelize.TEXT,
+        gst_no: {
+            type: Sequelize.STRING(20),
+            allowNull: true,
         },
         user_id: {
             type: Sequelize.INTEGER,

@@ -11,7 +11,7 @@ module.exports = function (app) {
   });
 
   app.get('/api/entries', [authJwt.verifyToken], controller.getEntries);
-  app.get('/api/entries/updationJournalEntries',  controller.generateJournalEntriesAndUpdateEntries);
+  app.get('/api/entries/updationJournalEntries', [authJwt.verifyToken], controller.generateJournalEntriesAndUpdateEntries);
   app.get('/api/entries/:id', [authJwt.verifyToken], controller.getEntryById); // Add this line
   app.post('/api/entries/bulk', [authJwt.verifyToken], controller.addEntries);
   app.put('/api/entries/bulk', [authJwt.verifyToken], controller.updateEntries);
