@@ -70,11 +70,21 @@ app.use(
   })
 );
 
-// parse requests of content-type - application/json
-app.use(express.json());
-
-// parse requests of content-type - application/x-www-form-urlencoded
-app.use(express.urlencoded({ extended: true }));
+// Middleware for JSON and URL-encoded data (exclude upload.routes)
+app.use((req, res, next) => {
+  if (!req.path.startsWith("/api/upload")) { // Apply to all routes except `/api/upload`
+    express.json()(req, res, next); 
+  } else {
+    next();
+  }
+});
+app.use((req, res, next) => {
+  if (!req.path.startsWith("/api/upload")) { // Apply to all routes except `/api/upload`
+    express.urlencoded({ extended: true })(req, res, next);
+  } else {
+    next();
+  }
+});
 
 // Use cookie-parser middleware 
 app.use(cookieParser());
@@ -114,6 +124,7 @@ require("./routes/stockRegister.routes.js")(app); // Updated from purchaseEntry.
 require("./routes/consolidateStockRegister.routes.js")(app); // Updated from purchaseEntry.routes.js
 require("./routes/balance.routes.js")(app); // Updated from purchaseEntry.routes.js
 require("./routes/ledger.routes.js")(app); // Updated from purchaseEntry.routes.js
+require("./routes/upload.routes.js")(app); // Updated from purchaseEntry.routes.js
 
 // Invoke the sync and inject function
 syncAndInjectData(db).then(() => {

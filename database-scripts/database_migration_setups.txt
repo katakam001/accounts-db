@@ -71,3 +71,11 @@ Sequelize CLI [Node: 22.11.0, CLI: 6.6.2, ORM: 6.37.5]
 Parsed url postgres://postgres:*****@localhost:5432/account_db
 == 20250129162005-insert-default-initial-data: reverting =======
 == 20250129162005-insert-default-initial-data: reverted (0.014s)
+
+
+C:\Software\accounts-db\src>npx sequelize migration:generate --name remove-description-column-default-account-list
+
+Sequelize CLI [Node: 22.11.0, CLI: 6.6.2, ORM: 6.37.6]
+
+migrations folder at "C:\Software\accounts-db\src\migrations" already exists.
+New migration was created at C:\Software\accounts-db\src\migrations\20250317114011-remove-description-column-default-account-list.js .

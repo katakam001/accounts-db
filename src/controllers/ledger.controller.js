@@ -12,12 +12,13 @@ exports.getLedgerForAccount = async (req, res) => {
     const limit = parseInt(req.query.limit) || 100;
     const userId = req.query.userId; // Assuming userId is passed as a query parameter
     const financialYear = req.query.financialYear; // Assuming financialYear is passed as a query parameter
+    const previousBalance = parseFloat(req.query.previousBalance) || 0; // Fetch previous balance from query
 
     const query = `
       WITH combined_entries AS (
         SELECT
           DATE(je.journal_date) AS date,
-          je.description AS narration,
+          ji.narration,
           ji.amount,
           ji.type
         FROM
@@ -31,11 +32,11 @@ exports.getLedgerForAccount = async (req, res) => {
         UNION ALL
         SELECT
           DATE(ce.cash_date) AS date,
-          ce.narration AS narration,
+          ce.narration,
           ce.amount,
           ce.type
         FROM
-          public.cash_entries ce
+          public.combined_cash_entries ce
         WHERE
           ce.account_id = :accountId AND
           ce.user_id = :userId AND
@@ -65,7 +66,7 @@ exports.getLedgerForAccount = async (req, res) => {
     });
 
     // Calculate running balance and format amounts with two decimal places
-    let balance = 0;
+    let balance = previousBalance; // Start with the previous balance
     ledger.forEach(entry => {
       entry.amount = parseFloat(entry.amount).toFixed(2);
       if (entry.type) { // Assuming type is boolean
@@ -89,8 +90,11 @@ exports.getLedgerForAccount = async (req, res) => {
     // Calculate next row cursor
     const nextRowCursor = ledger.length > 0 ? ledger[ledger.length - 1].row_num : null;
 
+    // Get the last balance to pass it to the next request
+    const lastBalance = ledger.length > 0 ? ledger[ledger.length - 1].balance : balance;
+
     // Send ledger, next row cursor, and hasMoreRecords to the front end
-    res.json({ ledger: ledger, nextRowCursor, hasMoreRecords });
+    res.json({ ledger: ledger, nextRowCursor, hasMoreRecords, lastBalance });
   } catch (error) {
     console.error('Error fetching ledger:', error);
     res.status(500).json({ error: 'Internal Server Error' });
@@ -111,7 +115,7 @@ exports.getUpdatedLedger = async (req, res) => {
       WITH combined_entries AS (
         SELECT
           DATE(je.journal_date) AS date,
-          je.description AS narration,
+          ji.narration,
           ji.amount,
           ji.type
         FROM
@@ -127,11 +131,11 @@ exports.getUpdatedLedger = async (req, res) => {
         UNION ALL
         SELECT
           DATE(ce.cash_date) AS date,
-          ce.narration AS narration,
+          ce.narration,
           ce.amount,
           ce.type
         FROM
-          public.cash_entries ce
+          public.combined_cash_entries ce
         WHERE
           ce.account_id = :accountId AND
           ce.user_id = :userId AND
@@ -328,7 +332,7 @@ async function getLedgerData(accountId, userId, financialYear) {
       WITH combined_entries AS (
         SELECT
           DATE(je.journal_date) AS date,
-          je.description AS narration,
+          ji.narration,
           ji.amount,
           ji.type
         FROM
@@ -342,11 +346,11 @@ async function getLedgerData(accountId, userId, financialYear) {
         UNION ALL
         SELECT
           DATE(ce.cash_date) AS date,
-          ce.narration AS narration,
+          ce.narration,
           ce.amount,
           ce.type
         FROM
-          public.cash_entries ce
+          public.combined_cash_entries ce
         WHERE
           ce.account_id = :accountId AND
           ce.user_id = :userId AND

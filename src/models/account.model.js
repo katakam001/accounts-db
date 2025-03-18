@@ -17,12 +17,12 @@ module.exports = (sequelize, Sequelize) => {
             type: Sequelize.INTEGER,
         },
         credit_balance: {
-            type: Sequelize.FLOAT,
+            type: Sequelize.DECIMAL(15, 2),
             defaultValue: 0,
             allowNull: false,
         },
         debit_balance: {
-            type: Sequelize.FLOAT,
+            type: Sequelize.DECIMAL(15, 2),
             defaultValue: 0,
             allowNull: false,
         },

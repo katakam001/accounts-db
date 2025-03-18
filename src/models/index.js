@@ -33,7 +33,8 @@ db.role = require("../models/role.model.js")(sequelize, Sequelize);
 db.account = require("../models/account.model.js")(sequelize, Sequelize);
 db.group = require("../models/group.model.js")(sequelize, Sequelize);
 db.accountGroup = require("../models/accountGroup.model.js")(sequelize, Sequelize, db.account, db.group);
-db.cash = require("../models/cashEntry.model.js")(sequelize, Sequelize, db.account);
+db.cash = require("../models/cashEntry.model.js")(sequelize, Sequelize, db.account,db.group);
+db.cashEntriesBatch = require("../models/cashEntriesBatch.model.js")(sequelize, Sequelize, db.account,db.group);
 db.journalEntry = require("../models/journalEntry.js")(sequelize, Sequelize);
 db.journalItem = require("../models/journalItem.js")(sequelize, Sequelize, db.account, db.group, db.journalEntry);
 db.categories = require("../models/categories.model.js")(sequelize, Sequelize);
@@ -54,7 +55,7 @@ db.processed_items = require("../models/processedItems.model.js")(sequelize, Seq
 db.production_entries = require("../models/production_entries.model.js")(sequelize, Sequelize,db.items,db.units,db.conversions,db.production_entries);
 db.consolidated_stock_register = require("../models/consolidatedStockRegister.model.js")(sequelize, Sequelize);
 db.balance = require("../models/balance.model.js")(sequelize, Sequelize);
-
+db.globalBatchOperations = require("../models/globalBatchOperations.model.js")(sequelize, Sequelize);
 
 db.fieldsMapping.belongsTo(db.categories, { foreignKey: 'category_id', as: 'category' });
 db.fieldsMapping.belongsTo(db.fields, { foreignKey: 'field_id', as: 'field' });
@@ -128,13 +129,5 @@ db.conversions.belongsTo(db.units, { foreignKey: 'from_unit_id', as: 'fromUnit' 
 db.conversions.belongsTo(db.units, { foreignKey: 'to_unit_id', as: 'toUnit' });
 
 
-// Import stored procedures
-// require("../stored_procedures/generateStockRegister.js")(sequelize, Sequelize);
-// require("../stored_procedures/archiveOldPartitions.js")(sequelize, Sequelize);
-// require("../stored_procedures/reindexActiveTables.js")(sequelize, Sequelize);
-// require("../stored_procedures/reindexAllTables.js")(sequelize, Sequelize);
-// require("../stored_procedures/scheduleVacuumJobs.js")(sequelize, Sequelize);
-// require("../stored_procedures/getVacuumSchedule.js")(sequelize, Sequelize);
-// require("../stored_procedures/pruneOldPartitions.js")(sequelize, Sequelize);
 
 module.exports = db;

@@ -14,12 +14,12 @@ exports.combinedBookListForDayBook = async (req, res) => {
     const rowCursor = parseInt(req.query.rowCursor) || 0;
 
     const combinedQuery = `
-      -- Fetch records from journal_entries and cash_entries within the financial year
+      -- Fetch records from journal_entries and combined_cash_entries within the financial year
       WITH combined_entries AS (
         SELECT
           DATE(je.journal_date) AS date,
           je.id AS id,
-          je.description,
+          ji.narration AS description,
           je."type" AS entry_type,
           ji.account_id,
           ji.amount,
@@ -45,7 +45,7 @@ exports.combinedBookListForDayBook = async (req, res) => {
           ce."type",
           ce.id AS entry_id
         FROM
-          public.cash_entries ce
+          public.combined_cash_entries ce
         WHERE
           ce.user_id = :userid AND
           ce.financial_year = :financial_year
@@ -76,6 +76,8 @@ exports.combinedBookListForDayBook = async (req, res) => {
       type: db.sequelize.QueryTypes.SELECT
     });
 
+    // console.log(combinedResult);
+
     // Group records by date
     const groupedEntries = combinedResult.reduce((acc, entry) => {
       if (!acc[entry.date]) {
@@ -105,8 +107,7 @@ exports.combinedBookListForDayBook = async (req, res) => {
     }
 
     // Check if there are remaining records for the last date
-    const lastDate = Object.keys(groupedEntries).pop();
-    if (groupedEntries[lastDate] && groupedEntries[lastDate].length > count) {
+    if (combinedResult.length > paginatedEntries.length) {
       hasNextPage = true;
     }
 
@@ -123,12 +124,12 @@ exports.combinedBookListForDayBook = async (req, res) => {
 async function fetchBatchEntries(userid, financial_year, limit, rowCursor) {
   const db = getDb();
   const combinedQuery = `
-    -- Fetch records from journal_entries and cash_entries within the financial year
+    -- Fetch records from journal_entries and combined_cash_entries within the financial year
     WITH combined_entries AS (
       SELECT
         DATE(je.journal_date) AS date,
         je.id AS id,
-        je.description,
+        ji.narration AS description,
         je."type" AS entry_type,
         ji.account_id,
         ji.amount,
@@ -158,7 +159,7 @@ async function fetchBatchEntries(userid, financial_year, limit, rowCursor) {
         ce.id AS entry_id,
         al.name AS particular
       FROM
-        public.cash_entries ce
+        public.combined_cash_entries ce
       JOIN
         public.account_list al ON ce.account_id = al.id
       WHERE
@@ -596,7 +597,7 @@ exports.getJournalEntries = async (req, res) => {
         SELECT
           je.id,
           je.journal_date,
-          je.description,
+          ji.narration,
           ji.journal_id,
           ji.account_id,
           ji.group_id,
@@ -612,7 +613,7 @@ exports.getJournalEntries = async (req, res) => {
       SELECT
         id,
         journal_date,
-        description,
+        narration,
         journal_id,
         account_id,
         group_id,
@@ -644,7 +645,6 @@ exports.getJournalEntries = async (req, res) => {
         journalEntries[entry.journal_id] = {
           id: entry.id,
           journal_date: entry.journal_date,
-          description: entry.description,
           items: []
         };
         orderedJournalIds.push(entry.journal_id); // Store the order of journal IDs
@@ -653,6 +653,7 @@ exports.getJournalEntries = async (req, res) => {
         journal_id: entry.journal_id,
         account_id: entry.account_id,
         group_id: entry.group_id,
+        narration: entry.narration,
         amount: entry.amount,
         type: entry.type
       });
@@ -700,7 +701,6 @@ exports.getJournalEntryById = async (req, res) => {
 SELECT 
     "JournalEntry"."id" AS "journal_id", 
     "JournalEntry"."journal_date", 
-    "JournalEntry"."description" AS "journal_description", 
     "JournalEntry"."financial_year", 
     "User"."username" AS "user_name", 
     "JournalItem"."account_id", 
@@ -709,6 +709,7 @@ SELECT
     "Group"."name" AS "group_name", 
     "JournalItem"."amount", 
     "JournalItem"."type", 
+    "JournalItem"."narration" AS "narration", 
     "JournalItem"."createdAt" AS "item_createdAt", 
     "JournalItem"."updatedAt" AS "item_updatedat"
 FROM 
@@ -741,6 +742,7 @@ WHERE
         group_id: entry.group_id,
         amount: entry.amount,
         type: entry.type,
+        narration: entry.narration,
         account_name: entry.account_name,
         group_name: entry.group_name,
         debit_amount: entry.type ? 0 : entry.amount,
@@ -753,7 +755,6 @@ WHERE
         acc.push({
           id: entry.journal_id,
           journal_date: entry.journal_date,
-          description: entry.journal_description,
           user_id: entry.user_id,
           user_name: entry.user_name,
           financial_year: entry.financial_year,
@@ -806,7 +807,7 @@ exports.deleteJournalEntry = async (req, res) => {
     await transaction.commit();
 
     // Broadcast the deletion event
-    broadcast({ type: 'DELETE', data: { id: journal.id ,journal_date:journal.journal_date}, entryType: 'journal', user_id: journal.user_id, financial_year: journal.financial_year });
+    broadcast({ type: 'DELETE', data: { id: journal.id, journal_date: journal.journal_date }, entryType: 'journal', user_id: journal.user_id, financial_year: journal.financial_year });
 
     res.status(204).send(); // Simplified response
   } catch (error) {
@@ -865,14 +866,15 @@ exports.updateJournalEntry = async (req, res) => {
       account_id: item.account_id,
       group_id: item.group_id,
       amount: item.amount,
+      narration: item.narration,
       type: item.type,
       createdAt: new Date(),
       updatedAt: new Date(),
     }));
 
     await JournalItem.bulkCreate(journalItems, {
-      fields: ['journal_id', 'account_id', 'group_id', 'amount', 'type', 'createdAt', 'updatedAt'],
-      returning: ['journal_id', 'account_id', 'group_id', 'amount', 'type', 'createdAt', 'updatedAt'],
+      fields: ['journal_id', 'account_id', 'group_id', 'amount', 'type', 'createdAt', 'updatedAt', 'narration'],
+      returning: ['journal_id', 'account_id', 'group_id', 'amount', 'type', 'createdAt', 'updatedAt', 'narration'],
       transaction
     });
 
@@ -880,14 +882,13 @@ exports.updateJournalEntry = async (req, res) => {
     const updatedJournalEntry = await JournalEntry.findAll({
       attributes: [
         'id',
-        'journal_date',
-        'description'
+        'journal_date'
       ],
       include: [
         {
           model: JournalItem,
           as: 'items',
-          attributes: ['journal_id', 'account_id', 'group_id', 'amount', 'type']
+          attributes: ['journal_id', 'account_id', 'group_id', 'amount', 'type', 'narration']
         }
       ],
       where: {
@@ -939,14 +940,15 @@ exports.createJournalEntryWithItems = async (req, res) => {
       account_id: item.account_id,
       group_id: item.group_id,
       amount: item.amount,
+      narration: item.narration,
       type: item.type,
       createdAt: new Date(),
       updatedAt: new Date(),
     }));
 
     await JournalItem.bulkCreate(journalItems, {
-      fields: ['journal_id', 'account_id', 'group_id', 'amount', 'type', 'createdAt', 'updatedAt'],
-      returning: ['journal_id', 'account_id', 'group_id', 'amount', 'type', 'createdAt', 'updatedAt'],
+      fields: ['journal_id', 'account_id', 'group_id', 'amount', 'type', 'createdAt', 'updatedAt', 'narration'],
+      returning: ['journal_id', 'account_id', 'group_id', 'amount', 'type', 'createdAt', 'updatedAt', 'narration'],
       transaction
     });
 
@@ -957,14 +959,13 @@ exports.createJournalEntryWithItems = async (req, res) => {
     const updatedJournalEntry = await JournalEntry.findAll({
       attributes: [
         'id',
-        'journal_date',
-        'description'
+        'journal_date'
       ],
       include: [
         {
           model: JournalItem,
           as: 'items',
-          attributes: ['journal_id', 'account_id', 'group_id', 'amount', 'type']
+          attributes: ['journal_id', 'account_id', 'group_id', 'amount', 'type', 'narration']
         }
       ],
       where: {

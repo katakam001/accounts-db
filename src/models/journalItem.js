@@ -28,7 +28,7 @@ module.exports = (sequelize, Sequelize, Account, Group, JournalEntry) => {
             onDelete: 'CASCADE'
         },
         amount: {
-            type: Sequelize.FLOAT,
+            type: Sequelize.DECIMAL(15, 2), // Updated to NUMERIC(10, 2)
             defaultValue: 0,
             allowNull: false
         },
@@ -37,6 +37,10 @@ module.exports = (sequelize, Sequelize, Account, Group, JournalEntry) => {
             defaultValue: true,
             allowNull: false
         },
+        narration: {
+            type: Sequelize.TEXT,
+            allowNull: true,
+        }
     }, {
         tableName: 'journal_items',
     });

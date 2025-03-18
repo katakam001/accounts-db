@@ -9,9 +9,9 @@ module.exports = (sequelize, Sequelize) => {
             type: Sequelize.DATE,
             allowNull: false
         },
-        description: {
-            type: Sequelize.TEXT,
-            allowNull: true
+        transaction_id: {
+          type: Sequelize.STRING(30),
+          allowNull: true,
         },
         user_id: {
             type: Sequelize.INTEGER,

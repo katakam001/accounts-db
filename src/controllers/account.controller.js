@@ -161,6 +161,7 @@ exports.getAccount = async (req, res) => {
 };
 
 exports.accountUpdate = async (req, res) => {
+  const { name, gst_no, user_id, debit_balance, credit_balance, financial_year, isDealer, group, address } = req.body;  
   try {
     const db = getDb();
     const Account = db.account;
@@ -168,7 +169,6 @@ exports.accountUpdate = async (req, res) => {
     const Address = db.address;
     const AccountGroup = db.accountGroup;
     const { id } = req.params;
-    const { name, gst_no, user_id, debit_balance, credit_balance, financial_year, isDealer, group, address } = req.body;  
     const account = await Account.findByPk(id);
     if (!account) {
       return res.status(404).send('Account not found');
@@ -248,8 +248,20 @@ exports.accountUpdate = async (req, res) => {
 
     res.send(response);
   } catch (error) {
-    console.log(error);
-    res.status(500).send(error);
+    if (error.name === "SequelizeUniqueConstraintError" && error.parent?.code === "23505") {
+      // Send error response with meaningful message
+      res.status(400).json({
+        error: 'Duplicate account name detected',
+        message: `The account name "${name}" already exists. Please choose a unique name.`
+      });
+    } else {
+      // Handle other errors
+      console.error('Error while updating the account:', error);
+      res.status(500).json({
+        error: 'Internal Server Error',
+        message: 'An unexpected error occurred while processing your request.'
+      });
+    }
   }
 };
 
@@ -283,7 +295,10 @@ exports.accountDelete = async (req, res) => {
     res.status(200).json({ message: 'Account deleted successfully' });
   } catch (error) {
     if (error.name === 'SequelizeForeignKeyConstraintError') {
-      res.status(400).json({ message: 'Cannot delete account due to foreign key constraint' });
+      res.status(400).json({
+        error: 'foreign key constraint',
+        message: `Cannot delete account due to foreign key constraint.`
+      });
     } else {
       res.status(500).json({ message: 'Internal server error', error: error.message });
     }
@@ -292,13 +307,13 @@ exports.accountDelete = async (req, res) => {
 
 
 exports.accountCreate = async (req, res) => {
+  const { name, gst_no, user_id, debit_balance, credit_balance, financial_year, isDealer, group, address } = req.body;  
   try {
     const db = getDb();
     const Account = db.account;
     const Group = db.group;
     const Address = db.address;
     const AccountGroup = db.accountGroup;
-    const { name, gst_no, user_id, debit_balance, credit_balance, financial_year, isDealer, group, address } = req.body;  
     const newAccount = await Account.create({
       name,
       gst_no,
@@ -358,7 +373,19 @@ exports.accountCreate = async (req, res) => {
 
     res.status(201).send(response);
   } catch (error) {
-    console.error('Error creating account:', error);
-    res.status(500).send('Internal server error');
+    if (error.name === "SequelizeUniqueConstraintError" && error.parent?.code === "23505") {
+      // Send error response with meaningful message
+      res.status(400).json({
+        error: 'Duplicate account name detected',
+        message: `The account name "${name}" already exists. Please choose a unique name.`
+      });
+    } else {
+      // Handle other errors
+      console.error('Error inserting account:', error);
+      res.status(500).json({
+        error: 'Internal Server Error',
+        message: 'An unexpected error occurred while processing your request.'
+      });
+    }
   }
 };

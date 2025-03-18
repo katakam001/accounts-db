@@ -1,4 +1,4 @@
-module.exports = (sequelize, Sequelize, Account) => {
+module.exports = (sequelize, Sequelize, Account, Group) => {
   const CashEntry = sequelize.define('cashEntry', {
     cash_date: {
       type: Sequelize.DATE,
@@ -16,12 +16,21 @@ module.exports = (sequelize, Sequelize, Account) => {
         key: 'id'
       }
     },
+    group_id: {
+      type: Sequelize.INTEGER,
+      allowNull: false,
+      references: {
+        model: Group,
+        key: 'id'
+      },
+      onDelete: 'CASCADE'
+    },
     type: {
       type: Sequelize.BOOLEAN,
       allowNull: false,
     },
     amount: {
-      type: Sequelize.FLOAT,
+      type: Sequelize.DECIMAL(15, 2),
       allowNull: false,
     },
     user_id: {
@@ -31,8 +40,12 @@ module.exports = (sequelize, Sequelize, Account) => {
       type: Sequelize.STRING,
       allowNull: false,
     },
+    transaction_id: {
+      type: Sequelize.STRING(30),
+      allowNull: true,
+    }
   }, {
-      tableName: 'cash_entries',
+    tableName: 'cash_entries',
   });
   return CashEntry;
 };

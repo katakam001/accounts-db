@@ -210,7 +210,6 @@ exports.addEntries = async (req, res) => {
     // Step 1: Insert a new journal entry
     const journalEntry = await JournalEntry.create({
       journal_date: journalDate,
-      description: getDescription(type),
       user_id: userId,
       financial_year: financialYear,
       type: type
@@ -223,7 +222,7 @@ exports.addEntries = async (req, res) => {
 
     for (const entry of entries) {
       // Remove dynamicFields from entry before creating new Entry
-      const { dynamicFields, id, ...entryWithoutDynamicFields } = entry;
+      const { dynamicFields, id,customerName, ...entryWithoutDynamicFields } = entry;
 
       // Step 2: Insert a new entry with the journal_id
       entryWithoutDynamicFields.journal_id = journalEntry.id;
@@ -238,7 +237,7 @@ exports.addEntries = async (req, res) => {
 
       // Determine the amount based on exclude_from_total and field_category
       const amount = dynamicFields.some(field => field.field_category === 1 && field.exclude_from_total) ? entry.value : entry.total_amount;
-      total_amount += amount;
+      total_amount += parseFloat(amount); // Parse the amount before summation
 
       // Add new entry with assigned ID to updatedEntries array, keeping dynamicFields the same
       updatedEntries.push({
@@ -247,7 +246,7 @@ exports.addEntries = async (req, res) => {
       });
 
       // Step 3: Insert journal items for the entry
-      const journalItems = await getJournalItems(entry, dynamicFields, journalEntry.id, amount);
+      const journalItems = await getJournalItems(entry, dynamicFields, journalEntry.id, amount,customerName);
       allJournalItems.push(...journalItems);
     }
 
@@ -259,8 +258,8 @@ exports.addEntries = async (req, res) => {
     // console.log(allJournalItems.length);
 
     await JournalItem.bulkCreate(allJournalItems, {
-      fields: ['journal_id', 'account_id', 'group_id', 'amount', 'type', 'createdAt', 'updatedAt'],
-      returning: ['journal_id', 'account_id', 'group_id', 'amount', 'type', 'createdAt', 'updatedAt'],
+      fields: ['journal_id', 'account_id', 'group_id', 'amount', 'type', 'createdAt', 'updatedAt','narration'],
+      returning: ['journal_id', 'account_id', 'group_id', 'amount', 'type', 'createdAt', 'updatedAt','narration'],
       transaction: t
     });
 
@@ -313,22 +312,26 @@ const getDescription = (type, isUpdate = false) => {
   return descriptions[type] || '';
 };
 
-const getJournalItems = async (entry, dynamicFields, journalId, amount) => {
+const getJournalItems = async (entry, dynamicFields, journalId, amount, customerName) => {
   const journalItems = [];
 
-  journalItems.push(await createJournalItem(journalId, entry.category_account_id, entry.value, entry.type === 1 || entry.type === 4 || entry.type === 6 ? false : true, entry.user_id, entry.financial_year));
+  // Pass the narration for getJournalItems
+  const narration = `${customerName} i.no.${entry.invoiceNumber} qty.${entry.quantity}`;
+  journalItems.push(await createJournalItem(journalId, entry.category_account_id, entry.value, entry.type === 1 || entry.type === 4 || entry.type === 6 ? false : true, entry.user_id, entry.financial_year, narration));
 
   for (const field of dynamicFields) {
-    // console.log(field);
     if (field.field_category === 1) {
       const groupId = await getGroupIdFromAccountId(field.tax_account_id, entry.user_id, entry.financial_year);
       const type = entry.type === 1 || entry.type === 4 || entry.type === 6 ? field.exclude_from_total : !field.exclude_from_total;
+
+      // Use the same dynamic narration format for this entry
       journalItems.push({
         journal_id: journalId,
         account_id: field.tax_account_id,
         group_id: groupId,
         amount: field.field_value,
-        type: type
+        type: type,
+        narration: `${customerName} i.no.${entry.invoiceNumber} qty.${entry.quantity}`
       });
     }
   }
@@ -339,29 +342,32 @@ const getJournalItems = async (entry, dynamicFields, journalId, amount) => {
 const getPartyJournalItems = async (entry, total_amount, journalId) => {
   const journalItems = [];
 
+  // Pass the narration for getPartyJournalItems
+  const narration = `i.no.${entry.invoiceNumber}/qty.${entry.quantity}`;
   switch (entry.type) {
     case 1: // Purchase Entry
     case 6: // Debit Note
     case 4: // Sale Return
-      journalItems.push(await createJournalItem(journalId, entry.account_id, total_amount, true, entry.user_id, entry.financial_year));
+      journalItems.push(await createJournalItem(journalId, entry.account_id, total_amount, true, entry.user_id, entry.financial_year, narration));
       break;
     case 2: // Sale Entry
     case 3: // Purchase Return
     case 5: // Credit Note
-      journalItems.push(await createJournalItem(journalId, entry.account_id, total_amount, false, entry.user_id, entry.financial_year));
+      journalItems.push(await createJournalItem(journalId, entry.account_id, total_amount, false, entry.user_id, entry.financial_year, narration));
       break;
   }
 
   return journalItems;
 };
 
-const createJournalItem = async (journalId, accountId, amount, type, userId, financialYear) => {
+const createJournalItem = async (journalId, accountId, amount, type, userId, financialYear, narration) => {
   return {
     journal_id: journalId,
     account_id: accountId,
     group_id: await getGroupIdFromAccountId(accountId, userId, financialYear),
     amount: amount,
-    type: type
+    type: type,
+    narration: narration // Add narration dynamically
   };
 };
 
@@ -393,7 +399,7 @@ exports.updateEntries = async (req, res) => {
 
     await journalEntry.update({
       journal_date: journalDate,
-      description: getDescription(type, true),
+      // description: getDescription(type, true),
       user_id: userId,
       financial_year: financialYear,
       type: type
@@ -416,7 +422,7 @@ exports.updateEntries = async (req, res) => {
     const updatedEntries = []; // Array to store updated entries
 
     for (const entry of entries) {
-      const { id, dynamicFields, ...entryWithoutDynamicFields } = entry;
+      const { id, dynamicFields,customerName, ...entryWithoutDynamicFields } = entry;
 
       // Step 2: Update or create new entries with the journal_id
       let updatedEntry;
@@ -439,7 +445,8 @@ exports.updateEntries = async (req, res) => {
 
       // Determine the amount based on exclude_from_total and field_category
       const amount = dynamicFields.some(field => field.field_category === 1 && field.exclude_from_total) ? entry.value : entry.total_amount;
-      total_amount += amount;
+      total_amount += parseFloat(amount); // Parse the amount before summation
+
 
       // Add updated entry to the updatedEntries array
       updatedEntries.push({
@@ -448,7 +455,7 @@ exports.updateEntries = async (req, res) => {
       });
 
       // Step 3: Insert journal items for the entry
-      const journalItems = await getJournalItems(entry, dynamicFields, journalEntry.id, amount);
+      const journalItems = await getJournalItems(entry, dynamicFields, journalEntry.id, amount,customerName);
       allJournalItems.push(...journalItems);
     }
 
@@ -460,8 +467,8 @@ exports.updateEntries = async (req, res) => {
     // Step 4: Delete existing journal items and insert new ones
     await JournalItem.destroy({ where: { journal_id: journalEntry.id }, transaction: t });
     await JournalItem.bulkCreate(allJournalItems, {
-      fields: ['journal_id', 'account_id', 'group_id', 'amount', 'type', 'createdAt', 'updatedAt'],
-      returning: ['journal_id', 'account_id', 'group_id', 'amount', 'type', 'createdAt', 'updatedAt'],
+      fields: ['journal_id', 'account_id', 'group_id', 'amount', 'type', 'createdAt', 'updatedAt','narration'],
+      returning: ['journal_id', 'account_id', 'group_id', 'amount', 'type', 'createdAt', 'updatedAt','narration'],
       transaction: t
     });
 
@@ -671,18 +678,25 @@ const processGroupForJournalEntries = async (entries) => {
   const Entry = db.entry;
   const JournalItem = db.journalItem;
   const JournalEntry = db.journalEntry;
-
+  const Account = db.account;
   const invoiceNumber = entries[0].invoiceNumber;
   const journalDate = entries[0].entry_date;
   const userId = entries[0].user_id;
   const financialYear = entries[0].financial_year;
   const type = entries[0].type;
 
+
+
   try {
+    // Step 1: Update or create a new journal entry
+    const account = await Account.findOne({
+      where: { id: entries[0].account_id },
+      transaction: t
+    });
+    const customerName =account.name;
     // Step 1: Insert a new journal entry
     const journalEntry = await JournalEntry.create({
       journal_date: journalDate,
-      description: getDescription(type),
       user_id: userId,
       financial_year: financialYear,
       type: type
@@ -710,7 +724,7 @@ const processGroupForJournalEntries = async (entries) => {
       // console.log(dynamicFields);
 
       // Step 3: Insert journal items for the entry
-      const journalItems = await getJournalItems(entry, dynamicFields, journalEntry.id, amount);
+      const journalItems = await getJournalItems(entry, dynamicFields, journalEntry.id, amount,customerName);
       allJournalItems.push(...journalItems);
     }
     // console.log(total_amount);
@@ -720,8 +734,8 @@ const processGroupForJournalEntries = async (entries) => {
     allJournalItems.unshift(...partyJournalItems);
 
     await JournalItem.bulkCreate(allJournalItems, {
-      fields: ['journal_id', 'account_id', 'group_id', 'amount', 'type', 'createdAt', 'updatedAt'],
-      returning: ['journal_id', 'account_id', 'group_id', 'amount', 'type', 'createdAt', 'updatedAt'],
+      fields: ['journal_id', 'account_id', 'group_id', 'amount', 'type', 'createdAt', 'updatedAt','narration'],
+      returning: ['journal_id', 'account_id', 'group_id', 'amount', 'type', 'createdAt', 'updatedAt','narration'],
       transaction: t
     });
 

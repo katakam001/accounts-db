@@ -41,19 +41,19 @@ module.exports = (sequelize, Sequelize, Category, Account, Units, JournalEntry, 
       onDelete: 'CASCADE'
     },
     quantity: {
-      type: Sequelize.NUMERIC,
+      type: Sequelize.DECIMAL(10, 4),
       allowNull: true
     },
     unit_price: {
-      type: Sequelize.NUMERIC,
+      type: Sequelize.DECIMAL(10, 2),
       allowNull: true
     },
     total_amount: {
-      type: Sequelize.NUMERIC,
+      type: Sequelize.DECIMAL(15, 2),
       allowNull: true
     },
     value: {
-      type: Sequelize.DECIMAL(20, 2),
+      type: Sequelize.DECIMAL(15, 2),
       allowNull: true
     },
     user_id: {
