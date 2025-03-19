@@ -5,7 +5,7 @@ module.exports = {
     // Add group_id column to cash_entries
     await queryInterface.addColumn('cash_entries', 'group_id', {
       type: Sequelize.INTEGER,
-      allowNull: false,
+      allowNull: true,
       references: {
         model: 'group_list', // The name of the Group table (ensure correct name)
         key: 'id'

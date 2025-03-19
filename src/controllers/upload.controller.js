@@ -1,6 +1,13 @@
 const { PdfReader } = require("pdfreader");
 const { getDb } = require("../utils/getDb");
 const moment = require('moment-timezone');
+const { exec } = require("child_process");
+const fs = require("fs");
+const path = require("path");
+const { v4: uuidv4 } = require("uuid");
+const pLimit = require("p-limit");
+
+const limit = pLimit(1); // Set concurrency to 1
 
 exports.uploadFile = async (req, res) => {
   try {
@@ -19,7 +26,18 @@ exports.uploadFile = async (req, res) => {
     console.log("user Id:", userId);
     console.log("financial year:", financialYear);
 
-    const tableDataByPage = await extractTableFromBuffer(req.file.buffer);
+    console.log("File uploaded successfully:", {
+      originalname: req.file.originalname,
+      mimetype: req.file.mimetype,
+      size: req.file.size,
+    });
+
+    // Compress the uploaded PDF
+    console.log("Starting PDF compression...");
+    const compressedBuffer = await compressPDF(req.file.buffer);
+    console.log("PDF compression completed. Compressed file size:", compressedBuffer.length);
+
+    const tableDataByPage = await extractTableFromBuffer(compressedBuffer);
 
     const groupedRecords = groupRecordsByTransactionId(tableDataByPage);
 
@@ -430,5 +448,52 @@ const extractAmountAndType = (input) => {
   return null; // Return nulls if no match is found
 };
 
+
+
+// Ghostscript compression function
+async function compressPDF(inputBuffer) {
+  return limit(() =>
+    new Promise((resolve, reject) => {
+      // Generate unique file names
+      const uniqueId = uuidv4();
+      const inputFilePath = path.join(__dirname, `temp-input-${uniqueId}.pdf`);
+      const outputFilePath = path.join(__dirname, `temp-output-${uniqueId}.pdf`);
+
+      try {
+        // Save input buffer as a temporary file
+        fs.writeFileSync(inputFilePath, inputBuffer);
+
+        // Ghostscript compression command
+        const command =
+          process.platform === "win32"
+            ? `gswin64c -sDEVICE=pdfwrite -dCompatibilityLevel=1.4 -dPDFSETTINGS=/ebook -dNOPAUSE -dBATCH -sOutputFile=${outputFilePath} ${inputFilePath}`
+            : `gs -sDEVICE=pdfwrite -dCompatibilityLevel=1.4 -dPDFSETTINGS=/ebook -dNOPAUSE -dBATCH -sOutputFile=${outputFilePath} ${inputFilePath}`;
+
+        // Execute the command
+        exec(command, (error) => {
+          if (error) {
+            console.error("Ghostscript error:", error.message);
+            reject(error);
+          } else {
+            // Read the compressed file
+            const compressedBuffer = fs.readFileSync(outputFilePath);
+
+            // Cleanup temporary files
+            fs.unlinkSync(inputFilePath); // Ensure temp input file is deleted
+            fs.unlinkSync(outputFilePath);
+
+            resolve(compressedBuffer);
+          }
+        });
+      } catch (cleanupError) {
+        // In case of failure, ensure temp files are cleaned
+        if (fs.existsSync(inputFilePath)) fs.unlinkSync(inputFilePath);
+        if (fs.existsSync(outputFilePath)) fs.unlinkSync(outputFilePath);
+
+        reject(cleanupError);
+      }
+    })
+  );
+}
 
 
