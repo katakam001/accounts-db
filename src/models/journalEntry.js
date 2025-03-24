@@ -24,7 +24,11 @@ module.exports = (sequelize, Sequelize) => {
         type: {
             type: Sequelize.INTEGER,
             allowNull: false
-        }
+        },
+        invoiceNumber: {
+            type: Sequelize.STRING,
+            allowNull: true
+          }
     }, {
         tableName: 'journal_entries',
     });

@@ -97,94 +97,109 @@ exports.getEntries = async (req, res) => {
   }
 };
 
-exports.getEntryById = async (req, res) => {
-  const entryId = req.params.id;
+exports.getEntryByInvoiceNumberByType = async (req, res) => {
+  const { invoiceNumber, type } = req.params;
 
-  if (!entryId) {
-    return res.status(400).json({ error: 'Entry ID parameter is required' });
+  if (!invoiceNumber) {
+    return res.status(400).json({ error: 'invoiceNumber is required' });
+  }
+  if (!type) {
+    return res.status(400).json({ error: 'type is required' });
   }
 
   try {
     const db = getDb();
-    const Entry = db.entry;
-    const EntryField = db.entryField;
-    const Categories = db.categories;
-    const Account = db.account;
-    const Units = db.units;
-    const Fields = db.fields;
-    const Items = db.items;
 
-    const entry = await Entry.findOne({
-      where: {
-        id: entryId
+    // Define the native SQL query
+    const entriesQuery = `
+      SELECT 
+        e.*,
+        json_agg(
+            json_build_object(
+                'field_id', ef.field_id, 
+                'field_value', ef.field_value, 
+                'field_name', f.field_name, -- Include field_name from fields
+                'field_category', fm.field_category, -- Include field_category from fieldsMapping
+                'tax_account_id', fm.account_id -- Include tax_account_id from fieldsMapping
+            )
+        ) AS fields,
+        c.name AS category_name,
+        a.name AS account_name,
+        u.name AS unit_name,
+        i.name AS item_name
+      FROM 
+        entries e
+      LEFT JOIN 
+        entry_fields ef ON e.id = ef.entry_id
+      LEFT JOIN 
+        fields f ON ef.field_id = f.id
+      LEFT JOIN 
+        fields_mapping fm ON f.id = fm.field_id AND fm.category_id = e.category_id
+      LEFT JOIN 
+        categories c ON e.category_id = c.id
+      LEFT JOIN 
+        account_list a ON e.account_id = a.id
+      LEFT JOIN 
+        units u ON e.unit_id = u.id
+      LEFT JOIN 
+        items i ON e.item_id = i.id
+      WHERE 
+        e."invoiceNumber" = :invoiceNumber 
+        AND e.type = :type
+      GROUP BY 
+        e.id, c.name, a.name, u.name, i.name;
+    `;
+
+    // Execute the query
+    const entries = await db.sequelize.query(entriesQuery, {
+      replacements: {
+        invoiceNumber: invoiceNumber,
+        type: parseInt(type),
       },
-      attributes: [
-        'id',
-        'category_id',
-        'entry_date',
-        'account_id',
-        'item_id',
-        'quantity',
-        'unit_price',
-        'total_amount',
-        'user_id',
-        'financial_year',
-        'value',
-        'journal_id',
-        'type',
-        [db.sequelize.col('category.name'), 'category_name'],
-        [db.sequelize.col('account.name'), 'account_name'],
-        [db.sequelize.col('unit.name'), 'unit_name'],
-        [db.sequelize.col('unit.id'), 'unit_id'],
-        [db.sequelize.col('item.name'), 'item_name']
-      ],
-      include: [
-        {
-          model: EntryField,
-          as: 'fields',
-          attributes: [
-            'id',
-            'entry_id',
-            'field_id',
-            'field_value',
-            [db.sequelize.literal('"fields->field"."field_name"'), 'field_name']
-          ],
-          include: [
-            {
-              model: Fields,
-              as: 'field',
-              attributes: []
-            }
-          ]
-        },
-        {
-          model: Categories,
-          as: 'category',
-          attributes: []
-        },
-        {
-          model: Account,
-          as: 'account',
-          attributes: []
-        },
-        {
-          model: Units,
-          as: 'unit',
-          attributes: []
-        },
-        {
-          model: Items,
-          as: 'item',
-          attributes: []
-        }
-      ]
+      type: db.Sequelize.QueryTypes.SELECT,
     });
 
-    if (!entry) {
+    if (!entries || entries.length === 0) {
       return res.status(404).json({ error: 'Entry not found' });
     }
 
-    res.json(entry);
+    // Format the response
+    const response = {
+      invoiceNumber,
+      entry_date: entries[0].entry_date, // Assuming all entries have the same invoice date
+      account_id: entries[0].account_id, // Assuming all entries have the same account_id
+      customerName: entries[0].account_name, // Using account_name as customerName
+      account_id: entries[0].account_id, // Using account_name as customerName
+      groupEntryValue: entries.reduce((sum, entry) => sum + parseFloat(entry.value), 0), // Summing up values
+      groupTotalAmount: entries.reduce((sum, entry) => sum + parseFloat(entry.total_amount), 0), // Summing up total amounts
+      entries: entries.map(entry => ({
+        id: entry.id,
+        category_id: entry.category_id,
+        entry_date: entry.entry_date,
+        account_id: entry.account_id,
+        item_id: entry.item_id,
+        quantity: entry.quantity,
+        unit_price: entry.unit_price,
+        total_amount: entry.total_amount,
+        user_id: entry.user_id,
+        financial_year: entry.financial_year,
+        value: entry.value,
+        journal_id: entry.journal_id,
+        type: entry.type,
+        unit_id: entry.unit_id,
+        invoiceNumber: entry.invoiceNumber,
+        category_account_id: entry.category_account_id,
+        fields: entry.fields ? JSON.parse(JSON.stringify(entry.fields)) : [],
+        category_name: entry.category_name,
+        account_name: entry.account_name,
+        item_name: entry.item_name,
+        unit_name: entry.unit_name,
+        category_account_name: entry.category_account_name || null, // Add category_account_name if applicable
+        dynamicFields: entry.fields ? JSON.parse(JSON.stringify(entry.fields)) : [],
+      })),
+    };
+
+    res.json(response);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -212,7 +227,8 @@ exports.addEntries = async (req, res) => {
       journal_date: journalDate,
       user_id: userId,
       financial_year: financialYear,
-      type: type
+      type: type,
+      invoiceNumber:invoiceNumber
     }, { transaction: t });
 
     const allJournalItems = [];
@@ -275,7 +291,8 @@ exports.addEntries = async (req, res) => {
         description: journalEntry.description,
         type: journalEntry.type,
         items: allJournalItems
-      }
+      },
+      invoiceNumber:invoiceNumber // Include the new invoice number
     };
 
     broadcast({ type: 'INSERT', data: broadcastData, entryType: 'entry', user_id: userId, financial_year: financialYear });
@@ -329,7 +346,7 @@ const getJournalItems = async (entry, dynamicFields, journalId, amount, customer
         journal_id: journalId,
         account_id: field.tax_account_id,
         group_id: groupId,
-        amount: field.field_value,
+        amount: parseFloat(parseFloat(field.field_value).toFixed(2)), // Convert amount to float and fix to 2 decimals
         type: type,
         narration: `${customerName} i.no.${entry.invoiceNumber} qty.${entry.quantity}`
       });
@@ -365,7 +382,7 @@ const createJournalItem = async (journalId, accountId, amount, type, userId, fin
     journal_id: journalId,
     account_id: accountId,
     group_id: await getGroupIdFromAccountId(accountId, userId, financialYear),
-    amount: amount,
+    amount: parseFloat(parseFloat(amount).toFixed(2)), // Convert amount to float and fix to 2 decimals
     type: type,
     narration: narration // Add narration dynamically
   };
@@ -402,10 +419,18 @@ exports.updateEntries = async (req, res) => {
       // description: getDescription(type, true),
       user_id: userId,
       financial_year: financialYear,
-      type: type
+      type: type,
+      invoiceNumber:newInvoiceNumber
     }, { transaction: t });
 
-    const existingEntries = await Entry.findAll({ where: { invoiceNumber: originalInvoiceNumber }, transaction: t });
+    const existingEntries = await Entry.findAll({
+      where: {
+        invoiceNumber: originalInvoiceNumber,
+        type: type, // Replace `desiredType` with the actual value or variable representing the type
+      },
+      transaction: t,
+    });
+    
     const existingEntryIds = existingEntries.map(entry => entry.id);
 
     // Identify and delete entries and their associated fields that are no longer present
@@ -501,7 +526,7 @@ exports.updateEntries = async (req, res) => {
 };
 
 exports.deleteEntries = async (req, res) => {
-  const { invoiceNumber } = req.params;
+  const { invoiceNumber,type } = req.params;
 
   try {
     const db = getDb();
@@ -510,9 +535,10 @@ exports.deleteEntries = async (req, res) => {
     const EntryField = db.entryField;
     const JournalItem = db.journalItem;
     const JournalEntry = db.journalEntry;
+    typeconverted=parseInt(type);
 
     // Find all entries linked to the provided invoiceNumber
-    const entries = await Entry.findAll({ where: { invoiceNumber }, transaction: t });
+    const entries = await Entry.findAll({ where: { invoiceNumber: invoiceNumber,type: typeconverted }, transaction: t });
 
     if (entries.length === 0) {
       await t.rollback();
@@ -520,7 +546,7 @@ exports.deleteEntries = async (req, res) => {
     }
 
     const journalId = entries[0].journal_id;
-    const type = entries[0].type;
+    // const type = entries[0].type;
 
 
     // Find the journal entry associated with the invoice number
@@ -551,7 +577,7 @@ exports.deleteEntries = async (req, res) => {
 
     // Broadcast the deletion event for the invoice number
     const broadcastData = {
-      group: { invoiceNumber: invoiceNumber, type: type, journal_id: journalId, journal_date: journalEntryExist.journal_date }
+      group: { invoiceNumber: invoiceNumber, type: typeconverted, journal_id: journalId, journal_date: journalEntryExist.journal_date }
     };
 
     broadcast({ type: 'DELETE', data: broadcastData, entryType: 'entry', user_id: journalEntryExist.user_id, financial_year: journalEntryExist.financial_year });

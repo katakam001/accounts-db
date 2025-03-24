@@ -24,13 +24,11 @@ exports.combinedBookListForDayBook = async (req, res) => {
           ji.account_id,
           ji.amount,
           ji.type,
-          COALESCE(e.id, je.id) AS entry_id
+          COALESCE(je."invoiceNumber", CAST(je.id AS VARCHAR)) AS entry_id
         FROM
           public.journal_entries je
         JOIN
           public.journal_items ji ON je.id = ji.journal_id
-        LEFT JOIN
-          public.entries e ON je.id = e.journal_id
         WHERE
           je.user_id = :userid AND
           je.financial_year = :financial_year
@@ -43,7 +41,7 @@ exports.combinedBookListForDayBook = async (req, res) => {
           ce.account_id,
           ce.amount,
           ce."type",
-          ce.id AS entry_id
+          unique_entry_id AS entry_id
         FROM
           public.combined_cash_entries ce
         WHERE
@@ -134,14 +132,12 @@ async function fetchBatchEntries(userid, financial_year, limit, rowCursor) {
         ji.account_id,
         ji.amount,
         ji.type,
-        COALESCE(e.id, je.id) AS entry_id,
+        COALESCE(je."invoiceNumber", CAST(je.id AS VARCHAR)) AS entry_id,
         al.name AS particular
       FROM
         public.journal_entries je
       JOIN
         public.journal_items ji ON je.id = ji.journal_id
-      LEFT JOIN
-        public.entries e ON je.id = e.journal_id
       JOIN
         public.account_list al ON ji.account_id = al.id
       WHERE
@@ -156,7 +152,7 @@ async function fetchBatchEntries(userid, financial_year, limit, rowCursor) {
         ce.account_id,
         ce.amount,
         ce."type",
-        ce.id AS entry_id,
+        unique_entry_id AS entry_id
         al.name AS particular
       FROM
         public.combined_cash_entries ce
@@ -259,10 +255,12 @@ async function processData(daybookEntries) {
   let processedEntries = [];
 
   for (const entry of daybookEntries) {
-    const cashCredit = entry.entry_type === 7 && entry.type ? entry.amount : 0;
-    const cashDebit = entry.entry_type === 7 && !entry.type ? entry.amount : 0;
-    const journalCredit = entry.entry_type >= 0 && entry.entry_type <= 6 && entry.type ? entry.amount : 0;
-    const journalDebit = entry.entry_type >= 0 && entry.entry_type <= 6 && !entry.type ? entry.amount : 0;
+    const amount = parseFloat(entry.amount);
+
+    const cashCredit = entry.entry_type === 7 && entry.type ? amount : 0;
+    const cashDebit = entry.entry_type === 7 && !entry.type ? amount : 0;
+    const journalCredit = entry.entry_type >= 0 && entry.entry_type <= 6 && entry.type ? amount : 0;
+    const journalDebit = entry.entry_type >= 0 && entry.entry_type <= 6 && !entry.type ? amount : 0;
 
     totalCashCredit += cashCredit;
     totalCashDebit += cashDebit;
@@ -291,12 +289,12 @@ async function processData(daybookEntries) {
   // Calculate totals and balance carry forward for each day
   const groupedDayBookEntries = Object.keys(groupedEntries).map((date, index, array) => {
     const entries = groupedEntries[date];
-    const totalCashCredit = entries.reduce((sum, entry) => sum + entry.cashCredit, 0);
-    const totalJournalCredit = entries.reduce((sum, entry) => sum + entry.journalCredit, 0);
-    const totalJournalDebit = entries.reduce((sum, entry) => sum + entry.journalDebit, 0);
-    const totalCashDebit = entries.reduce((sum, entry) => sum + entry.cashDebit, 0);
-    const balanceCarryForward = totalCashCredit - totalCashDebit;
-    const journalBalanceCarryForward = totalJournalCredit - totalJournalDebit;
+    const totalCashCredit = parseFloat(entries.reduce((sum, entry) => sum + entry.cashCredit, 0)).toFixed(2);
+    const totalJournalCredit = parseFloat(entries.reduce((sum, entry) => sum + entry.journalCredit, 0)).toFixed(2);
+    const totalJournalDebit = parseFloat(entries.reduce((sum, entry) => sum + entry.journalDebit, 0)).toFixed(2);
+    const totalCashDebit = parseFloat(entries.reduce((sum, entry) => sum + entry.cashDebit, 0)).toFixed(2);
+    const balanceCarryForward =  parseFloat((parseFloat(totalCashCredit) - parseFloat(totalCashDebit)).toFixed(2));
+    const journalBalanceCarryForward = parseFloat((parseFloat(totalJournalCredit) - parseFloat(totalJournalDebit)).toFixed(2));
 
     // Add opening balance for the next day
     if (index < array.length - 1) {
@@ -703,6 +701,7 @@ SELECT
     "JournalEntry"."journal_date", 
     "JournalEntry"."financial_year", 
     "User"."username" AS "user_name", 
+    "User"."id" AS "user_id", 
     "JournalItem"."account_id", 
     "Account"."name" AS "account_name", 
     "JournalItem"."group_id", 
@@ -835,7 +834,6 @@ exports.updateJournalEntry = async (req, res) => {
     const [affectedRows, updated] = await JournalEntry.update(
       {
         journal_date: journalDate,
-        description: updatedEntry.description,
         user_id: updatedEntry.user_id,
         updatedAt: new Date(),
         financial_year: updatedEntry.financial_year,
@@ -865,7 +863,7 @@ exports.updateJournalEntry = async (req, res) => {
       journal_id: entryId,
       account_id: item.account_id,
       group_id: item.group_id,
-      amount: item.amount,
+      amount: parseFloat(item.amount).toFixed(2),
       narration: item.narration,
       type: item.type,
       createdAt: new Date(),
@@ -882,7 +880,8 @@ exports.updateJournalEntry = async (req, res) => {
     const updatedJournalEntry = await JournalEntry.findAll({
       attributes: [
         'id',
-        'journal_date'
+        'journal_date',
+        'type'
       ],
       include: [
         {
@@ -896,11 +895,26 @@ exports.updateJournalEntry = async (req, res) => {
       },
       transaction
     });
+    
+    const output = {
+      id: updatedJournalEntry[0].id,
+      journal_date: updatedJournalEntry[0].journal_date,
+      type: updatedJournalEntry[0].type,
+      items: updatedJournalEntry[0].items.map(item => ({
+        journal_id: item.journal_id,
+        account_id: item.account_id,
+        group_id: item.group_id,
+        amount: parseFloat(item.amount), // Convert amount to a float
+        type: item.type,
+        narration: item.narration,
+      })),
+    };
+    // console.log(output);
 
     // Commit the transaction
     await transaction.commit();
 
-    broadcast({ type: 'UPDATE', data: updatedJournalEntry[0], entryType: 'journal', user_id: updated.user_id, financial_year: updated.financial_year }); // Emit WebSocket message
+    broadcast({ type: 'UPDATE', data: output, entryType: 'journal', user_id: updated.user_id, financial_year: updated.financial_year }); // Emit WebSocket message
 
     res.status(200).json({ message: 'Journal entry updated successfully' }); // Simplified response
   } catch (error) {
@@ -913,20 +927,19 @@ exports.updateJournalEntry = async (req, res) => {
 
 exports.createJournalEntryWithItems = async (req, res) => {
   const newEntry = req.body;
+  const db = getDb();
+  const transaction = await db.sequelize.transaction();
 
   // Convert journal_date string to Date object
   const journalDate = new Date(newEntry.journal_date);
 
   try {
-    const db = getDb();
-    const transaction = await db.sequelize.transaction();
     const JournalEntry = db.journalEntry;
     const JournalItem = db.journalItem;
 
     // Create new journal entry
     const createdJournalEntry = await JournalEntry.create({
       journal_date: journalDate,
-      description: newEntry.description,
       user_id: newEntry.user_id,
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -959,7 +972,8 @@ exports.createJournalEntryWithItems = async (req, res) => {
     const updatedJournalEntry = await JournalEntry.findAll({
       attributes: [
         'id',
-        'journal_date'
+        'journal_date',
+        'type'
       ],
       include: [
         {
@@ -974,10 +988,24 @@ exports.createJournalEntryWithItems = async (req, res) => {
       transaction
     });
 
+    const output = {
+      id: updatedJournalEntry[0].id,
+      journal_date: updatedJournalEntry[0].journal_date,
+      type: updatedJournalEntry[0].type,
+      items: updatedJournalEntry[0].items.map(item => ({
+        journal_id: item.journal_id,
+        account_id: item.account_id,
+        group_id: item.group_id,
+        amount: parseFloat(item.amount), // Convert amount to a float
+        type: item.type,
+        narration: item.narration,
+      })),
+    };  
+
     // Commit the transaction
     await transaction.commit();
 
-    broadcast({ type: 'INSERT', data: updatedJournalEntry[0], entryType: 'journal', user_id: newEntry.user_id, financial_year: newEntry.financial_year }); // Emit WebSocket message
+    broadcast({ type: 'INSERT', data: output, entryType: 'journal', user_id: newEntry.user_id, financial_year: newEntry.financial_year }); // Emit WebSocket message
     res.status(201).json({ message: 'Journal entry created successfully' }); // Simplified response
   } catch (error) {
     // Rollback the transaction in case of error

@@ -318,7 +318,7 @@ const processTransactions = async (groupedRecords, accountMap, suspenseAccountNa
           transaction_id: transactionId,
           user_id: userId,
           financial_year: financialYear,
-          type: 1,
+          type: 0,
         }, { transaction: t });
 
         journalItems.forEach((item) => {

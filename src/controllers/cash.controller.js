@@ -53,31 +53,50 @@ exports.cashBookListForDayBook = async (req, res) => {
 exports.getCashEntryById = async (req, res) => {
   try {
     const entryId = req.params.id;
-    const db = getDb();
-    const CashEntry = db.cash;
-    const Account = db.account;
 
     if (!entryId) {
       return res.status(400).json({ error: 'Entry ID is required' });
     }
 
-    const cashEntry = await CashEntry.findOne({
-      where: { id: entryId },
-      include: [
-        {
-          model: Account,
-          attributes: ['name'] // Fetch the account name from the Account model
-        }
-      ]
+    const db = getDb();
+
+    // Define the native SQL query
+    const cashEntryQuery = `
+      SELECT 
+        cce.unique_entry_id,
+        cce.id,
+        cce.cash_date,
+        cce.account_id,
+        cce.group_id,
+        cce.narration,
+        cce.amount,
+        cce.type,
+        cce.user_id,
+        cce.financial_year,
+        al.name AS account_name -- Join to get account_name from account_list
+      FROM 
+        combined_cash_entries AS cce
+      LEFT JOIN 
+        account_list AS al ON cce.account_id = al.id
+      WHERE 
+        cce.unique_entry_id = :entryId; -- Add the condition to fetch by entry ID
+    `;
+
+    // Execute the query
+    const [cashEntry] = await db.sequelize.query(cashEntryQuery, {
+      replacements: { entryId: entryId },
+      type: db.Sequelize.QueryTypes.SELECT,
     });
 
     if (cashEntry) {
-      // Transform the data to match the CashEntry interface
+      // Transform the data to match the required format
       const transformedEntry = {
         id: cashEntry.id,
+        unique_entry_id:cashEntry.unique_entry_id,
         cash_entry_date: new Date(cashEntry.cash_date),
         account_id: cashEntry.account_id,
-        account_name: cashEntry.Account.name, // Get account_name from the joined Account table
+        account_name: cashEntry.account_name, // Retrieved from the native query
+        group_id: cashEntry.group_id,
         narration_description: cashEntry.narration,
         amount: cashEntry.amount,
         type: cashEntry.type,
@@ -85,7 +104,7 @@ exports.getCashEntryById = async (req, res) => {
         cash_credit: cashEntry.type ? cashEntry.amount : 0,
         balance: 0, // Initial balance, will be recalculated on the client side
         user_id: cashEntry.user_id,
-        financial_year: cashEntry.financial_year
+        financial_year: cashEntry.financial_year,
       };
 
       return res.status(200).json(transformedEntry);
@@ -108,7 +127,8 @@ exports.cashBookList = async (req, res) => {
     // Fetch data from the `combined_cash_entries` view and join with `account_list` to get account_name
     const cashEntries = await db.sequelize.query(
       `
-      SELECT 
+      SELECT
+        cce.unique_entry_id,
         cce.id,
         cce.cash_date,
         cce.account_id,
@@ -133,6 +153,7 @@ exports.cashBookList = async (req, res) => {
 
     // Transform the data to match the CashEntry interface
     const transformedEntries = cashEntries.map(entry => ({
+      unique_entry_id: entry.unique_entry_id,
       id: entry.id,
       cash_entry_date: new Date(entry.cash_date),
       account_id: entry.account_id,
@@ -162,20 +183,41 @@ exports.cashEntryUpdate = async (req, res) => {
   try {
     const db = getDb();
     const CashEntry = db.cash;
-    const cashEntry = await CashEntry.findByPk(id);
-    if (!cashEntry) {
-      return res.status(404).json({ error: 'Cash entry not found' });
+    const CashEntryBatch = db.cashEntriesBatch; // Reference to cash_entries_batch
+    let cashEntry;
+    let uniqueEntryId;
+
+    // Check the prefix of the unique ID to decide which table to query
+    if (id.startsWith('CE_')) {
+      // Real-time entry
+      const extractedId = id.replace('CE_', ''); // Extract the numeric ID
+      cashEntry = await CashEntry.findByPk(extractedId); // Query cashEntries table
+      uniqueEntryId = id; // Assign the original unique_entry_id
+    } else if (id.startsWith('CEB_')) {
+      // Batch entry
+      const extractedId = id.replace('CEB_', ''); // Extract the numeric ID
+      cashEntry = await CashEntryBatch.findByPk(extractedId); // Query cashEntriesBatch table
+      uniqueEntryId = id; // Assign the original unique_entry_id
+    } else {
+      return res.status(400).json({ error: 'Invalid ID format' }); // Handle invalid ID format
     }
+
+    // Check if the entry exists
+      if (!cashEntry) {
+        return res.status(404).json({ error: 'Cash entry not found in either table' });
+      }
+
+    // Update the entry
     cashEntry.cash_date = cash_entry_date;
     cashEntry.narration = narration_description;
     cashEntry.account_id = account_id;
     cashEntry.type = type;
-    cashEntry.amount = amount;
+    cashEntry.amount = parseFloat(parseFloat(amount).toFixed(2));
     cashEntry.user_id = user_id;
     cashEntry.financial_year = financial_year;
     cashEntry.group_id = group_id;
     await cashEntry.save();
-    broadcast({ type: 'UPDATE', data: cashEntry, entryType: 'cash', user_id, financial_year }); // Emit WebSocket message
+    broadcast({ type: 'UPDATE', data: { ...cashEntry.toJSON(), unique_entry_id: uniqueEntryId }, entryType: 'cash', user_id, financial_year }); // Emit WebSocket message
     return res.status(200).json({ message: 'Cash entry updated successfully' }); // Simplified response
   } catch (err) {
     console.error(err);
@@ -201,7 +243,9 @@ exports.cashEntryCreate = async (req, res) => {
       financial_year,
       group_id
     });
-    broadcast({ type: 'INSERT', data: cashEntry, entryType: 'cash', user_id, financial_year }); // Emit WebSocket message
+    const uniqueEntryId = `CE_${cashEntry.id}`; // Prefix the ID with "CE_"
+    const formattedAmount = parseFloat(amount).toFixed(2);
+    broadcast({ type: 'INSERT', data: { ...cashEntry.toJSON(), unique_entry_id: uniqueEntryId,amount:parseFloat(formattedAmount) }, entryType: 'cash', user_id, financial_year }); // Emit WebSocket message
     return res.status(201).json({ message: 'Cash entry created successfully' }); // Simplified response
   } catch (err) {
     console.error(err);
@@ -215,14 +259,30 @@ exports.cashEntryDelete = async (req, res) => {
   try {
     const db = getDb();
     const CashEntry = db.cash;
-    const cashEntry = await CashEntry.findByPk(id);
-    if (!cashEntry) {
-      return res.status(404).json({ error: 'Cash entry not found' });
+    const CashEntryBatch = db.cashEntriesBatch; // Reference to cash_entries_batch
+    let cashEntry;
+    let uniqueEntryId = id; // Use the original unique_entry_id directly
+    let extractedId;
+
+    // Determine whether the ID is from real-time (CE) or batch (CEB)
+    if (id.startsWith('CE_')) {
+      // Real-time entry
+      extractedId = id.replace('CE_', ''); // Extract the numeric ID
+      cashEntry = await CashEntry.findByPk(extractedId); // Query cashEntries table
+    } else if (id.startsWith('CEB_')) {
+      // Batch entry
+      extractedId = id.replace('CEB_', ''); // Extract the numeric ID
+      cashEntry = await CashEntryBatch.findByPk(extractedId); // Query cashEntriesBatch table
+    } else {
+      return res.status(400).json({ error: 'Invalid ID format' }); // Handle invalid ID format
     }
-    await CashEntry.destroy({
+    if (!cashEntry) {
+      return res.status(404).json({ error: 'Cash entry not found in either table' });
+    }
+    await cashEntry.destroy({
       where: { id: id } // Add id to the where clause
     });
-    broadcast({ type: 'DELETE', data: cashEntry, entryType: 'cash', user_id: cashEntry.user_id, financial_year: cashEntry.financial_year }); // Emit WebSocket message
+    broadcast({ type: 'DELETE', data: {  unique_entry_id: uniqueEntryId }, entryType: 'cash', user_id: cashEntry.user_id, financial_year: cashEntry.financial_year }); // Emit WebSocket message
     return res.status(204).send(); // Simplified response
   } catch (err) {
     console.error(err);
