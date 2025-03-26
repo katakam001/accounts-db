@@ -8,6 +8,8 @@ exports.getEntries = async (req, res) => {
   const type = req.query.type;
   const startRow = parseInt(req.query.nextStartRow, 10) || 1;
   const pageSize = parseInt(req.query.pageSize, 10) || 10;
+  const fromDate = req.query.fromDate ? new Date(req.query.fromDate) : null; // Parse fromDate if provided
+  const toDate = req.query.toDate ? new Date(req.query.toDate) : null;
 
   if (!user_id) {
     return res.status(400).json({ error: 'userId query parameter is required' });
@@ -23,7 +25,14 @@ exports.getEntries = async (req, res) => {
     const db = getDb();
     const bufferSize = 10;
     const endRow = startRow + pageSize + bufferSize;
-
+    const dateFilterConditions = []; // Collect date filters dynamically
+    if (fromDate) {
+      dateFilterConditions.push(`e.entry_date >= :fromDate`);
+    }
+    if (toDate) {
+      dateFilterConditions.push(`e.entry_date <= :toDate`);
+    }
+    const dateFilterSQL = dateFilterConditions.length > 0 ? `AND ${dateFilterConditions.join(' AND ')}` : '';
    
     const [entriesBuffer] = await db.sequelize.query(
       `WITH CTE AS (
@@ -32,13 +41,13 @@ exports.getEntries = async (req, res) => {
                  ROW_NUMBER() OVER (ORDER BY e.entry_date , e.id) as row_num
           FROM entries e
           LEFT JOIN entry_fields ef ON e.id = ef.entry_id
-          WHERE e.user_id = :user_id AND e.financial_year = :financial_year AND e.type = :type
+          WHERE e.user_id = :user_id AND e.financial_year = :financial_year AND e.type = :type ${dateFilterSQL}
           GROUP BY e.id
       )
       SELECT * FROM CTE
             WHERE row_num BETWEEN :startRow AND :endRow`,
       {
-        replacements: { user_id, financial_year, type, startRow, endRow }
+        replacements: { user_id, financial_year, type, startRow, endRow,fromDate: fromDate ? fromDate.toISOString() : undefined,toDate: toDate ? toDate.toISOString() : undefined }
       }
     );
 
@@ -295,7 +304,7 @@ exports.addEntries = async (req, res) => {
       invoiceNumber:invoiceNumber // Include the new invoice number
     };
 
-    broadcast({ type: 'INSERT', data: broadcastData, entryType: 'entry', user_id: userId, financial_year: financialYear });
+    broadcast({ type: 'INSERT', data: broadcastData, entryType: 'entry', user_id: userId, financial_year: financialYear, journal_date: journalDate });
 
     res.status(201).json({ message: 'Entries created successfully' });
   } catch (error) {
@@ -515,7 +524,7 @@ exports.updateEntries = async (req, res) => {
     };
 
 
-    broadcast({ type: 'UPDATE', data: broadcastData, entryType: 'entry', user_id: userId, financial_year: financialYear });
+    broadcast({ type: 'UPDATE', data: broadcastData, entryType: 'entry', user_id: userId, financial_year: financialYear,journal_date:journalDate });
 
     res.status(200).json({ message: 'Entries updated successfully' });
   } catch (error) {
@@ -580,7 +589,7 @@ exports.deleteEntries = async (req, res) => {
       group: { invoiceNumber: invoiceNumber, type: typeconverted, journal_id: journalId, journal_date: journalEntryExist.journal_date }
     };
 
-    broadcast({ type: 'DELETE', data: broadcastData, entryType: 'entry', user_id: journalEntryExist.user_id, financial_year: journalEntryExist.financial_year });
+    broadcast({ type: 'DELETE', data: broadcastData, entryType: 'entry', user_id: journalEntryExist.user_id, financial_year: journalEntryExist.financial_year, journal_date: journalEntryExist.journal_date });
 
     res.status(204).send(); // No content
   } catch (error) {

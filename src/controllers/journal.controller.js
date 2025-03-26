@@ -152,7 +152,7 @@ async function fetchBatchEntries(userid, financial_year, limit, rowCursor) {
         ce.account_id,
         ce.amount,
         ce."type",
-        unique_entry_id AS entry_id
+        unique_entry_id AS entry_id,
         al.name AS particular
       FROM
         public.combined_cash_entries ce
@@ -244,10 +244,12 @@ async function batchProcessingForDayBook(userid, financial_year, limit, rowCurso
     hasNextPage = true;
   }
 
+  nextRowCursor = paginatedEntries.length > 0 ? paginatedEntries[paginatedEntries.length - 1].row_num : null;
+
   return { entries: paginatedEntries, nextRowCursor, hasNextPage };
 }
 
-async function processData(daybookEntries) {
+async function processData(daybookEntries,lastPageBalance) {
   let totalCashCredit = 0;
   let totalJournalCredit = 0;
   let totalJournalDebit = 0;
@@ -286,6 +288,18 @@ async function processData(daybookEntries) {
   // Group entries by date
   const groupedEntries = groupByDate(processedEntries);
 
+  if (lastPageBalance && processedEntries.length > 0) {
+    const firstDate = Object.keys(groupedEntries)[0];
+    groupedEntries[firstDate].unshift({
+        date: firstDate,
+        cashCredit: lastPageBalance, // Use the carry-forward balance from the previous page
+        journalCredit: 0,
+        particular: 'Opening Balance',
+        journalDebit: 0,
+        cashDebit: 0
+    });
+}
+
   // Calculate totals and balance carry forward for each day
   const groupedDayBookEntries = Object.keys(groupedEntries).map((date, index, array) => {
     const entries = groupedEntries[date];
@@ -321,7 +335,15 @@ async function processData(daybookEntries) {
     };
   });
 
-  return groupedDayBookEntries;
+  // Ensure groupedDayBookEntries exists and is non-empty before accessing
+  const finalBalanceCarryForward = groupedDayBookEntries.length > 0
+    ? groupedDayBookEntries[groupedDayBookEntries.length - 1].balanceCarryForward
+    : 0;
+
+  return {
+    groupedDayBookEntries,
+    finalBalanceCarryForward,
+  };
 }
 
 function groupByDate(entries) {
@@ -346,21 +368,26 @@ const fetchDaybookEntries = async (userId, financialYear, limit, rowCursor) => {
 exports.exportDaybookToExcel = async (req, res) => {
   try {
     const { userId, financialYear } = req.query;
+    const db = getDb();
+    const Account = db.account;
     const limit = 1000; // Define the batch size
     let rowCursor = 0;
     let hasNextPage = true;
-
+    let lastPageBalance=0;
     const exportsDir = path.join(__dirname, '..', 'exports');
     if (!fs.existsSync(exportsDir)) {
       fs.mkdirSync(exportsDir, { recursive: true });
     }
 
     const filteredEntries = [];
+    const account = await Account.findOne({ where: { name: 'CASH', user_id: userId, financial_year: financialYear } });
+    lastPageBalance = parseFloat(account.debit_balance - account.credit_balance);
 
     while (hasNextPage) {
       const { entries, nextRowCursor, hasNextPage: nextPage } = await fetchDaybookEntries(userId, financialYear, limit, rowCursor);
-      const processedEntries = await processData(entries); // Process the data
-      filteredEntries.push(...processedEntries);
+      const { groupedDayBookEntries, finalBalanceCarryForward } = await processData(entries,lastPageBalance); // Destructure the returned object
+      lastPageBalance = finalBalanceCarryForward; // Assign the final balance carry forward for the last page
+      filteredEntries.push(...groupedDayBookEntries);
       rowCursor = nextRowCursor;
       hasNextPage = nextPage;
     }
@@ -499,9 +526,13 @@ exports.exportDaybookToPDF = async (req, res) => {
   try {
     const { userId, financialYear } = req.query;
     const limit = 1000; // Define the batch size
+    const db = getDb();
+    const Account = db.account;
     const rowsPerPage = 40; // Define the number of rows per page
     let rowCursor = 0;
     let hasNextPage = true;
+    let lastPageBalance=0;
+
 
     const exportsDir = path.join(__dirname, '..', 'exports');
     if (!fs.existsSync(exportsDir)) {
@@ -509,11 +540,14 @@ exports.exportDaybookToPDF = async (req, res) => {
     }
 
     const filteredEntries = [];
+    const account = await Account.findOne({ where: { name: 'CASH', user_id: userId, financial_year: financialYear } });
+    lastPageBalance = parseFloat(account.debit_balance - account.credit_balance);
 
     while (hasNextPage) {
       const { entries, nextRowCursor, hasNextPage: nextPage } = await fetchDaybookEntries(userId, financialYear, limit, rowCursor);
-      const processedEntries = await processData(entries); // Process the data
-      filteredEntries.push(...processedEntries);
+      const { groupedDayBookEntries, finalBalanceCarryForward } = await processData(entries,lastPageBalance); // Destructure the returned object
+      lastPageBalance = finalBalanceCarryForward; // Assign the final balance carry forward for the last page
+      filteredEntries.push(...groupedDayBookEntries);
       rowCursor = nextRowCursor;
       hasNextPage = nextPage;
     }
