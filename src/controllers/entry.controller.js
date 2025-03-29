@@ -105,6 +105,167 @@ exports.getEntries = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+exports.getTaxSummary = async (req, res) => {
+  const user_id = req.query.userId;
+  const financial_year = req.query.financialYear;
+  const type = req.query.type;
+  const fromDate = req.query.fromDate ? new Date(req.query.fromDate) : null;
+  const toDate = req.query.toDate ? new Date(req.query.toDate) : null;
+
+  if (!user_id) {
+    return res.status(400).json({ error: 'userId query parameter is required' });
+  }
+  if (!financial_year) {
+    return res.status(400).json({ error: 'financialYear query parameter is required' });
+  }
+  if (!type) {
+    return res.status(400).json({ error: 'type query parameter is required' });
+  }
+
+  try {
+    const db = getDb();
+    const dateFilterConditions = [];
+
+    if (fromDate) {
+      dateFilterConditions.push(`e.entry_date >= :fromDate`);
+    }
+    if (toDate) {
+      dateFilterConditions.push(`e.entry_date <= :toDate`);
+    }
+    const dateFilterSQL = dateFilterConditions.length > 0 ? `AND ${dateFilterConditions.join(' AND ')}` : '';
+
+    const [summaryData] = await db.sequelize.query(
+      `WITH tax_per_entry AS (
+          SELECT
+              e.id AS entry_id,
+              e.category_account_id,
+              fm.field_id,
+              f.field_name,
+              CAST(ef.field_value AS FLOAT) AS total_tax_value
+          FROM entries e
+          INNER JOIN entry_fields ef ON e.id = ef.entry_id
+          INNER JOIN fields_mapping fm ON ef.field_id = fm.field_id
+          INNER JOIN fields f ON fm.field_id = f.id
+          WHERE fm.field_category = 1
+            AND e.user_id = :user_id
+            AND e.financial_year = :financial_year
+            AND e.type = :type
+            ${dateFilterSQL}
+          GROUP BY e.id, e.category_account_id, fm.field_id, f.field_name, ef.field_value
+      ),
+      tax_per_category AS (
+          SELECT
+              te.category_account_id,
+              te.field_id,
+              te.field_name,
+              SUM(te.total_tax_value) AS total_field_value
+          FROM tax_per_entry te
+          GROUP BY te.category_account_id, te.field_id, te.field_name
+      ),
+      value_summary AS (
+          SELECT
+              e.category_account_id,
+              ROUND(SUM(CAST(e.value AS FLOAT))::numeric, 2) AS total_value,
+              ROUND(SUM(CAST(e.total_amount AS FLOAT))::numeric, 2) AS total_amount
+          FROM entries e
+          WHERE e.user_id = :user_id
+            AND e.financial_year = :financial_year
+            AND e.type = :type
+            ${dateFilterSQL}
+          GROUP BY e.category_account_id
+      )
+      SELECT
+          vs.category_account_id,
+          vs.total_value,
+          vs.total_amount,
+          COALESCE(
+            json_agg(
+              json_build_object(
+                'field_id', tc.field_id,
+                'field_name', tc.field_name,
+                'total_field_value', ROUND(tc.total_field_value::numeric, 2)
+              )
+            ) FILTER (WHERE tc.field_id IS NOT NULL), '[]'
+          ) AS tax_details
+      FROM value_summary vs
+      LEFT JOIN tax_per_category tc ON vs.category_account_id = tc.category_account_id
+      GROUP BY vs.category_account_id, vs.total_value, vs.total_amount;`,
+      {
+        replacements: {
+          user_id,
+          financial_year,
+          type,
+          fromDate: fromDate ? fromDate.toISOString() : undefined,
+          toDate: toDate ? toDate.toISOString() : undefined,
+        },
+      }
+    );
+
+    res.json(summaryData);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+exports.getEntryTypeSummary = async (req, res) => {
+  const user_id = req.query.userId;
+  const financial_year = req.query.financialYear;
+  const fromDate = req.query.fromDate ? new Date(req.query.fromDate) : null;
+  const toDate = req.query.toDate ? new Date(req.query.toDate) : null;
+
+  // Validate required query parameters
+  if (!user_id) {
+    return res.status(400).json({ error: 'userId query parameter is required' });
+  }
+  if (!financial_year) {
+    return res.status(400).json({ error: 'financialYear query parameter is required' });
+  }
+
+  try {
+    const db = getDb(); // Initialize your database connection
+    const dateFilterConditions = [];
+
+    // Handle optional date filters
+    if (fromDate) {
+      dateFilterConditions.push(`entry_date >= :fromDate`);
+    }
+    if (toDate) {
+      dateFilterConditions.push(`entry_date <= :toDate`);
+    }
+    const dateFilterSQL = dateFilterConditions.length > 0 ? `AND ${dateFilterConditions.join(' AND ')}` : '';
+
+    // Execute query for total amount per type
+    const [summaryData] = await db.sequelize.query(
+      `SELECT 
+          type,
+          ROUND(CAST(COALESCE(SUM(total_amount), 0) AS NUMERIC), 2) AS total_amount_sum
+       FROM 
+          entries
+       WHERE 
+          user_id = :user_id
+          AND financial_year = :financial_year
+          AND type IN (1, 2, 3, 4, 5, 6)
+          ${dateFilterSQL}
+       GROUP BY 
+          type
+       ORDER BY 
+          type;`,
+      {
+        replacements: {
+          user_id,
+          financial_year,
+          fromDate: fromDate ? fromDate.toISOString() : undefined,
+          toDate: toDate ? toDate.toISOString() : undefined,
+        },
+      }
+    );
+
+    // Return the summarized data
+    res.json(summaryData);
+  } catch (error) {
+    // Handle any errors gracefully
+    res.status(500).json({ error: error.message });
+  }
+};
 
 exports.getEntryByInvoiceNumberByType = async (req, res) => {
   const { invoiceNumber, type } = req.params;
