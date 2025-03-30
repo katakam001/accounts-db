@@ -28,7 +28,11 @@ module.exports = (sequelize, Sequelize) => {
         invoiceNumber: {
             type: Sequelize.STRING,
             allowNull: true
-          }
+        },
+        invoice_seq_id: {
+            type: Sequelize.BIGINT, // Adding the invoice_seq_id field
+            allowNull: true
+        },  
     }, {
         tableName: 'journal_entries',
     });

@@ -24,7 +24,7 @@ exports.combinedBookListForDayBook = async (req, res) => {
           ji.account_id,
           ji.amount,
           ji.type,
-          COALESCE(je."invoiceNumber", CAST(je.id AS VARCHAR)) AS entry_id
+          COALESCE(CAST(je.invoice_seq_id AS VARCHAR), CAST(je.id AS VARCHAR)) AS entry_id
         FROM
           public.journal_entries je
         JOIN
@@ -132,7 +132,7 @@ async function fetchBatchEntries(userid, financial_year, limit, rowCursor) {
         ji.account_id,
         ji.amount,
         ji.type,
-        COALESCE(je."invoiceNumber", CAST(je.id AS VARCHAR)) AS entry_id,
+        COALESCE(CAST(je.invoice_seq_id AS VARCHAR), CAST(je.id AS VARCHAR)) AS entry_id,
         al.name AS particular
       FROM
         public.journal_entries je
@@ -270,7 +270,7 @@ async function processData(daybookEntries,lastPageBalance) {
     totalJournalDebit += journalDebit;
 
     processedEntries.push({
-      id: entry.entry_type === 7 ? entry.id : entry.entry_id,
+      id: entry.entry_id,
       date: entry.date,
       cashCredit,
       journalCredit,

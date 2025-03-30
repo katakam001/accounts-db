@@ -92,6 +92,10 @@ module.exports = (sequelize, Sequelize, Category, Account, Units, JournalEntry, 
       type: Sequelize.STRING,
       allowNull: false
     },
+    invoice_seq_id: {
+      type: Sequelize.BIGINT, // Adding the invoice_seq_id field
+      allowNull: true
+    },
     category_account_id: {
       type: Sequelize.INTEGER,
       allowNull: true,

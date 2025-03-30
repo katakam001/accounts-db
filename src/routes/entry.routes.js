@@ -14,8 +14,8 @@ module.exports = function (app) {
   app.get('/api/entries/getTaxSummary', [authJwt.verifyToken], controller.getTaxSummary);
   app.get('/api/entries/getEntryTypeSummary', [authJwt.verifyToken], controller.getEntryTypeSummary);
   app.get('/api/entries/updationJournalEntries', [authJwt.verifyToken], controller.generateJournalEntriesAndUpdateEntries);
-  app.get('/api/entries/:invoiceNumber/:type', [authJwt.verifyToken], controller.getEntryByInvoiceNumberByType); // Add this line
+  app.get('/api/entries/:invoice_seq_id/:type', [authJwt.verifyToken], controller.getEntryByInvoiceNumberByType); // Add this line
   app.post('/api/entries/bulk', [authJwt.verifyToken], controller.addEntries);
   app.put('/api/entries/bulk', [authJwt.verifyToken], controller.updateEntries);
-  app.delete('/api/entries/:invoiceNumber/:type', [authJwt.verifyToken], controller.deleteEntries);
+  app.delete('/api/entries/:invoice_seq_id/:type', [authJwt.verifyToken], controller.deleteEntries);
 };

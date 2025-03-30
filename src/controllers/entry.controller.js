@@ -55,12 +55,12 @@ exports.getEntries = async (req, res) => {
     
 
     // Step 2: Identify the last invoice number in the batch
-    const lastInvoiceNumber = entriesBuffer[pageSize - 1]?.invoiceNumber;
+    const lastInvoiceNumber = entriesBuffer[pageSize - 1]?.invoice_seq_id;
     let lastIndex = pageSize - 1;
 
     // Step 3: Ensure all entries with the same invoice number are included
     for (let i = pageSize; i < entriesBuffer.length; i++) {
-      if (entriesBuffer[i].invoiceNumber === lastInvoiceNumber) {
+      if (entriesBuffer[i].invoice_seq_id === lastInvoiceNumber) {
         lastIndex = i;
       } else {
         break;
@@ -91,6 +91,7 @@ exports.getEntries = async (req, res) => {
       type: entry.type,
       unit_id: entry.unit_id,
       invoiceNumber: entry.invoiceNumber,
+      invoice_seq_id:entry.invoice_seq_id,
       category_account_id: entry.category_account_id,
       fields: entry.fields ? JSON.parse(JSON.stringify(entry.fields)) : []
     }));
@@ -268,10 +269,10 @@ exports.getEntryTypeSummary = async (req, res) => {
 };
 
 exports.getEntryByInvoiceNumberByType = async (req, res) => {
-  const { invoiceNumber, type } = req.params;
+  const { invoice_seq_id, type } = req.params;
 
-  if (!invoiceNumber) {
-    return res.status(400).json({ error: 'invoiceNumber is required' });
+  if (!invoice_seq_id) {
+    return res.status(400).json({ error: 'invoice_seq_id is required' });
   }
   if (!type) {
     return res.status(400).json({ error: 'type is required' });
@@ -314,7 +315,7 @@ exports.getEntryByInvoiceNumberByType = async (req, res) => {
       LEFT JOIN 
         items i ON e.item_id = i.id
       WHERE 
-        e."invoiceNumber" = :invoiceNumber 
+        e.invoice_seq_id = :invoice_seq_id 
         AND e.type = :type
       GROUP BY 
         e.id, c.name, a.name, u.name, i.name;
@@ -323,7 +324,7 @@ exports.getEntryByInvoiceNumberByType = async (req, res) => {
     // Execute the query
     const entries = await db.sequelize.query(entriesQuery, {
       replacements: {
-        invoiceNumber: invoiceNumber,
+        invoice_seq_id: invoice_seq_id,
         type: parseInt(type),
       },
       type: db.Sequelize.QueryTypes.SELECT,
@@ -335,7 +336,8 @@ exports.getEntryByInvoiceNumberByType = async (req, res) => {
 
     // Format the response
     const response = {
-      invoiceNumber,
+      invoice_seq_id,
+      invoiceNumber: entries[0].invoiceNumber,
       entry_date: entries[0].entry_date, // Assuming all entries have the same invoice date
       account_id: entries[0].account_id, // Assuming all entries have the same account_id
       customerName: entries[0].account_name, // Using account_name as customerName
@@ -358,6 +360,7 @@ exports.getEntryByInvoiceNumberByType = async (req, res) => {
         type: entry.type,
         unit_id: entry.unit_id,
         invoiceNumber: entry.invoiceNumber,
+        invoice_seq_id: entry.invoice_seq_id,
         category_account_id: entry.category_account_id,
         fields: entry.fields ? JSON.parse(JSON.stringify(entry.fields)) : [],
         category_name: entry.category_name,
@@ -392,13 +395,19 @@ exports.addEntries = async (req, res) => {
     const financialYear = entries[0].financial_year;
     const type = entries[0].type;
 
-    // Step 1: Insert a new journal entry
+    // Step 1: Get the next sequence ID for the invoice group
+    const [[{ next_sequence_id }]] = await db.sequelize.query(
+      `SELECT nextval('group_entries_seq') AS next_sequence_id`
+    );
+
+    // Step 2: Insert a new journal entry
     const journalEntry = await JournalEntry.create({
       journal_date: journalDate,
       user_id: userId,
       financial_year: financialYear,
       type: type,
-      invoiceNumber:invoiceNumber
+      invoiceNumber:invoiceNumber,
+      invoice_seq_id: next_sequence_id // Store the sequence ID
     }, { transaction: t });
 
     const allJournalItems = [];
@@ -412,6 +421,7 @@ exports.addEntries = async (req, res) => {
 
       // Step 2: Insert a new entry with the journal_id
       entryWithoutDynamicFields.journal_id = journalEntry.id;
+      entryWithoutDynamicFields.invoice_seq_id = next_sequence_id; // Assign the same sequence ID
       const newEntry = await Entry.create(entryWithoutDynamicFields, { transaction: t });
 
       const entryFields = dynamicFields.map(field => ({
@@ -462,7 +472,8 @@ exports.addEntries = async (req, res) => {
         type: journalEntry.type,
         items: allJournalItems
       },
-      invoiceNumber:invoiceNumber // Include the new invoice number
+      invoiceNumber:invoiceNumber, // Include the new invoice number
+      invoice_seq_id: next_sequence_id // Include the new sequence ID
     };
 
     broadcast({ type: 'INSERT', data: broadcastData, entryType: 'entry', user_id: userId, financial_year: financialYear, journal_date: journalDate });
@@ -569,8 +580,7 @@ exports.updateEntries = async (req, res) => {
     const JournalItem = db.journalItem;
     const JournalEntry = db.journalEntry;
 
-    const originalInvoiceNumber = entries[0].originalInvoiceNumber || entries[0].invoiceNumber;
-    // console.log(originalInvoiceNumber);
+    const invoiceSeqId = entries[0].invoice_seq_id; // Use `invoice_seq_id` directly
     const newInvoiceNumber = entries[0].invoiceNumber;
     const journalId = entries[0].journal_id;
     const journalDate = entries[0].entry_date;
@@ -586,17 +596,17 @@ exports.updateEntries = async (req, res) => {
 
     await journalEntry.update({
       journal_date: journalDate,
-      // description: getDescription(type, true),
       user_id: userId,
       financial_year: financialYear,
       type: type,
-      invoiceNumber:newInvoiceNumber
+      invoice_seq_id: invoiceSeqId, // Update `invoice_seq_id`
+      invoiceNumber: newInvoiceNumber // Update `invoiceNumber` correctly
     }, { transaction: t });
 
+    // Find all existing entries for the `invoice_seq_id`
     const existingEntries = await Entry.findAll({
       where: {
-        invoiceNumber: originalInvoiceNumber,
-        type: type, // Replace `desiredType` with the actual value or variable representing the type
+        invoice_seq_id: invoiceSeqId // Use `invoice_seq_id` for filtering
       },
       transaction: t,
     });
@@ -628,6 +638,7 @@ exports.updateEntries = async (req, res) => {
       } else {
         entryWithoutDynamicFields.journal_id = journalEntry.id;
         entryWithoutDynamicFields.invoiceNumber = newInvoiceNumber; // Update to new invoice number
+        entryWithoutDynamicFields.invoice_seq_id = invoiceSeqId; // Assign the existing `invoice_seq_id`
         updatedEntry = await Entry.create(entryWithoutDynamicFields, { transaction: t });
       }
 
@@ -680,8 +691,8 @@ exports.updateEntries = async (req, res) => {
         type: journalEntry.type,
         items: allJournalItems
       },
-      originalInvoiceNumber:originalInvoiceNumber, // Include the original invoice number
-      newInvoiceNumber:newInvoiceNumber // Include the new invoice number
+      invoice_seq_id: invoiceSeqId, // Include the sequence ID
+      invoiceNumber: newInvoiceNumber // Include the updated invoice number
     };
 
 
@@ -696,7 +707,7 @@ exports.updateEntries = async (req, res) => {
 };
 
 exports.deleteEntries = async (req, res) => {
-  const { invoiceNumber,type } = req.params;
+  const { invoice_seq_id,  type } = req.params; // Include required parameters
 
   try {
     const db = getDb();
@@ -705,18 +716,20 @@ exports.deleteEntries = async (req, res) => {
     const EntryField = db.entryField;
     const JournalItem = db.journalItem;
     const JournalEntry = db.journalEntry;
-    typeconverted=parseInt(type);
 
-    // Find all entries linked to the provided invoiceNumber
-    const entries = await Entry.findAll({ where: { invoiceNumber: invoiceNumber,type: typeconverted }, transaction: t });
+    // Find all entries linked to the provided `invoice_seq_id`
+    const entries = await Entry.findAll({
+      where: { invoice_seq_id },
+      transaction: t,
+    });
 
     if (entries.length === 0) {
       await t.rollback();
-      return res.status(404).json({ error: 'No entries found for the provided invoice number' });
+      return res.status(404).json({ error: 'No entries found for the provided invoice sequence ID' });
     }
 
     const journalId = entries[0].journal_id;
-    // const type = entries[0].type;
+    const invoiceNumber = entries[0].invoiceNumber;
 
 
     // Find the journal entry associated with the invoice number
@@ -747,7 +760,13 @@ exports.deleteEntries = async (req, res) => {
 
     // Broadcast the deletion event for the invoice number
     const broadcastData = {
-      group: { invoiceNumber: invoiceNumber, type: typeconverted, journal_id: journalId, journal_date: journalEntryExist.journal_date }
+      group: {
+        invoiceNumber: invoiceNumber, // Include `invoiceNumber`
+        type: parseInt(type), // Ensure `type` is converted to integer
+        journal_id: journalId,
+        journal_date: journalEntryExist.journal_date,
+        invoice_seq_id: invoice_seq_id, // Add `invoice_seq_id`
+      },
     };
 
     broadcast({ type: 'DELETE', data: broadcastData, entryType: 'entry', user_id: journalEntryExist.user_id, financial_year: journalEntryExist.financial_year, journal_date: journalEntryExist.journal_date });
@@ -787,6 +806,7 @@ exports.generateJournalEntriesAndUpdateEntries = async () => {
         'type',
         'unit_id',
         'invoiceNumber',
+        'invoice_seq_id',
         'category_account_id',
             ] // Specify the columns you need
     });
@@ -795,19 +815,19 @@ exports.generateJournalEntriesAndUpdateEntries = async () => {
 
     // Group entries by invoiceNumber
     const groupedEntries = cleanEntries.reduce((acc, entry) => {
-      if (!acc[entry.invoiceNumber]) {
-        acc[entry.invoiceNumber] = [];
+      if (!acc[entry.invoice_seq_id]) {
+        acc[entry.invoice_seq_id] = [];
       }
-      acc[entry.invoiceNumber].push(entry);
+      acc[entry.invoice_seq_id].push(entry);
       return acc;
     }, {});
 
     // console.log(groupedEntries);
 
     // Process each group of entries
-    for (const invoiceNumber in groupedEntries) {
-      if (groupedEntries.hasOwnProperty(invoiceNumber)) {
-        const group = groupedEntries[invoiceNumber];
+    for (const invoice_seq_id in groupedEntries) {
+      if (groupedEntries.hasOwnProperty(invoice_seq_id)) {
+        const group = groupedEntries[invoice_seq_id];
 
                 // Fetch entry fields and their corresponding field mappings for the current group
                 for (const entry of group) {
@@ -876,6 +896,7 @@ const processGroupForJournalEntries = async (entries) => {
   const JournalEntry = db.journalEntry;
   const Account = db.account;
   const invoiceNumber = entries[0].invoiceNumber;
+  const invoiceSeqId = entries[0].invoice_seq_id;
   const journalDate = entries[0].entry_date;
   const userId = entries[0].user_id;
   const financialYear = entries[0].financial_year;
@@ -895,7 +916,9 @@ const processGroupForJournalEntries = async (entries) => {
       journal_date: journalDate,
       user_id: userId,
       financial_year: financialYear,
-      type: type
+      type: type,
+      invoice_seq_id: invoiceSeqId, // Update `invoice_seq_id`
+      invoiceNumber: invoiceNumber // Update `invoiceNumber` correctly
     }, { transaction: t });
 
     // Step 2: Update all entries in the group with the new journal_id
