@@ -823,6 +823,15 @@ exports.deleteJournalEntry = async (req, res) => {
       await transaction.rollback();
       return res.status(404).json({ error: 'Journal entry not found' });
     }
+    
+    // Retrieve the list of account IDs associated with this journal entry
+    const journalItems = await JournalItem.findAll({
+      attributes: ['account_id'],
+      where: { journal_id: entryId },
+      transaction
+    });
+
+    const accountIds = journalItems.map(item => item.account_id);
 
     // Delete associated journal items
     await JournalItem.destroy({
@@ -840,7 +849,7 @@ exports.deleteJournalEntry = async (req, res) => {
     await transaction.commit();
 
     // Broadcast the deletion event
-    broadcast({ type: 'DELETE', data: { id: journal.id, journal_date: journal.journal_date }, entryType: 'journal', user_id: journal.user_id, financial_year: journal.financial_year });
+    broadcast({ type: 'DELETE', data: { id: journal.id, journal_date: journal.journal_date, account_ids: accountIds }, entryType: 'journal', user_id: journal.user_id, financial_year: journal.financial_year,journal_date: journal.journal_date });
 
     res.status(204).send(); // Simplified response
   } catch (error) {
@@ -948,7 +957,7 @@ exports.updateJournalEntry = async (req, res) => {
     // Commit the transaction
     await transaction.commit();
 
-    broadcast({ type: 'UPDATE', data: output, entryType: 'journal', user_id: updated.user_id, financial_year: updated.financial_year }); // Emit WebSocket message
+    broadcast({ type: 'UPDATE', data: output, entryType: 'journal', user_id: updated.user_id, financial_year: updated.financial_year,journal_date: updatedJournalEntry[0].journal_date }); // Emit WebSocket message
 
     res.status(200).json({ message: 'Journal entry updated successfully' }); // Simplified response
   } catch (error) {
@@ -1039,7 +1048,7 @@ exports.createJournalEntryWithItems = async (req, res) => {
     // Commit the transaction
     await transaction.commit();
 
-    broadcast({ type: 'INSERT', data: output, entryType: 'journal', user_id: newEntry.user_id, financial_year: newEntry.financial_year }); // Emit WebSocket message
+    broadcast({ type: 'INSERT', data: output, entryType: 'journal', user_id: newEntry.user_id, financial_year: newEntry.financial_year,journal_date: updatedJournalEntry[0].journal_date }); // Emit WebSocket message
     res.status(201).json({ message: 'Journal entry created successfully' }); // Simplified response
   } catch (error) {
     // Rollback the transaction in case of error

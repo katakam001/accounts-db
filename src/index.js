@@ -3,6 +3,7 @@ const cors = require("cors");
 const cookieParser = require('cookie-parser');
 const path = require('path');
 const chokidar = require('chokidar');
+const moment = require('moment-timezone');
 const app = express();
 const syncAndInjectData = require('./syncAndInject');
 const { getDb, reloadDb } = require("./utils/getDb");
@@ -26,7 +27,10 @@ async function reloadConfig() {
     {
       host: global.dbConfig.HOST,
       dialect: global.dbConfig.dialect,
-      logging: console.log,
+      logging: (msg) => {
+        const timestamp = moment().tz('Asia/Kolkata').format('YYYY-MM-DD HH:mm:ss');
+        console.log(`[${timestamp}] ${msg}`);
+      },
       pool: {
         max: global.dbConfig.pool.max,
         min: global.dbConfig.pool.min,

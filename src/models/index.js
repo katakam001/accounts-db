@@ -1,5 +1,6 @@
 
 const Sequelize = require("sequelize");
+const moment = require('moment-timezone');
 // Access the global dbConfig
 global.dbConfig = require('../config/db.config'); 
 const dbConfig = global.dbConfig;
@@ -11,7 +12,10 @@ const sequelize = global.sequelize || new Sequelize(
   {
     host: dbConfig.HOST,
     dialect: dbConfig.dialect,
-    logging: console.log,
+    logging: (msg) => {
+      const timestamp = moment().tz('Asia/Kolkata').format('YYYY-MM-DD HH:mm:ss');
+      console.log(`[${timestamp}] ${msg}`);
+    },
     pool: {
       max: dbConfig.pool.max,
       min: dbConfig.pool.min,

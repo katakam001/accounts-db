@@ -217,7 +217,7 @@ exports.cashEntryUpdate = async (req, res) => {
     cashEntry.financial_year = financial_year;
     cashEntry.group_id = group_id;
     await cashEntry.save();
-    broadcast({ type: 'UPDATE', data: { ...cashEntry.toJSON(), unique_entry_id: uniqueEntryId }, entryType: 'cash', user_id, financial_year }); // Emit WebSocket message
+    broadcast({ type: 'UPDATE', data: { ...cashEntry.toJSON(), unique_entry_id: uniqueEntryId }, entryType: 'cash', user_id, financial_year,cash_date:cash_entry_date }); // Emit WebSocket message
     return res.status(200).json({ message: 'Cash entry updated successfully' }); // Simplified response
   } catch (err) {
     console.error(err);
@@ -245,7 +245,7 @@ exports.cashEntryCreate = async (req, res) => {
     });
     const uniqueEntryId = `CE_${cashEntry.id}`; // Prefix the ID with "CE_"
     const formattedAmount = parseFloat(amount).toFixed(2);
-    broadcast({ type: 'INSERT', data: { ...cashEntry.toJSON(), unique_entry_id: uniqueEntryId,amount:parseFloat(formattedAmount) }, entryType: 'cash', user_id, financial_year }); // Emit WebSocket message
+    broadcast({ type: 'INSERT', data: { ...cashEntry.toJSON(), unique_entry_id: uniqueEntryId,amount:parseFloat(formattedAmount) }, entryType: 'cash', user_id, financial_year,cash_date:cashEntry.cash_date }); // Emit WebSocket message
     return res.status(201).json({ message: 'Cash entry created successfully' }); // Simplified response
   } catch (err) {
     console.error(err);
@@ -263,16 +263,22 @@ exports.cashEntryDelete = async (req, res) => {
     let cashEntry;
     let uniqueEntryId = id; // Use the original unique_entry_id directly
     let extractedId;
+    let account_id;
+    let cash_date;
 
     // Determine whether the ID is from real-time (CE) or batch (CEB)
     if (id.startsWith('CE_')) {
       // Real-time entry
       extractedId = id.replace('CE_', ''); // Extract the numeric ID
       cashEntry = await CashEntry.findByPk(extractedId); // Query cashEntries table
+      account_id = cashEntry.account_id;
+      cash_date = cashEntry.cash_date;
     } else if (id.startsWith('CEB_')) {
       // Batch entry
       extractedId = id.replace('CEB_', ''); // Extract the numeric ID
       cashEntry = await CashEntryBatch.findByPk(extractedId); // Query cashEntriesBatch table
+      account_id = cashEntry.account_id;
+      cash_date = cashEntry.cash_date;
     } else {
       return res.status(400).json({ error: 'Invalid ID format' }); // Handle invalid ID format
     }
@@ -282,7 +288,7 @@ exports.cashEntryDelete = async (req, res) => {
     await cashEntry.destroy({
       where: { id: id } // Add id to the where clause
     });
-    broadcast({ type: 'DELETE', data: {  unique_entry_id: uniqueEntryId }, entryType: 'cash', user_id: cashEntry.user_id, financial_year: cashEntry.financial_year }); // Emit WebSocket message
+    broadcast({ type: 'DELETE', data: {  unique_entry_id: uniqueEntryId,account_id:account_id }, entryType: 'cash', user_id: cashEntry.user_id, financial_year: cashEntry.financial_year,cash_date:cash_date }); // Emit WebSocket message
     return res.status(204).send(); // Simplified response
   } catch (err) {
     console.error(err);

@@ -750,6 +750,15 @@ exports.deleteEntries = async (req, res) => {
 
     }
 
+      // Retrieve the list of account IDs associated with this journal entry
+      const journalItems = await JournalItem.findAll({
+        attributes: ['account_id'],
+        where: { journal_id: journalId },
+        transaction: t
+      });
+  
+      const accountIds = journalItems.map(item => item.account_id);  
+
     // Delete the journal items
     await JournalItem.destroy({ where: { journal_id: journalId }, transaction: t });
 
@@ -766,6 +775,7 @@ exports.deleteEntries = async (req, res) => {
         journal_id: journalId,
         journal_date: journalEntryExist.journal_date,
         invoice_seq_id: invoice_seq_id, // Add `invoice_seq_id`
+        account_ids: accountIds
       },
     };
 

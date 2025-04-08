@@ -101,6 +101,160 @@ exports.getLedgerForAccount = async (req, res) => {
   }
 };
 
+exports.getLedger = async (req, res) => {
+  const user_id = req.query.userId;
+  const financial_year = req.query.financialYear;
+  const startRow = parseInt(req.query.nextStartRow, 10) || 1;
+  const pageSize = parseInt(req.query.pageSize, 10) || 10;
+  const fromDate = req.query.fromDate ? new Date(req.query.fromDate) : null;
+  const toDate = req.query.toDate ? new Date(req.query.toDate) : null;
+
+  if (!user_id) {
+    return res.status(400).json({ error: 'userId query parameter is required' });
+  }
+
+  if (!financial_year) {
+    return res.status(400).json({ error: 'financialYear query parameter is required' });
+  }
+
+  try {
+    const db = getDb();
+    const endRow = startRow + pageSize + 1; // Adding a buffer of 1 record
+
+    // Dynamically construct date filter conditions for both tables
+    const dateFilterConditionsForJE = [];
+    const dateFilterConditionsForCE = [];
+    if (fromDate) {
+      dateFilterConditionsForJE.push(`je.journal_date >= :fromDate`);
+      dateFilterConditionsForCE.push(`ce.cash_date >= :fromDate`);
+    }
+    if (toDate) {
+      dateFilterConditionsForJE.push(`je.journal_date <= :toDate`);
+      dateFilterConditionsForCE.push(`ce.cash_date <= :toDate`);
+    }
+    const dateFilterSQLForJE = dateFilterConditionsForJE.length > 0 ? `AND ${dateFilterConditionsForJE.join(' AND ')}` : '';
+    const dateFilterSQLForCE = dateFilterConditionsForCE.length > 0 ? `AND ${dateFilterConditionsForCE.join(' AND ')}` : '';
+
+    const [entriesBuffer] = await db.sequelize.query(
+      `
+      WITH combined_entries AS (
+        SELECT
+          CAST(je.id AS VARCHAR) as entry_id,
+          DATE(je.journal_date) AS date,
+          ji.narration,
+          ji.amount,
+          ji.type,
+          ji.account_id,
+          ji.group_id
+        FROM
+          public.journal_entries je
+        JOIN
+          public.journal_items ji ON je.id = ji.journal_id
+        WHERE
+          je.user_id = :user_id AND
+          je.financial_year = :financial_year ${dateFilterSQLForJE}
+
+        UNION ALL
+
+        SELECT
+          ce.unique_entry_id as entry_id,
+          DATE(ce.cash_date) AS date,
+          ce.narration,
+          ce.amount,
+          ce.type,
+          ce.account_id,
+          ce.group_id
+        FROM
+          public.combined_cash_entries ce
+        WHERE
+          ce.user_id = :user_id AND
+          ce.financial_year = :financial_year ${dateFilterSQLForCE}
+      ),
+      entries_with_names AS (
+        SELECT
+          ce.entry_id,
+          ce.date,
+          ce.narration,
+          ce.amount,
+          ce.type,
+          ce.account_id,
+          a.name AS account_name,
+          ce.group_id,
+          g.name AS group_name
+        FROM
+          combined_entries ce
+        LEFT JOIN
+          public.group_list g ON ce.group_id = g.id
+        LEFT JOIN
+          public.account_list a ON ce.account_id = a.id
+        WHERE
+          g.user_id = :user_id AND
+          g.financial_year = :financial_year AND
+          a.user_id = :user_id AND
+          a.financial_year = :financial_year
+      ),
+      numbered_entries AS (
+        SELECT
+          *,
+          ROW_NUMBER() OVER (ORDER BY group_name, account_name, date) AS row_num
+        FROM
+          entries_with_names
+      ),
+      entries_with_balance AS (
+        SELECT
+          *,
+          SUM(CASE WHEN type THEN amount ELSE -amount END) 
+            OVER (PARTITION BY account_id ORDER BY row_num) AS balance
+        FROM
+          numbered_entries
+      )
+      SELECT *
+      FROM entries_with_balance
+      WHERE row_num BETWEEN :startRow AND :endRow
+      ORDER BY group_name, account_name, row_num
+      `,
+      {
+        replacements: {
+          user_id,
+          financial_year,
+          startRow,
+          endRow,
+          fromDate: fromDate ? fromDate.toISOString() : undefined,
+          toDate: toDate ? toDate.toISOString() : undefined,
+        }
+      }
+    );
+
+    // Determine if there are more records
+    const hasMoreRecords = entriesBuffer.length > pageSize;
+    const validEntries = hasMoreRecords ? entriesBuffer.slice(0, pageSize) : entriesBuffer;
+
+    // Prepare and send the result
+    const groupedEntries = validEntries.map((entry) => ({
+      entry_id: entry.entry_id,
+      group_id: entry.group_id,
+      group_name: entry.group_name,
+      account_id: entry.account_id,
+      account_name: entry.account_name,
+      date: entry.date,
+      narration: entry.narration,
+      amount: parseFloat(entry.amount).toFixed(2),
+      type: entry.type,
+      balance: parseFloat(entry.balance).toFixed(2),
+    }));
+
+    res.json({
+      entries: groupedEntries,
+      nextStartRow: startRow + groupedEntries.length, // Null if no more records
+      hasMore: hasMoreRecords, // True if more records exist
+    });
+  } catch (error) {
+    console.error('Error fetching ledger data:', error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+
 exports.getUpdatedLedger = async (req, res) => {
   try {
     const db = getDb();
