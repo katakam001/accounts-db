@@ -1,5 +1,5 @@
 const { authJwt } = require("../middleware");
-const { uploadFile } = require("../controllers/upload.controller");
+const controller = require("../controllers/upload.controller");
 const upload = require("../config/multer-config"); // Multer config file
 
 module.exports = function (app) {
@@ -9,5 +9,7 @@ module.exports = function (app) {
   });
 
   // Add the route for file upload
-  app.post("/api/upload/bank-statement-pdf", [authJwt.verifyToken, upload], uploadFile);
+  app.post("/api/upload/bank-statement-pdf", [authJwt.verifyToken, upload], controller.uploadFile);
+  app.post("/api/upload/entries-upload", [authJwt.verifyToken, upload], controller.entriesupload);
+  app.post("/api/upload/validate-entries-upload", [authJwt.verifyToken, upload], controller.validateEntriesupload);
 };

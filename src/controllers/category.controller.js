@@ -1,20 +1,10 @@
 const {getDb} = require("../utils/getDb");
-
+const { fetchCategories } = require('../services/category.service');
 
 exports.getAllCategories = async (req, res) => {
   try {
-    const db = getDb();
-    const Categories = db.categories;
     const { type, userId, financialYear } = req.query;
-    
-    const whereClause = {
-      ...(type && { type }),
-      ...(userId && { user_id: userId }),
-      ...(financialYear && { financial_year: financialYear })
-    };
-    
-    const categories = await Categories.findAll({ where: whereClause });
-    
+    const categories = await fetchCategories({ type, userId, financialYear });   
     res.json(categories);
   } catch (error) {
     res.status(500).json({ error: error.message });

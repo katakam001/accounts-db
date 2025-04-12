@@ -12,7 +12,7 @@ const data = JSON.parse(fs.readFileSync(dataPath, 'utf8'));
 const accountListData = data.map(entry => ({
     id: entry.id,
     name: entry.name,
-    description: entry.description,
+    gst_no: entry.gst_no,
     user_id: entry.user_id,
     credit_balance: entry.credit_balance,
     debit_balance: entry.debit_balance,
@@ -46,7 +46,7 @@ const addressData = data
     }));
 
 // Define fields for each CSV
-const accountListFields = ['id', 'name', 'description', 'user_id', 'credit_balance', 'debit_balance', 'financial_year', 'isDealer', 'type', 'createdAt', 'updatedAt'];
+const accountListFields = ['id', 'name', 'gst_no', 'user_id', 'credit_balance', 'debit_balance', 'financial_year', 'isDealer', 'type', 'createdAt', 'updatedAt'];
 const accountGroupFields = ['account_id', 'group_id', 'createdAt', 'updatedAt'];
 const addressFields = ['account_id', 'street', 'city', 'state', 'postal_code', 'country', 'createdAt', 'updatedAt'];
 

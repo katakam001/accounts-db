@@ -1,5 +1,6 @@
 const { getDb } = require("../utils/getDb");
 const { broadcast } = require('../websocket'); // Import the broadcast function
+const entryService = require('../services/entry.service');
 
 
 exports.getEntries = async (req, res) => {
@@ -377,112 +378,36 @@ exports.getEntryByInvoiceNumberByType = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
-
 exports.addEntries = async (req, res) => {
   const { entries } = req.body;
 
   try {
-    const db = getDb();
-    const t = await db.sequelize.transaction();
-    const Entry = db.entry;
-    const EntryField = db.entryField;
-    const JournalItem = db.journalItem;
-    const JournalEntry = db.journalEntry;
+    const result = await entryService.addEntriesService(entries);
 
-    const invoiceNumber = entries[0].invoiceNumber;
-    const journalDate = entries[0].entry_date;
-    const userId = entries[0].user_id;
-    const financialYear = entries[0].financial_year;
-    const type = entries[0].type;
+    // Extract data from the service result
+    const { data } = result;
+    const { journalEntry, entries: updatedEntries, invoiceNumber, invoice_seq_id } = data; // Include invoiceNumber and invoice_seq_id
+    const { user_id, financial_year, entry_date } = entries[0];
 
-    // Step 1: Get the next sequence ID for the invoice group
-    const [[{ next_sequence_id }]] = await db.sequelize.query(
-      `SELECT nextval('group_entries_seq') AS next_sequence_id`
-    );
-
-    // Step 2: Insert a new journal entry
-    const journalEntry = await JournalEntry.create({
-      journal_date: journalDate,
-      user_id: userId,
-      financial_year: financialYear,
-      type: type,
-      invoiceNumber:invoiceNumber,
-      invoice_seq_id: next_sequence_id // Store the sequence ID
-    }, { transaction: t });
-
-    const allJournalItems = [];
-    let total_amount = 0;
-
-    const updatedEntries = []; // Array to store entries with assigned IDs
-
-    for (const entry of entries) {
-      // Remove dynamicFields from entry before creating new Entry
-      const { dynamicFields, id,customerName, ...entryWithoutDynamicFields } = entry;
-
-      // Step 2: Insert a new entry with the journal_id
-      entryWithoutDynamicFields.journal_id = journalEntry.id;
-      entryWithoutDynamicFields.invoice_seq_id = next_sequence_id; // Assign the same sequence ID
-      const newEntry = await Entry.create(entryWithoutDynamicFields, { transaction: t });
-
-      const entryFields = dynamicFields.map(field => ({
-        entry_id: newEntry.id,
-        field_id: field.field_id,
-        field_value: field.field_value
-      }));
-      await EntryField.bulkCreate(entryFields, { transaction: t });
-
-      // Determine the amount based on exclude_from_total and field_category
-      const amount = dynamicFields.some(field => field.field_category === 1 && field.exclude_from_total) ? entry.value : entry.total_amount;
-      total_amount += parseFloat(amount); // Parse the amount before summation
-
-      // Add new entry with assigned ID to updatedEntries array, keeping dynamicFields the same
-      updatedEntries.push({
-        ...newEntry.toJSON(),
-        dynamicFields: dynamicFields,
-      });
-
-      // Step 3: Insert journal items for the entry
-      const journalItems = await getJournalItems(entry, dynamicFields, journalEntry.id, amount,customerName);
-      allJournalItems.push(...journalItems);
-    }
-
-    // Create party journal item once per invoice
-    const partyJournalItems = await getPartyJournalItems(entries[0], total_amount, journalEntry.id);
-    // Add partyJournalItems to the front of the allJournalItems array
-    allJournalItems.unshift(...partyJournalItems);
-
-    // console.log(allJournalItems.length);
-
-    await JournalItem.bulkCreate(allJournalItems, {
-      fields: ['journal_id', 'account_id', 'group_id', 'amount', 'type', 'createdAt', 'updatedAt','narration'],
-      returning: ['journal_id', 'account_id', 'group_id', 'amount', 'type', 'createdAt', 'updatedAt','narration'],
-      transaction: t
+    // Include invoiceNumber and invoice_seq_id in broadcastData
+    broadcast({
+      type: 'INSERT',
+      data: {
+        entries: updatedEntries,
+        group: { type: data.group.type },
+        journalEntry:journalEntry,
+        invoiceNumber,      // Ensure invoiceNumber is included
+        invoice_seq_id,     // Ensure invoice_seq_id is included
+      },
+      entryType: 'entry',
+      user_id,
+      financial_year,
+      journal_date:entry_date,
     });
 
-    await t.commit();
-
-    // Broadcast the new entry along with journal entries and items (excluding entryFields)
-    const broadcastData = {
-      entries: updatedEntries,
-      group: { type: type },
-      journalEntry: {
-        id: journalEntry.id,
-        journal_date: journalEntry.journal_date,
-        description: journalEntry.description,
-        type: journalEntry.type,
-        items: allJournalItems
-      },
-      invoiceNumber:invoiceNumber, // Include the new invoice number
-      invoice_seq_id: next_sequence_id // Include the new sequence ID
-    };
-
-    broadcast({ type: 'INSERT', data: broadcastData, entryType: 'entry', user_id: userId, financial_year: financialYear, journal_date: journalDate });
-
-    res.status(201).json({ message: 'Entries created successfully' });
+    res.status(201).json({ message: result.message }); // Return the result as response
   } catch (error) {
-    console.log(error);
-    await t.rollback();
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: error.message });
   }
 };
 

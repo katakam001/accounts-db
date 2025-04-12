@@ -1,20 +1,11 @@
 const { getDb } = require("../utils/getDb");
+const { getAllItems } = require('../services/items.service');
 
 exports.getAllItems = async (req, res) => {
   try {
-    const db = getDb();
-    const Item = db.items;
     const { userId, financialYear } = req.query;
 
-    const whereCondition = {
-      ...(userId && { user_id: userId }),
-      ...(financialYear && { financial_year: financialYear })
-    };
-
-    const items = await Item.findAll({
-      attributes: ['id', 'name', 'user_id', 'financial_year'],
-      where: whereCondition
-    });
+    const items = await getAllItems({  userId, financialYear });   
 
     res.json(items);
   } catch (error) {

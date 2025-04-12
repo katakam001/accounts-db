@@ -2,10 +2,10 @@
     {
         "id": 166,
         "name": "Traveling",
-        "description": "",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": false,
         "group": {
@@ -20,10 +20,10 @@
     {
         "id": 167,
         "name": "Postage and Telephone",
-        "description": "",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": false,
         "group": {
@@ -38,10 +38,10 @@
     {
         "id": 168,
         "name": "Vehicle Maintenance",
-        "description": "",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": false,
         "group": {
@@ -56,10 +56,10 @@
     {
         "id": 169,
         "name": "Sadar",
-        "description": "",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": false,
         "group": {
@@ -74,10 +74,10 @@
     {
         "id": 170,
         "name": "Printing & Stationary",
-        "description": "",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": false,
         "group": {
@@ -92,10 +92,10 @@
     {
         "id": 171,
         "name": "Insurance",
-        "description": "",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": false,
         "group": {
@@ -110,10 +110,10 @@
     {
         "id": 172,
         "name": "Taxes & Licenses",
-        "description": "",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": false,
         "group": {
@@ -128,10 +128,10 @@
     {
         "id": 173,
         "name": "Audit Fees",
-        "description": "",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": false,
         "group": {
@@ -146,10 +146,10 @@
     {
         "id": 174,
         "name": "Commissions",
-        "description": "",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": false,
         "group": {
@@ -164,10 +164,10 @@
     {
         "id": 175,
         "name": "Advertisement",
-        "description": "",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": false,
         "group": {
@@ -182,10 +182,10 @@
     {
         "id": 176,
         "name": "Interest Paid",
-        "description": "",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": false,
         "group": {
@@ -200,10 +200,10 @@
     {
         "id": 177,
         "name": "Amc cess",
-        "description": "",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": false,
         "group": {
@@ -218,10 +218,10 @@
     {
         "id": 178,
         "name": "Freight",
-        "description": "",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": false,
         "group": {
@@ -236,10 +236,10 @@
     {
         "id": 179,
         "name": "Coolie",
-        "description": "",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": false,
         "group": {
@@ -254,10 +254,10 @@
     {
         "id": 180,
         "name": "Electricity",
-        "description": "",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": false,
         "group": {
@@ -272,10 +272,10 @@
     {
         "id": 181,
         "name": "Ginning & Pressing Charges",
-        "description": "",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": false,
         "group": {
@@ -290,10 +290,10 @@
     {
         "id": 182,
         "name": "RCM SGST",
-        "description": "",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": false,
         "group": {
@@ -308,10 +308,10 @@
     {
         "id": 183,
         "name": "RCM CGST",
-        "description": "",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": false,
         "group": {
@@ -326,10 +326,10 @@
     {
         "id": 184,
         "name": "Lease Rent",
-        "description": "",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": false,
         "group": {
@@ -344,10 +344,10 @@
     {
         "id": 185,
         "name": "Machine Repair",
-        "description": "",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": false,
         "group": {
@@ -362,10 +362,10 @@
     {
         "id": 186,
         "name": "SGST",
-        "description": "",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": false,
         "group": {
@@ -380,10 +380,10 @@
     {
         "id": 187,
         "name": "CGST",
-        "description": "",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": false,
         "group": {
@@ -398,10 +398,10 @@
     {
         "id": 188,
         "name": "IGST",
-        "description": "",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": false,
         "group": {
@@ -416,10 +416,10 @@
     {
         "id": 189,
         "name": "RCM IGST",
-        "description": "",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": false,
         "group": {
@@ -434,10 +434,10 @@
     {
         "id": 190,
         "name": "Sample Testing Charges",
-        "description": "",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": false,
         "group": {
@@ -452,10 +452,10 @@
     {
         "id": 191,
         "name": "Bank Charges",
-        "description": "",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": false,
         "group": {
@@ -470,10 +470,10 @@
     {
         "id": 192,
         "name": "Purchase Account",
-        "description": "",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": false,
         "group": {
@@ -488,10 +488,10 @@
     {
         "id": 193,
         "name": "Sales Account",
-        "description": "",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": false,
         "group": {
@@ -506,10 +506,10 @@
     {
         "id": 194,
         "name": "CASH",
-        "description": "cash on hand",
+        "gst_no": "cash on hand",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": false,
         "group": {
@@ -523,11 +523,11 @@
     },
     {
         "id": 195,
-        "name": "Venkata rao",
-        "description": "",
+        "name": "Venkata Rao",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -541,11 +541,11 @@
     },
     {
         "id": 196,
-        "name": "Lakshmi coffee",
-        "description": "",
+        "name": "Lakshmi Coffee",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -559,11 +559,11 @@
     },
     {
         "id": 197,
-        "name": "lakshmi srinivasa traders",
-        "description": "",
+        "name": "Lakshmi Srinivasa traders",
+        "gst_no": "37AFGPA38732A1ZV",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -577,11 +577,11 @@
     },
     {
         "id": 198,
-        "name": "Lakshmi durga stores",
-        "description": "",
+        "name": "Lakshmi Durga Stores",
+        "gst_no": "37AAJFL6098A1Z5",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -595,11 +595,11 @@
     },
     {
         "id": 199,
-        "name": "Chennaiah fancy",
-        "description": "",
+        "name": "Chennaiah Fancy",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -613,11 +613,11 @@
     },
     {
         "id": 200,
-        "name": "harsha vardhini G/S",
-        "description": "",
+        "name": "Harsha Vardhini G/S",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -631,11 +631,11 @@
     },
     {
         "id": 202,
-        "name": "A prasad general stores",
-        "description": "",
+        "name": "A Prasad General Stores",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -649,11 +649,11 @@
     },
     {
         "id": 203,
-        "name": "AS kirana",
-        "description": "",
+        "name": "AS Kirana",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -667,11 +667,11 @@
     },
     {
         "id": 204,
-        "name": "Sri venkata sai kirana merchants",
-        "description": "",
+        "name": "Sri Venkata Sai Kirana Merchants",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -685,11 +685,11 @@
     },
     {
         "id": 205,
-        "name": "Kalyani fancy & kangan hall",
-        "description": "",
+        "name": "Kalyani Fancy & Kangan Hall",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -703,11 +703,11 @@
     },
     {
         "id": 206,
-        "name": "lakshmi venkateswara general stores",
-        "description": "",
+        "name": "Lakshmi Venkateswara General Stores",
+        "gst_no": "37ADEPI8242H1ZI",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -721,11 +721,11 @@
     },
     {
         "id": 207,
-        "name": "Naga fancy",
-        "description": "",
+        "name": "Naga Fancy",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -739,11 +739,11 @@
     },
     {
         "id": 208,
-        "name": "Bhaskar fancy",
-        "description": "",
+        "name": "Bhaskar Fancy",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -757,11 +757,11 @@
     },
     {
         "id": 209,
-        "name": "suraksha stores",
-        "description": "",
+        "name": "Suraksha Stores",
+        "gst_no": "37ADEFS9065J1ZH",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -771,15 +771,21 @@
             "financial_year": "2024-2025",
             "user_id": 9
         },
-        "address": null
+        "address": {
+            "street": "",
+            "city": "CHILAKALURIPET",
+            "state": "ANDHRA PRADESH",
+            "postal_code": "522616",
+            "country": "INDIA"
+        }
     },
     {
         "id": 210,
-        "name": "Sri venkateswara fancy & kangan hall",
-        "description": "",
+        "name": "Sri Venkateswara Fancy & Kangan Hall",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -793,11 +799,11 @@
     },
     {
         "id": 211,
-        "name": "Ramu fancy & kangan hall",
-        "description": "",
+        "name": "Ramu Fancy & Kangan Hall",
+        "gst_no": "37APCPP2624L1ZP",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -811,11 +817,11 @@
     },
     {
         "id": 212,
-        "name": "Rajshekar kirana",
-        "description": "",
+        "name": "Rajshekar Kirana",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -829,11 +835,11 @@
     },
     {
         "id": 213,
-        "name": "Grandhi srinu",
-        "description": "",
+        "name": "Grandhi Srinu",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -847,11 +853,11 @@
     },
     {
         "id": 214,
-        "name": "Sri lakshmi sai kirana fancy",
-        "description": "",
+        "name": "Sri Lakshmi Sai Kirana Fancy",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -865,29 +871,11 @@
     },
     {
         "id": 215,
-        "name": "Sri lakshmi sai general stores",
-        "description": "",
+        "name": "Sri Lakshmi Sai General Stores",
+        "gst_no": "37AWIPC7191G1ZD",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
-        "financial_year": "2024-2025",
-        "isDealer": true,
-        "group": {
-            "id": 167,
-            "name": "Sundry Debtors",
-            "description": null,
-            "financial_year": "2024-2025",
-            "user_id": 9
-        },
-        "address": null
-    },
-    {
-        "id": 216,
-        "name": "Venkata sai durga kirana merchant",
-        "description": "",
-        "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -901,11 +889,11 @@
     },
     {
         "id": 217,
-        "name": "Sri vasavi medical corporation P& D",
-        "description": "",
+        "name": "Sri Vasavi Medical Corporation P& D",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -919,29 +907,11 @@
     },
     {
         "id": 218,
-        "name": "Lakshmi ganpathi fancy & Kangan hall",
-        "description": "",
+        "name": "Lakshmi Ganpathi Fancy & Kangan Hall",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
-        "financial_year": "2024-2025",
-        "isDealer": true,
-        "group": {
-            "id": 167,
-            "name": "Sundry Debtors",
-            "description": null,
-            "financial_year": "2024-2025",
-            "user_id": 9
-        },
-        "address": null
-    },
-    {
-        "id": 219,
-        "name": "Venkata sai durga kirana merchant",
-        "description": "",
-        "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -955,29 +925,11 @@
     },
     {
         "id": 220,
-        "name": "Pandu ranga medicals",
-        "description": "",
+        "name": "Pandu Ranga Medicals",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
-        "financial_year": "2024-2025",
-        "isDealer": true,
-        "group": {
-            "id": 167,
-            "name": "Sundry Debtors",
-            "description": null,
-            "financial_year": "2024-2025",
-            "user_id": 9
-        },
-        "address": null
-    },
-    {
-        "id": 221,
-        "name": "Sri lakshmi sai general stores",
-        "description": "",
-        "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -991,11 +943,11 @@
     },
     {
         "id": 222,
-        "name": "Himalaya general stores",
-        "description": "",
+        "name": "Himalaya General Stores",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -1009,11 +961,11 @@
     },
     {
         "id": 223,
-        "name": "Itha ramesh",
-        "description": "",
+        "name": "Itha Ramesh",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -1027,11 +979,11 @@
     },
     {
         "id": 224,
-        "name": "Raja general stores",
-        "description": "",
+        "name": "Raja General Stores",
+        "gst_no": "37AXLPB7637G1ZA",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -1045,11 +997,11 @@
     },
     {
         "id": 225,
-        "name": "Sri uma maheswara general stores",
-        "description": "",
+        "name": "Sri Uma Maheswara General Stores",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -1063,29 +1015,11 @@
     },
     {
         "id": 226,
-        "name": "Vsk medicals",
-        "description": "",
+        "name": "VSK Medicals",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
-        "financial_year": "2024-2025",
-        "isDealer": true,
-        "group": {
-            "id": 167,
-            "name": "Sundry Debtors",
-            "description": null,
-            "financial_year": "2024-2025",
-            "user_id": 9
-        },
-        "address": null
-    },
-    {
-        "id": 227,
-        "name": "Sri hemalatha fancy & General stores",
-        "description": "",
-        "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -1099,11 +1033,11 @@
     },
     {
         "id": 228,
-        "name": "Sri hemanth medicals",
-        "description": "",
+        "name": "Sri Hemanth Medicals",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -1117,11 +1051,11 @@
     },
     {
         "id": 229,
-        "name": "Poojita corporation",
-        "description": "",
+        "name": "Poojita Corporation",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -1135,11 +1069,11 @@
     },
     {
         "id": 230,
-        "name": "Lakshmi general stores",
-        "description": "",
+        "name": "Lakshmi General Stores",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -1153,11 +1087,11 @@
     },
     {
         "id": 231,
-        "name": "Gayathri kirana general stores",
-        "description": "",
+        "name": "Gayathri Kirana General Stores",
+        "gst_no": "37ALVPV9276B1Z7",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -1171,11 +1105,11 @@
     },
     {
         "id": 232,
-        "name": "Sri lakshmi srinivasa general stores",
-        "description": "",
+        "name": "Sri Lakshmi Srinivasa General Stores",
+        "gst_no": "37AKAPG0884G1ZB",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -1189,11 +1123,11 @@
     },
     {
         "id": 233,
-        "name": "Harish fancy mart",
-        "description": "",
+        "name": "Harish Fancy Mart",
+        "gst_no": "37BRXPJ9790H1ZP",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -1207,11 +1141,11 @@
     },
     {
         "id": 234,
-        "name": "Chandra stores",
-        "description": "",
+        "name": "Chandra Stores",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -1225,11 +1159,11 @@
     },
     {
         "id": 235,
-        "name": "Ravi teja general stores",
-        "description": "",
+        "name": "Ravi Teja General Stores",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -1243,11 +1177,11 @@
     },
     {
         "id": 236,
-        "name": "Krishna fancies",
-        "description": "",
+        "name": "Krishna Fancies",
+        "gst_no": "37AKTPP9681K1ZX",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -1261,11 +1195,11 @@
     },
     {
         "id": 237,
-        "name": "Tava poornachandra rao",
-        "description": "",
+        "name": "Tava Poornachandra Rao",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -1279,11 +1213,11 @@
     },
     {
         "id": 238,
-        "name": "Bhaskar general stores",
-        "description": "",
+        "name": "Bhaskar General Stores",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -1297,11 +1231,11 @@
     },
     {
         "id": 239,
-        "name": "RS market",
-        "description": "",
+        "name": "RS Market",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -1315,11 +1249,11 @@
     },
     {
         "id": 240,
-        "name": "Sri radha krishna fancy & general stores",
-        "description": "",
+        "name": "Sri Radha Krishna Fancy & General Stores",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -1334,10 +1268,10 @@
     {
         "id": 241,
         "name": "Ramesh",
-        "description": "",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -1351,11 +1285,11 @@
     },
     {
         "id": 242,
-        "name": "Sravan kumar general stores",
-        "description": "",
+        "name": "Sravan Kumar General Stores",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -1369,11 +1303,11 @@
     },
     {
         "id": 243,
-        "name": "Ananda medical agencies",
-        "description": "",
+        "name": "Ananda Medical Agencies",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -1387,11 +1321,11 @@
     },
     {
         "id": 244,
-        "name": "Sudhakar fancy",
-        "description": "",
+        "name": "Sudhakar Fancy",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -1405,11 +1339,11 @@
     },
     {
         "id": 245,
-        "name": "Sri vasavi general stores",
-        "description": "",
+        "name": "Sri Vasavi General Stores",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -1423,11 +1357,11 @@
     },
     {
         "id": 246,
-        "name": "Maddi shankar rao kirana merchant",
-        "description": "",
+        "name": "Maddi Shankar Rao Kirana Merchant",
+        "gst_no": "37BYRPM9241H2ZR",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -1441,11 +1375,11 @@
     },
     {
         "id": 247,
-        "name": "Sri venkateswara general stores",
-        "description": "",
+        "name": "Sri Venkateswara General Stores",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -1459,29 +1393,11 @@
     },
     {
         "id": 248,
-        "name": "Lakshmi surya medical agency",
-        "description": "",
+        "name": "Lakshmi Surya Medical Agency",
+        "gst_no": "37ADSPT4684L1ZE",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
-        "financial_year": "2024-2025",
-        "isDealer": true,
-        "group": {
-            "id": 167,
-            "name": "Sundry Debtors",
-            "description": null,
-            "financial_year": "2024-2025",
-            "user_id": 9
-        },
-        "address": null
-    },
-    {
-        "id": 249,
-        "name": "Sujatha general stores",
-        "description": "",
-        "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -1495,29 +1411,11 @@
     },
     {
         "id": 250,
-        "name": "Sri vijaya lakshmi kirana stores",
-        "description": "",
+        "name": "Sri Vijaya Lakshmi Kirana Stores",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
-        "financial_year": "2024-2025",
-        "isDealer": true,
-        "group": {
-            "id": 167,
-            "name": "Sundry Debtors",
-            "description": null,
-            "financial_year": "2024-2025",
-            "user_id": 9
-        },
-        "address": null
-    },
-    {
-        "id": 251,
-        "name": "Lakshmi durga stores",
-        "description": "",
-        "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -1531,29 +1429,11 @@
     },
     {
         "id": 252,
-        "name": "Sri tirumala traders",
-        "description": "",
+        "name": "Sri Tirumala Traders",
+        "gst_no": "37CAEPP5824F1ZJ",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
-        "financial_year": "2024-2025",
-        "isDealer": true,
-        "group": {
-            "id": 167,
-            "name": "Sundry Debtors",
-            "description": null,
-            "financial_year": "2024-2025",
-            "user_id": 9
-        },
-        "address": null
-    },
-    {
-        "id": 253,
-        "name": "Ravi teja general stores",
-        "description": "",
-        "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -1567,11 +1447,11 @@
     },
     {
         "id": 254,
-        "name": "Sri lakshmi maheswara general stores",
-        "description": "",
+        "name": "Sri Lakshmi Maheswara General Stores",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -1586,10 +1466,10 @@
     {
         "id": 255,
         "name": "Ramesh A",
-        "description": "",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -1603,11 +1483,11 @@
     },
     {
         "id": 256,
-        "name": "Sri konark agencies",
-        "description": "",
+        "name": "Sri Konark Agencies",
+        "gst_no": "37ABGFS2577M1ZI",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -1621,11 +1501,11 @@
     },
     {
         "id": 257,
-        "name": "Govind fancy",
-        "description": "",
+        "name": "Govind Fancy",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -1639,11 +1519,11 @@
     },
     {
         "id": 258,
-        "name": "Madhu medicals",
-        "description": "",
+        "name": "Madhu Medicals",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -1657,11 +1537,11 @@
     },
     {
         "id": 259,
-        "name": "Krishna krishna",
-        "description": "",
+        "name": "Krishna Krishna",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -1675,11 +1555,11 @@
     },
     {
         "id": 260,
-        "name": "Lakshmi ganpathi medical&fancy stores",
-        "description": "",
+        "name": "Lakshmi Ganpathi Medical & Fancy Stores",
+        "gst_no": "37AFHPA9131L1ZC",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -1693,11 +1573,11 @@
     },
     {
         "id": 261,
-        "name": "Venkata sai durga kirana merchant",
-        "description": "",
+        "name": "Venkata Sai Durga Kirana Merchant",
+        "gst_no": "37AUWPB6707B1ZM",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -1711,11 +1591,11 @@
     },
     {
         "id": 262,
-        "name": "Maruthi general stores",
-        "description": "",
+        "name": "Maruthi General Stores",
+        "gst_no": "37BEJPS5302H1ZD",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -1729,11 +1609,11 @@
     },
     {
         "id": 263,
-        "name": "Nageswara general merchant",
-        "description": "",
+        "name": "Nageswara General Merchant",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -1747,11 +1627,11 @@
     },
     {
         "id": 264,
-        "name": "Ushodaya medicals enterprises",
-        "description": "",
+        "name": "Ushodaya Medicals Enterprises",
+        "gst_no": "37AABFU1564G1Z7",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -1765,11 +1645,11 @@
     },
     {
         "id": 265,
-        "name": "Prasad fancy mart",
-        "description": "",
+        "name": "Prasad Fancy Mart",
+        "gst_no": "37BCUPC4504Q1Z1",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -1783,11 +1663,11 @@
     },
     {
         "id": 266,
-        "name": "Sri sai nadha medicls",
-        "description": "",
+        "name": "Sri Sainadha Medicls",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -1801,11 +1681,11 @@
     },
     {
         "id": 267,
-        "name": "Durga kirana medicals",
-        "description": "",
+        "name": "Durga Kirana Medicals",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -1819,11 +1699,11 @@
     },
     {
         "id": 268,
-        "name": "Tirumala medicals",
-        "description": "",
+        "name": "Tirumala Medicals",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -1837,11 +1717,11 @@
     },
     {
         "id": 269,
-        "name": "Anithe medicls",
-        "description": "",
+        "name": "Anithe Medicls",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -1855,11 +1735,11 @@
     },
     {
         "id": 270,
-        "name": "Sri hanuman selections",
-        "description": "",
+        "name": "Sri Hanuman Selections",
+        "gst_no": "37BDSPM9224L1ZQ",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -1873,11 +1753,11 @@
     },
     {
         "id": 271,
-        "name": "Sri lakshmi ganpathi general stores",
-        "description": "",
+        "name": "Sri Lakshmi Ganpathi General Stores",
+        "gst_no": "37ALXPC1227B1ZD",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -1891,11 +1771,11 @@
     },
     {
         "id": 272,
-        "name": "Chnna manga rao",
-        "description": "",
+        "name": "Chnna Manga Rao",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -1909,11 +1789,11 @@
     },
     {
         "id": 273,
-        "name": "Krishna murthy traders",
-        "description": "",
+        "name": "Krishna Murthy Traders",
+        "gst_no": "37AHPPC7640R1ZD",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -1927,11 +1807,11 @@
     },
     {
         "id": 274,
-        "name": "Madhava kirana merchant",
-        "description": "",
+        "name": "Madhava Kirana Merchant",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -1945,11 +1825,11 @@
     },
     {
         "id": 275,
-        "name": "Lakshmi fancy stores",
-        "description": "",
+        "name": "Lakshmi Fancy Stores",
+        "gst_no": "37CAEPP5842F1ZJ",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -1963,11 +1843,11 @@
     },
     {
         "id": 276,
-        "name": "Ganesh sai kirana merchant",
-        "description": "",
+        "name": "Ganesh Sai Kirana Merchant",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -1981,11 +1861,11 @@
     },
     {
         "id": 277,
-        "name": "Sujatha general stores",
-        "description": "",
+        "name": "Sujatha General Stores",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -1999,11 +1879,11 @@
     },
     {
         "id": 280,
-        "name": "Yeshwanth kirana merchant",
-        "description": "",
+        "name": "Yashwanth Kirana Merchant",
+        "gst_no": "37BAQPP9024C1ZG",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -2017,11 +1897,11 @@
     },
     {
         "id": 281,
-        "name": "K.Sambasiva rao kirana merchant",
-        "description": "",
+        "name": "K.Sambasiva Rao Kirana Merchant",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -2036,10 +1916,10 @@
     {
         "id": 282,
         "name": "Ravi Fancy",
-        "description": "",
+        "gst_no": "37ADNPC1490N1Z6",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -2053,11 +1933,11 @@
     },
     {
         "id": 283,
-        "name": "AVR GENERAL STORES",
-        "description": "",
+        "name": "AVR General Stores",
+        "gst_no": "37AINPA3843JIZ4",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -2071,11 +1951,11 @@
     },
     {
         "id": 284,
-        "name": "P.VENKATESWARLU FANCY(RK)",
-        "description": "",
+        "name": "P.Venkateswarlu Fancy(RK)",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -2089,11 +1969,11 @@
     },
     {
         "id": 285,
-        "name": "VENKATA LAKSHMI SRAVANI GENERAL STORES",
-        "description": "",
+        "name": "Venkata Lakshmi Sravani General Stores",
+        "gst_no": "37CEWPP8359H1ZF",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -2107,11 +1987,11 @@
     },
     {
         "id": 286,
-        "name": "GR PAINTS",
-        "description": "",
+        "name": "GR Paints",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -2125,11 +2005,11 @@
     },
     {
         "id": 287,
-        "name": "SRI LAKSHMI GENERAL STORES",
-        "description": "",
+        "name": "Sri Lakshmi General Stores",
+        "gst_no": "37CMVPA0975M1ZD",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -2143,11 +2023,11 @@
     },
     {
         "id": 288,
-        "name": "SRI LAKSHMI GANPATHI KIRANA GENERAL STORES",
-        "description": "",
+        "name": "Sri Lakshmi Ganapathi Kirana General Stores",
+        "gst_no": "37BOYPK7973R1ZB",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -2161,11 +2041,11 @@
     },
     {
         "id": 289,
-        "name": "KISHORE FANCY",
-        "description": "",
+        "name": "Kishore Fancy",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -2179,11 +2059,11 @@
     },
     {
         "id": 290,
-        "name": "VD MART",
-        "description": "",
+        "name": "VD Mart",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -2197,11 +2077,11 @@
     },
     {
         "id": 291,
-        "name": "SRI SARADA FANCY & KANGANS",
-        "description": "",
+        "name": "Sri Sarada Fancy & Kangans",
+        "gst_no": "37AIOPV1599HZE",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -2215,11 +2095,11 @@
     },
     {
         "id": 292,
-        "name": "VENKATA NAGA LAKSHMI GENERAL MERCHANT",
-        "description": "",
+        "name": "Venkata Naga Lakshmi General Merchant",
+        "gst_no": "37AWAPC8979Q1ZM",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -2233,11 +2113,11 @@
     },
     {
         "id": 293,
-        "name": "SRI DHANALAKSHMI GENERAL STORES",
-        "description": "",
+        "name": "Sri Dhanalakshmi General Stores",
+        "gst_no": "37BEAPP5071H1ZF",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -2251,29 +2131,11 @@
     },
     {
         "id": 294,
-        "name": "QUALITY MEDICALS",
-        "description": "",
+        "name": "Quality Medicals",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
-        "financial_year": "2024-2025",
-        "isDealer": true,
-        "group": {
-            "id": 167,
-            "name": "Sundry Debtors",
-            "description": null,
-            "financial_year": "2024-2025",
-            "user_id": 9
-        },
-        "address": null
-    },
-    {
-        "id": 295,
-        "name": "SRI LAKSHMI SRINIVASA GENERAL STORES",
-        "description": "",
-        "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -2287,11 +2149,11 @@
     },
     {
         "id": 296,
-        "name": "CHINNA SHOPE",
-        "description": "",
+        "name": "Chinna Shope",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -2305,11 +2167,11 @@
     },
     {
         "id": 297,
-        "name": "PADMA VASAVI MEDICALS",
-        "description": "",
+        "name": "Padma Vasavi Medicals",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -2323,11 +2185,11 @@
     },
     {
         "id": 298,
-        "name": "RAVIKINDI NAGESWARA RAO RICE&G/M",
-        "description": "",
+        "name": "Ravikindi Nageswara Rao Rice & G/M",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -2341,11 +2203,11 @@
     },
     {
         "id": 299,
-        "name": "SRI HEMALATHA FANCY& GENERAL STORES",
-        "description": "",
+        "name": "Sri Hemalatha Fancy & General Stores",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -2359,11 +2221,11 @@
     },
     {
         "id": 300,
-        "name": "SS DRY FRUITS",
-        "description": "",
+        "name": "SS Dry Fruits",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -2377,11 +2239,11 @@
     },
     {
         "id": 301,
-        "name": "SWATHI MEDICALS",
-        "description": "",
+        "name": "Swathi Medicals",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -2395,29 +2257,11 @@
     },
     {
         "id": 302,
-        "name": "VDS WHOLESALE MARKET",
-        "description": "",
+        "name": "VDS Wholesale Market",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
-        "financial_year": "2024-2025",
-        "isDealer": true,
-        "group": {
-            "id": 167,
-            "name": "Sundry Debtors",
-            "description": null,
-            "financial_year": "2024-2025",
-            "user_id": 9
-        },
-        "address": null
-    },
-    {
-        "id": 303,
-        "name": "RAVI FANCY",
-        "description": "",
-        "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -2431,11 +2275,11 @@
     },
     {
         "id": 304,
-        "name": "JYOTHY LABS LTD",
-        "description": "",
+        "name": "Jyothi Labs Ltd",
+        "gst_no": "37AAACJ3213B1Z9",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -2445,15 +2289,21 @@
             "financial_year": "2024-2025",
             "user_id": 9
         },
-        "address": null
+        "address": {
+            "street": "",
+            "city": "VIJAYAWADA",
+            "state": "ANDHRA PRADESH",
+            "postal_code": "521151",
+            "country": "INDIA"
+        }
     },
     {
         "id": 305,
-        "name": "SRESHTA HYPER MARKET",
-        "description": "",
+        "name": "Sreshta Hyper Market",
+        "gst_no": "37ACTFS5339M1Z5",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -2467,11 +2317,11 @@
     },
     {
         "id": 306,
-        "name": "SRI VENKATA SIVA SAI KIRANAGENERAL STORES",
-        "description": "",
+        "name": "Sri Venkata Siva Sai Kirana General Stores",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -2485,11 +2335,11 @@
     },
     {
         "id": 307,
-        "name": "SRI VASAVI MEDICAL CORPORATION P&D",
-        "description": "",
+        "name": "Sri Vasavi Medical Corporation P&D",
+        "gst_no": "37ABGFA4678H1ZN",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -2503,11 +2353,11 @@
     },
     {
         "id": 308,
-        "name": "SRI HANUMAN GENERAL MEARCHENT",
-        "description": "",
+        "name": "Sri Hanuman General Mearchant",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -2521,11 +2371,11 @@
     },
     {
         "id": 309,
-        "name": "SATEESH MEDICALS",
-        "description": "",
+        "name": "Sateesh Medicals",
+        "gst_no": "37ADOPV8052C1Z5",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -2539,11 +2389,11 @@
     },
     {
         "id": 310,
-        "name": "LASHMAIAH FANCY",
-        "description": "",
+        "name": "Lashmaiah Fancy",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -2557,11 +2407,11 @@
     },
     {
         "id": 311,
-        "name": "SANTHOSH MEDICALS & FANCY STORES",
-        "description": "",
+        "name": "Santhosh Medicals & Fancy Stores",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -2575,11 +2425,11 @@
     },
     {
         "id": 312,
-        "name": "VASU FANCY",
-        "description": "",
+        "name": "Vasu Fancy",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -2593,11 +2443,11 @@
     },
     {
         "id": 313,
-        "name": "SRI SRINIVASA KIRANA STORES",
-        "description": "",
+        "name": "Sri Srinivasa Kirana Stores",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -2611,11 +2461,11 @@
     },
     {
         "id": 314,
-        "name": "SIVA KUMARA GENERAL STORES",
-        "description": "",
+        "name": "Siva Kumara General Stores",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -2629,11 +2479,11 @@
     },
     {
         "id": 315,
-        "name": "VVS IMITATIONS & FANCY",
-        "description": "",
+        "name": "VVS Imitations & Fancy",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -2647,11 +2497,11 @@
     },
     {
         "id": 316,
-        "name": "GOVARDHAN GENERAL STORES",
-        "description": "",
+        "name": "Govardhan General Stores",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -2665,11 +2515,11 @@
     },
     {
         "id": 317,
-        "name": "SURESH MEDICALS",
-        "description": "",
+        "name": "Suresh Medicals",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -2683,11 +2533,11 @@
     },
     {
         "id": 318,
-        "name": "RAVI (RF)",
-        "description": "",
+        "name": "Ravi (RF)",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -2701,11 +2551,11 @@
     },
     {
         "id": 319,
-        "name": "VENKATADRI TRADERS",
-        "description": "",
+        "name": "Venkatadri Traders",
+        "gst_no": "37AVKPT5407D1ZF",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -2719,11 +2569,11 @@
     },
     {
         "id": 320,
-        "name": "LAKSHMI NARASIMHA PROVISIONS",
-        "description": "",
+        "name": "Lakshmi Narasimha Provisions",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -2737,11 +2587,11 @@
     },
     {
         "id": 321,
-        "name": "MEENAKSHI TRADERS",
-        "description": "",
+        "name": "Meenakshi Traders",
+        "gst_no": "37BFTPS9275N1ZO",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -2755,11 +2605,11 @@
     },
     {
         "id": 322,
-        "name": "SRI VASAVI FANCY KIRANA & GENERAL STORES",
-        "description": "",
+        "name": "Sri Vasavi Fancy Kirana & General Stores",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -2773,11 +2623,11 @@
     },
     {
         "id": 323,
-        "name": "NAVEEN MEDICALS",
-        "description": "",
+        "name": "Naveen Medicals",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -2791,11 +2641,11 @@
     },
     {
         "id": 324,
-        "name": "SRI LAKSHMI GANAPATHI MEDICALS ENTERPRISES",
-        "description": "",
+        "name": "Sri Lakshmi Ganapathi Medicals Enterprises",
+        "gst_no": "37BOYPK7973R1ZB",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -2809,11 +2659,11 @@
     },
     {
         "id": 325,
-        "name": "SIVA PRAVATHI KIRANA MERCHANT",
-        "description": "",
+        "name": "Siva Pravathi Kirana Merchant",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -2827,11 +2677,11 @@
     },
     {
         "id": 326,
-        "name": "VENKATA SIVA SAI PAVAN KIRANA",
-        "description": "",
+        "name": "Venkata Siva Sai Pavan Kirana",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -2845,29 +2695,11 @@
     },
     {
         "id": 327,
-        "name": "AUTO SRINU",
-        "description": "",
+        "name": "Auto Srinu",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
-        "financial_year": "2024-2025",
-        "isDealer": true,
-        "group": {
-            "id": 167,
-            "name": "Sundry Debtors",
-            "description": null,
-            "financial_year": "2024-2025",
-            "user_id": 9
-        },
-        "address": null
-    },
-    {
-        "id": 328,
-        "name": "SRI LAKSHMI GANPATHI KIRANA GENERAL STORES",
-        "description": "",
-        "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -2881,11 +2713,11 @@
     },
     {
         "id": 329,
-        "name": "LUCKY MEDICAL& FANCY",
-        "description": "",
+        "name": "Lucky Medical & Fancy",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -2899,11 +2731,11 @@
     },
     {
         "id": 330,
-        "name": "KUMAR GENERAL STORES",
-        "description": "",
+        "name": "Kumar General Stores",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -2917,11 +2749,11 @@
     },
     {
         "id": 331,
-        "name": "RAMENJANEYA GENERAL MERCHANT",
-        "description": "",
+        "name": "Ramanjaneya General Merchant",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -2935,11 +2767,11 @@
     },
     {
         "id": 332,
-        "name": "A.VENKATESWARA RAO",
-        "description": "",
+        "name": "A.Venkateswara Rao",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -2953,11 +2785,11 @@
     },
     {
         "id": 333,
-        "name": "VINDO MEDICAL & GENERAL STORE",
-        "description": "",
+        "name": "Vindo Medical & General Store",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -2971,11 +2803,11 @@
     },
     {
         "id": 334,
-        "name": "SAI TEJA MEDICALS & FANCY STORES",
-        "description": "",
+        "name": "Sai Teja Medicals & Fancy Stores",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -2989,11 +2821,11 @@
     },
     {
         "id": 335,
-        "name": "RAMA SAI ENTEPRISES",
-        "description": "",
+        "name": "Rama Sai Enterprises",
+        "gst_no": "37ADTPR1314G1ZD",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -3003,15 +2835,21 @@
             "financial_year": "2024-2025",
             "user_id": 9
         },
-        "address": null
+        "address": {
+            "street": "",
+            "city": "VIJAYAWADA",
+            "state": "ANDHRA PRADESH",
+            "postal_code": "",
+            "country": "INDIA"
+        }
     },
     {
         "id": 336,
-        "name": "SRI VENKATACHALA GENERAL STORES",
-        "description": "",
+        "name": "Sri Venkatachala General Stores",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -3025,11 +2863,11 @@
     },
     {
         "id": 337,
-        "name": "BHASKAR FANCY STORES",
-        "description": "",
+        "name": "Bhaskar Fancy Stores",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -3043,11 +2881,11 @@
     },
     {
         "id": 338,
-        "name": "MUSTHAFA WHOLESALE KIRANA & G/S",
-        "description": "",
+        "name": "Musthafa Wholesale Kirana & G/S",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -3061,11 +2899,11 @@
     },
     {
         "id": 339,
-        "name": "LAKSHMI SAI FANCY & KANGAN HALL",
-        "description": "",
+        "name": "Lakshmi Sai Fancy & Kangan Hall",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -3079,11 +2917,11 @@
     },
     {
         "id": 340,
-        "name": "lakshmi narasimha enter prises",
-        "description": "",
+        "name": "Lakshmi Narasimha Enterprises",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -3097,11 +2935,11 @@
     },
     {
         "id": 341,
-        "name": "tava purnachandrao g/s",
-        "description": "",
+        "name": "Tava Purnachandrao g/s",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -3115,11 +2953,11 @@
     },
     {
         "id": 342,
-        "name": "sri subrahmnyeswara medicals&fancy",
-        "description": "",
+        "name": "Sri Subrahmnyeswara Medicals & Fancy",
+        "gst_no": "",
         "user_id": 9,
-        "debit_balance": 0,
-        "credit_balance": 0,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
         "financial_year": "2024-2025",
         "isDealer": true,
         "group": {
@@ -3130,5 +2968,1199 @@
             "user_id": 9
         },
         "address": null
+    },
+    {
+        "id": 343,
+        "name": "Modern Fancy",
+        "gst_no": "",
+        "user_id": 9,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 344,
+        "name": "Satya Deva Medicals & Fancy",
+        "gst_no": "",
+        "user_id": 9,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 345,
+        "name": "Kamal Enterprises",
+        "gst_no": "",
+        "user_id": 9,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 346,
+        "name": "Sri Charitra General Stores",
+        "gst_no": "",
+        "user_id": 9,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 347,
+        "name": "Nageswara Rao G/S",
+        "gst_no": "",
+        "user_id": 9,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 348,
+        "name": "RR Pharmacy",
+        "gst_no": "",
+        "user_id": 9,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 349,
+        "name": "Padmanabha Hotel",
+        "gst_no": "",
+        "user_id": 9,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 350,
+        "name": "Tirumala Coconut Company",
+        "gst_no": "",
+        "user_id": 9,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 351,
+        "name": "Hishanth Fancy & Kangan Hall",
+        "gst_no": "",
+        "user_id": 9,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 352,
+        "name": "Karthikeya Kiran Satores",
+        "gst_no": "",
+        "user_id": 9,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 353,
+        "name": "Lakhmi Karthikeya Medicals",
+        "gst_no": "",
+        "user_id": 9,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 354,
+        "name": "Sai Charitra General Stores",
+        "gst_no": "",
+        "user_id": 9,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 355,
+        "name": "Durga Bakers",
+        "gst_no": "",
+        "user_id": 9,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 356,
+        "name": "Prathap Wholesale Market",
+        "gst_no": "",
+        "user_id": 9,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 357,
+        "name": "Tulasi Sai General Traders",
+        "gst_no": "",
+        "user_id": 9,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 358,
+        "name": "Sangam Dairy Guru",
+        "gst_no": "",
+        "user_id": 9,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 359,
+        "name": "Jevan Baikary",
+        "gst_no": "",
+        "user_id": 9,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 167,
+            "name": "Sundry Debtors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 386,
+        "name": "Sale of Fancy Item",
+        "gst_no": null,
+        "user_id": 9,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
+        "financial_year": "2024-2025",
+        "isDealer": false,
+        "group": {
+            "id": 200,
+            "name": "Sale Account",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 387,
+        "name": "Sale of Fancy Item 5%",
+        "gst_no": null,
+        "user_id": 9,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
+        "financial_year": "2024-2025",
+        "isDealer": false,
+        "group": {
+            "id": 200,
+            "name": "Sale Account",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 388,
+        "name": "Sale of Fancy Item 12%",
+        "gst_no": null,
+        "user_id": 9,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
+        "financial_year": "2024-2025",
+        "isDealer": false,
+        "group": {
+            "id": 200,
+            "name": "Sale Account",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 389,
+        "name": "Sale of Fancy Item 18%",
+        "gst_no": null,
+        "user_id": 9,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
+        "financial_year": "2024-2025",
+        "isDealer": false,
+        "group": {
+            "id": 200,
+            "name": "Sale Account",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 360,
+        "name": "SGST 2.5%",
+        "gst_no": null,
+        "user_id": 9,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
+        "financial_year": "2024-2025",
+        "isDealer": false,
+        "group": {
+            "id": 206,
+            "name": "SGST",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 361,
+        "name": "CGST 2.5%",
+        "gst_no": null,
+        "user_id": 9,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
+        "financial_year": "2024-2025",
+        "isDealer": false,
+        "group": {
+            "id": 205,
+            "name": "CGST",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 362,
+        "name": "SGST 6%",
+        "gst_no": null,
+        "user_id": 9,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
+        "financial_year": "2024-2025",
+        "isDealer": false,
+        "group": {
+            "id": 206,
+            "name": "SGST",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 363,
+        "name": "CGST 6%",
+        "gst_no": null,
+        "user_id": 9,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
+        "financial_year": "2024-2025",
+        "isDealer": false,
+        "group": {
+            "id": 205,
+            "name": "CGST",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 364,
+        "name": "SGST 9%",
+        "gst_no": null,
+        "user_id": 9,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
+        "financial_year": "2024-2025",
+        "isDealer": false,
+        "group": {
+            "id": 206,
+            "name": "SGST",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 365,
+        "name": "CGST 9%",
+        "gst_no": null,
+        "user_id": 9,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
+        "financial_year": "2024-2025",
+        "isDealer": false,
+        "group": {
+            "id": 205,
+            "name": "CGST",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 366,
+        "name": "Purchase of Fancy Item",
+        "gst_no": null,
+        "user_id": 9,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
+        "financial_year": "2024-2025",
+        "isDealer": false,
+        "group": {
+            "id": 199,
+            "name": "Purchase Account",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 367,
+        "name": "Purchase Return of Fancy Item",
+        "gst_no": null,
+        "user_id": 9,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
+        "financial_year": "2024-2025",
+        "isDealer": false,
+        "group": {
+            "id": 201,
+            "name": "Purchase Return Account",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 368,
+        "name": "Purchase of Fancy Item 5%",
+        "gst_no": null,
+        "user_id": 9,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
+        "financial_year": "2024-2025",
+        "isDealer": false,
+        "group": {
+            "id": 199,
+            "name": "Purchase Account",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 369,
+        "name": "Purchase of Fancy Item 12%",
+        "gst_no": null,
+        "user_id": 9,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
+        "financial_year": "2024-2025",
+        "isDealer": false,
+        "group": {
+            "id": 199,
+            "name": "Purchase Account",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 370,
+        "name": "Purchase of Fancy Item 18%",
+        "gst_no": null,
+        "user_id": 9,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
+        "financial_year": "2024-2025",
+        "isDealer": false,
+        "group": {
+            "id": 199,
+            "name": "Purchase Account",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 371,
+        "name": "Purchase Return of Fancy Item 5%",
+        "gst_no": null,
+        "user_id": 9,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
+        "financial_year": "2024-2025",
+        "isDealer": false,
+        "group": {
+            "id": 201,
+            "name": "Purchase Return Account",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 372,
+        "name": "Purchase Return of Fancy Item 12%",
+        "gst_no": null,
+        "user_id": 9,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
+        "financial_year": "2024-2025",
+        "isDealer": false,
+        "group": {
+            "id": 201,
+            "name": "Purchase Return Account",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 373,
+        "name": "Purchase Return of Fancy Item 18%",
+        "gst_no": null,
+        "user_id": 9,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
+        "financial_year": "2024-2025",
+        "isDealer": false,
+        "group": {
+            "id": 201,
+            "name": "Purchase Return Account",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 374,
+        "name": "Sale Return of Fancy Item 18%",
+        "gst_no": null,
+        "user_id": 9,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
+        "financial_year": "2024-2025",
+        "isDealer": false,
+        "group": {
+            "id": 202,
+            "name": "Sale Return Account",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 375,
+        "name": "Sale Return of Fancy Item 12%",
+        "gst_no": null,
+        "user_id": 9,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
+        "financial_year": "2024-2025",
+        "isDealer": false,
+        "group": {
+            "id": 202,
+            "name": "Sale Return Account",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 376,
+        "name": "Sale Return of Fancy Item 5%",
+        "gst_no": null,
+        "user_id": 9,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
+        "financial_year": "2024-2025",
+        "isDealer": false,
+        "group": {
+            "id": 202,
+            "name": "Sale Return Account",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 377,
+        "name": "Sale Return of Fancy Item",
+        "gst_no": null,
+        "user_id": 9,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
+        "financial_year": "2024-2025",
+        "isDealer": false,
+        "group": {
+            "id": 202,
+            "name": "Sale Return Account",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 378,
+        "name": "Credit Note of Fancy Item 18%",
+        "gst_no": null,
+        "user_id": 9,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
+        "financial_year": "2024-2025",
+        "isDealer": false,
+        "group": {
+            "id": 203,
+            "name": "Credit Note Account",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 379,
+        "name": "Credit Note of Fancy Item 12%",
+        "gst_no": null,
+        "user_id": 9,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
+        "financial_year": "2024-2025",
+        "isDealer": false,
+        "group": {
+            "id": 203,
+            "name": "Credit Note Account",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 380,
+        "name": "Credit Note of Fancy Item 5%",
+        "gst_no": null,
+        "user_id": 9,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
+        "financial_year": "2024-2025",
+        "isDealer": false,
+        "group": {
+            "id": 203,
+            "name": "Credit Note Account",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 381,
+        "name": "Credit Note of Fancy Item",
+        "gst_no": null,
+        "user_id": 9,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
+        "financial_year": "2024-2025",
+        "isDealer": false,
+        "group": {
+            "id": 203,
+            "name": "Credit Note Account",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 382,
+        "name": "Debit Note of Fancy Item 18%",
+        "gst_no": null,
+        "user_id": 9,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
+        "financial_year": "2024-2025",
+        "isDealer": false,
+        "group": {
+            "id": 204,
+            "name": "Debit Note Account",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 383,
+        "name": "Debit Note of Fancy Item 12%",
+        "gst_no": null,
+        "user_id": 9,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
+        "financial_year": "2024-2025",
+        "isDealer": false,
+        "group": {
+            "id": 204,
+            "name": "Debit Note Account",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 384,
+        "name": "Debit Note of Fancy Item 5%",
+        "gst_no": null,
+        "user_id": 9,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
+        "financial_year": "2024-2025",
+        "isDealer": false,
+        "group": {
+            "id": 204,
+            "name": "Debit Note Account",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 385,
+        "name": "Debit Note of Fancy Item",
+        "gst_no": null,
+        "user_id": 9,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
+        "financial_year": "2024-2025",
+        "isDealer": false,
+        "group": {
+            "id": 204,
+            "name": "Debit Note Account",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 419,
+        "name": "Kedar corporation",
+        "gst_no": "37AALFK8093J1ZM",
+        "user_id": 9,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 168,
+            "name": "Sundry Creditors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": {
+            "street": "",
+            "city": "GUNTUR",
+            "state": "ANDHRA PRADESH",
+            "postal_code": "522003",
+            "country": "INDIA"
+        }
+    },
+    {
+        "id": 420,
+        "name": "Maharani Dall Mill",
+        "gst_no": "37AATFM2099N1ZA",
+        "user_id": 9,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 168,
+            "name": "Sundry Creditors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": {
+            "street": "",
+            "city": "TENALI",
+            "state": "ANDHRA PRADESH",
+            "postal_code": "522295",
+            "country": "INDIA"
+        }
+    },
+    {
+        "id": 422,
+        "name": "Sri Sujana Agencies",
+        "gst_no": "37ACEPY9940P1ZG",
+        "user_id": 9,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 168,
+            "name": "Sundry Creditors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": {
+            "street": "",
+            "city": "vijayawada",
+            "state": "ANDHRA PRADESH",
+            "postal_code": "",
+            "country": "INDIA"
+        }
+    },
+    {
+        "id": 423,
+        "name": "Sree Bhaskara Corporation",
+        "gst_no": "37AEUPN7833G1ZU",
+        "user_id": 9,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 168,
+            "name": "Sundry Creditors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": {
+            "street": "",
+            "city": "GOLLAPUDI",
+            "state": "ANDHRA PRADESH",
+            "postal_code": "521225",
+            "country": "INDIA"
+        }
+    },
+    {
+        "id": 424,
+        "name": "Gayatri Rice Company",
+        "gst_no": "37AGZPS2095Q1ZZ",
+        "user_id": 9,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
+        "financial_year": "2024-2025",
+        "isDealer": false,
+        "group": {
+            "id": 168,
+            "name": "Sundry Creditors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 425,
+        "name": "The Nilagiri Tea Emporium",
+        "gst_no": "36AABFT1991L1ZS",
+        "user_id": 9,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
+        "financial_year": "2024-2025",
+        "isDealer": false,
+        "group": {
+            "id": 168,
+            "name": "Sundry Creditors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": {
+            "street": "",
+            "city": "HYDERABAD",
+            "state": "TELANGANA",
+            "postal_code": "",
+            "country": "INDIA"
+        }
+    },
+    {
+        "id": 426,
+        "name": "A.R.Traders",
+        "gst_no": "",
+        "user_id": 9,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 168,
+            "name": "Sundry Creditors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 427,
+        "name": "Sri Rama prasad Enterprises",
+        "gst_no": "37CBBPT9725K1ZZ",
+        "user_id": 9,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 168,
+            "name": "Sundry Creditors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": {
+            "street": "",
+            "city": "GUNTUR",
+            "state": "ANDHRA PRADESH",
+            "postal_code": "522003",
+            "country": "INDIA"
+        }
+    },
+    {
+        "id": 428,
+        "name": "Manuyu Marketing",
+        "gst_no": "",
+        "user_id": 9,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 168,
+            "name": "Sundry Creditors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 430,
+        "name": "Tenali Double Horse Pvt Ltd",
+        "gst_no": "",
+        "user_id": 9,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 168,
+            "name": "Sundry Creditors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 431,
+        "name": "UNION BANK OF INDIA",
+        "gst_no": "",
+        "user_id": 9,
+        "debit_balance": "407832.45",
+        "credit_balance": "0.00",
+        "financial_year": "2024-2025",
+        "isDealer": false,
+        "group": {
+            "id": 165,
+            "name": "Bank Account",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": {
+            "street": "",
+            "city": "chilakaluripeta",
+            "state": "",
+            "postal_code": "",
+            "country": ""
+        }
+    },
+    {
+        "id": 432,
+        "name": "PURCHASE OF FANCY ITEM IGST",
+        "gst_no": "",
+        "user_id": 9,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 199,
+            "name": "Purchase Account",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": {
+            "street": "",
+            "city": "",
+            "state": "",
+            "postal_code": "",
+            "country": "INDIA"
+        }
+    },
+    {
+        "id": 433,
+        "name": "RECKITT BENCKISER INDIA PVT LTD",
+        "gst_no": "37AABCR2655Q1ZT",
+        "user_id": 9,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 168,
+            "name": "Sundry Creditors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": {
+            "street": "",
+            "city": "VIJAYAWADA",
+            "state": "ANDHRA PRADESH",
+            "postal_code": "520007",
+            "country": "INDIA"
+        }
+    },
+    {
+        "id": 434,
+        "name": "METRO CASH & CARRY INDIA LTD",
+        "gst_no": "",
+        "user_id": 9,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
+        "financial_year": "2024-2025",
+        "isDealer": true,
+        "group": {
+            "id": 168,
+            "name": "Sundry Creditors",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 435,
+        "name": "Suspense Account",
+        "gst_no": "",
+        "user_id": 9,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
+        "financial_year": "2024-2025",
+        "isDealer": false,
+        "group": {
+            "id": 253,
+            "name": "Suspense",
+            "description": "",
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": null
+    },
+    {
+        "id": 437,
+        "name": "CHUNDURU SUBBA RAO",
+        "gst_no": "",
+        "user_id": 9,
+        "debit_balance": "0.00",
+        "credit_balance": "0.00",
+        "financial_year": "2024-2025",
+        "isDealer": false,
+        "group": {
+            "id": 175,
+            "name": "Unsecured Loans",
+            "description": null,
+            "financial_year": "2024-2025",
+            "user_id": 9
+        },
+        "address": {
+            "street": "",
+            "city": "CHILAKALURIPET",
+            "state": "ANDHRA PRADESH",
+            "postal_code": "522616",
+            "country": "INDIA"
+        }
     }
 ]
