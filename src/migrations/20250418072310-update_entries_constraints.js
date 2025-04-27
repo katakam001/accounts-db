@@ -8,6 +8,7 @@ module.exports = {
     await queryInterface.removeConstraint('entries', 'entries_item_id_fkey');
     await queryInterface.removeConstraint('entries', 'entries_journal_id_fkey');
     await queryInterface.removeConstraint('entries', 'entries_unit_id_fkey');
+    await queryInterface.removeConstraint('entries', 'entries_category_account_id_fkey');
 
     // Add updated foreign key constraints with ON DELETE RESTRICT
     await queryInterface.addConstraint('entries', {
