@@ -5,6 +5,7 @@ module.exports = {
     // Remove the existing foreign key constraints
     await queryInterface.removeConstraint('fields_mapping', 'fields_mapping_category_id_fkey');
     await queryInterface.removeConstraint('fields_mapping', 'fields_mapping_field_id_fkey');
+    await queryInterface.removeConstraint('fields_mapping', 'fields_mapping_account_id_fkey');
 
     // Add new foreign key constraint for category_id with ON DELETE RESTRICT
     await queryInterface.addConstraint('fields_mapping', {
