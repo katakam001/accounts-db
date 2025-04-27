@@ -811,10 +811,9 @@ WHERE
 
 exports.deleteJournalEntry = async (req, res) => {
   const entryId = req.params.id;
-
+  const db = getDb();
+  const transaction = await db.sequelize.transaction();
   try {
-    const db = getDb();
-    const transaction = await db.sequelize.transaction();
     const JournalEntry = db.journalEntry;
     const JournalItem = db.journalItem;
     const journal = await JournalEntry.findByPk(entryId, { transaction });
@@ -853,10 +852,19 @@ exports.deleteJournalEntry = async (req, res) => {
 
     res.status(204).send(); // Simplified response
   } catch (error) {
-    // Rollback the transaction in case of error
+    // Rollback the transaction in case of errors
     await transaction.rollback();
     console.error('Error deleting journal entry:', error);
-    res.status(500).json({ error: 'Internal server error' });
+
+    if (error.name === 'SequelizeForeignKeyConstraintError') {
+      res.status(400).json({
+        error: 'foreign key constraint',
+        message: `Cannot delete journal entry due to foreign key constraint.`,
+        detail: error.parent.detail || error.message, // Provide database-generated details
+      });
+    } else {
+      res.status(500).json({ message: 'Internal server error', error: error.message });
+    }
   }
 };
 

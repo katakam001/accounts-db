@@ -14,7 +14,7 @@ module.exports = (sequelize, Sequelize, Category, Account, Units, JournalEntry, 
         key: 'id'
       },
       onUpdate: 'CASCADE',
-      onDelete: 'CASCADE'
+      onDelete: 'RESTRICT'
     },
     entry_date: {
       type: Sequelize.DATE,
@@ -28,7 +28,7 @@ module.exports = (sequelize, Sequelize, Category, Account, Units, JournalEntry, 
         key: 'id'
       },
       onUpdate: 'CASCADE',
-      onDelete: 'SET NULL'
+      onDelete: 'RESTRICT'
     },
     item_id: {
       type: Sequelize.INTEGER,
@@ -38,7 +38,7 @@ module.exports = (sequelize, Sequelize, Category, Account, Units, JournalEntry, 
         key: 'id'
       },
       onUpdate: 'CASCADE',
-      onDelete: 'CASCADE'
+      onDelete: 'RESTRICT'
     },
     quantity: {
       type: Sequelize.DECIMAL(10, 4),
@@ -72,7 +72,7 @@ module.exports = (sequelize, Sequelize, Category, Account, Units, JournalEntry, 
         key: 'id'
       },
       onUpdate: 'CASCADE',
-      onDelete: 'CASCADE'
+      onDelete: 'RESTRICT'
     },
     journal_id: {
       type: Sequelize.INTEGER,
@@ -82,7 +82,7 @@ module.exports = (sequelize, Sequelize, Category, Account, Units, JournalEntry, 
         key: 'id'
       },
       onUpdate: 'CASCADE',
-      onDelete: 'SET NULL'
+      onDelete: 'RESTRICT'
     },
     type: {
       type: Sequelize.INTEGER,
@@ -104,7 +104,7 @@ module.exports = (sequelize, Sequelize, Category, Account, Units, JournalEntry, 
         key: 'id'
       },
       onUpdate: 'CASCADE',
-      onDelete: 'SET NULL'
+      onDelete: 'RESTRICT'
     },
   }, {
     tableName: 'entries',

@@ -11,6 +11,8 @@ module.exports = (sequelize, Sequelize, Items, Units, Conversions,ProductionEntr
         model: Items,
         key: 'id',
       },
+      onDelete: 'RESTRICT', // Change to ON DELETE RESTRICT
+      onUpdate: 'CASCADE',  // Keep ON UPDATE CASCADE
     },
     item_id: {
       type: Sequelize.INTEGER,
@@ -18,6 +20,8 @@ module.exports = (sequelize, Sequelize, Items, Units, Conversions,ProductionEntr
         model: Items,
         key: 'id',
       },
+      onDelete: 'RESTRICT', // Change to ON DELETE RESTRICT
+      onUpdate: 'CASCADE',  // Keep ON UPDATE CASCADE
     },
     unit_id: {
       type: Sequelize.INTEGER,
@@ -25,6 +29,8 @@ module.exports = (sequelize, Sequelize, Items, Units, Conversions,ProductionEntr
         model: Units,
         key: 'id',
       },
+      onDelete: 'RESTRICT', // Change to ON DELETE RESTRICT
+      onUpdate: 'CASCADE',  // Keep ON UPDATE CASCADE
     },
     production_date: {
       type: Sequelize.DATE,
@@ -49,6 +55,8 @@ module.exports = (sequelize, Sequelize, Items, Units, Conversions,ProductionEntr
         model: Conversions,
         key: 'id',
       },
+      onDelete: 'RESTRICT', // Change to ON DELETE RESTRICT
+      onUpdate: 'CASCADE',  // Keep ON UPDATE CASCADE
       allowNull: true,
     },
     production_entry_id: {
@@ -57,6 +65,8 @@ module.exports = (sequelize, Sequelize, Items, Units, Conversions,ProductionEntr
         model: ProductionEntries,
         key: 'id',
       },
+      onDelete: 'RESTRICT', // Change to ON DELETE RESTRICT
+      onUpdate: 'CASCADE',  // Keep ON UPDATE CASCADE
       allowNull: true,
     },
   }, {

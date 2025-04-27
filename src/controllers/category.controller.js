@@ -60,17 +60,31 @@ exports.updateCategory = async (req, res) => {
 };
 
 exports.deleteCategory = async (req, res) => {
+  const { id } = req.params;
   try {
     const db = getDb();
     const Categories = db.categories;
-    const { id } = req.params;
-    const deleted = await Categories.destroy({ where: { id } });
-    if (deleted) {
-      res.status(204).send();
-    } else {
-      throw new Error('Category not found');
+
+    // Check if the category exists
+    const category = await Categories.findByPk(id);
+    if (!category) {
+      return res.status(404).json({ message: 'Category not found' });
     }
+
+    // Attempt to delete the category
+    await category.destroy();
+
+    // Successful deletion
+    res.status(200).json({ message: 'Category deleted successfully' });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    if (error.name === 'SequelizeForeignKeyConstraintError') {
+      res.status(400).json({
+        error: 'foreign key constraint',
+        message: `Cannot delete category due to foreign key constraint.`,
+        detail: error.parent.detail || error.message, // Provide only relevant database details
+      });
+    } else {
+      res.status(500).json({ message: 'Internal server error', error: error.message });
+    }
   }
 };

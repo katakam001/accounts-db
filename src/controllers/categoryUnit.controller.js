@@ -115,3 +115,45 @@ exports.deleteCategoryUnit = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+exports.deleteCategoryUnit = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const db = getDb();
+    const CategoryUnits = db.categoryUnits;
+    const Entries = db.entry;
+
+    // Fetch the category_unit record by ID
+    const categoryUnit = await CategoryUnits.findOne({ where: { id } });
+    if (!categoryUnit) {
+      return res.status(404).json({ message: 'Category Unit not found' });
+    }
+
+    const { category_id, unit_id } = categoryUnit;
+
+    // Check if the combination of category_id and unit_id exists in entries
+    const isCombinationReferenced = await Entries.findOne({
+      where: { category_id, unit_id },
+    });
+    console.log(isCombinationReferenced);
+
+    if (isCombinationReferenced) {
+      return res.status(400).json({
+        error: 'foreign key constraint',
+        message: `Cannot delete category_units: The combination of category_id (${category_id}) and unit_id (${unit_id}) is actively referenced.`,
+        detail: `The combination of category_id (${category_id}) and field_id (${unit_id}) is actively referenced in invoices`, // Provide only relevant database details
+      });
+    }
+
+    // Proceed with deletion if no references exist
+    // const deletedCategoryUnit = await CategoryUnits.destroy({ where: { id } });
+
+    // if (!deletedCategoryUnit) {
+    //   return res.status(404).json({ message: 'Category Unit not found' });
+    // }
+
+    // Successful deletion
+    res.status(200).json({ message: 'Category Unit deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ message: 'Internal server error', error: error.message });
+  }
+};

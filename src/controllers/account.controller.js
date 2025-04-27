@@ -265,46 +265,56 @@ exports.accountUpdate = async (req, res) => {
   }
 };
 
-// Delete Account
 exports.accountDelete = async (req, res) => {
+  const db = getDb();
+  const transaction = await db.sequelize.transaction(); // Start a transaction
   try {
-    const db = getDb();
     const Account = db.account;
     const Address = db.address;
     const AccountGroup = db.accountGroup;
     const { id } = req.params;
-    const account = await Account.findByPk(id);
+
+    // Check if the account exists
+    const account = await Account.findByPk(id, { transaction });
     if (!account) {
+      await transaction.rollback(); // Rollback transaction if account not found
       return res.status(404).json({ message: 'Account not found' });
     }
 
     // Check if account group exists and remove it
-    const accountGroup = await AccountGroup.findOne({ where: { account_id: id } });
+    const accountGroup = await AccountGroup.findOne({ where: { account_id: id }, transaction });
     if (accountGroup) {
-      await AccountGroup.destroy({ where: { account_id: id } });
+      await AccountGroup.destroy({ where: { account_id: id }, transaction });
     }
 
     // Check if address exists and remove it
-    const address = await Address.findOne({ where: { account_id: id } });
+    const address = await Address.findOne({ where: { account_id: id }, transaction });
     if (address) {
-      await Address.destroy({ where: { account_id: id } });
+      await Address.destroy({ where: { account_id: id }, transaction });
     }
 
     // Delete the account
-    await account.destroy();
+    await account.destroy({ transaction });
+
+    // Commit the transaction after successful deletions
+    await transaction.commit();
     res.status(200).json({ message: 'Account deleted successfully' });
   } catch (error) {
+    // Rollback the transaction in case of errors
+    await transaction.rollback();
+    console.error('Error deleting account:', error);
+
     if (error.name === 'SequelizeForeignKeyConstraintError') {
       res.status(400).json({
         error: 'foreign key constraint',
-        message: `Cannot delete account due to foreign key constraint.`
+        message: `Cannot delete account due to foreign key constraint.`,
+        detail: error.parent.detail || error.message, // Provide database-generated details
       });
     } else {
       res.status(500).json({ message: 'Internal server error', error: error.message });
     }
   }
 };
-
 
 exports.accountCreate = async (req, res) => {
   const { name, gst_no, user_id, debit_balance, credit_balance, financial_year, isDealer, group, address } = req.body;  

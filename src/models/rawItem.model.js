@@ -1,4 +1,4 @@
-module.exports = (sequelize, Sequelize,Items,Units) => {
+module.exports = (sequelize, Sequelize, Items, Units) => {
     const RawItem = sequelize.define("RawItem", {
         id: {
             type: Sequelize.INTEGER,
@@ -11,6 +11,8 @@ module.exports = (sequelize, Sequelize,Items,Units) => {
                 model: Items,
                 key: 'id',
             },
+            onDelete: 'RESTRICT', // Change to ON DELETE RESTRICT
+            onUpdate: 'CASCADE',  // Keep ON UPDATE CASCADE
         },
         unit_id: {
             type: Sequelize.INTEGER,
@@ -18,6 +20,8 @@ module.exports = (sequelize, Sequelize,Items,Units) => {
                 model: Units,
                 key: 'id',
             },
+            onDelete: 'RESTRICT', // Change to ON DELETE RESTRICT
+            onUpdate: 'CASCADE',  // Keep ON UPDATE CASCADE
         },
         user_id: {
             type: Sequelize.INTEGER,

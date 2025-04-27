@@ -11,6 +11,8 @@ module.exports = (sequelize, Sequelize, RawItems, Items, Units, Conversions) => 
           model: RawItems,
           key: 'id',
         },
+        onDelete: 'RESTRICT', // Change to ON DELETE RESTRICT
+        onUpdate: 'CASCADE',  // Keep ON UPDATE CASCADE
       },
       item_id: {
         type: Sequelize.INTEGER,
@@ -18,6 +20,8 @@ module.exports = (sequelize, Sequelize, RawItems, Items, Units, Conversions) => 
           model: Items,
           key: 'id',
         },
+        onDelete: 'RESTRICT', // Change to ON DELETE RESTRICT
+        onUpdate: 'CASCADE',  // Keep ON UPDATE CASCADE
       },
       unit_id: {
         type: Sequelize.INTEGER,
@@ -25,6 +29,8 @@ module.exports = (sequelize, Sequelize, RawItems, Items, Units, Conversions) => 
           model: Units,
           key: 'id',
         },
+        onDelete: 'RESTRICT', // Change to ON DELETE RESTRICT
+        onUpdate: 'CASCADE',  // Keep ON UPDATE CASCADE
       },
       percentage: {
         type: Sequelize.FLOAT,
@@ -36,6 +42,8 @@ module.exports = (sequelize, Sequelize, RawItems, Items, Units, Conversions) => 
           model: Conversions,
           key: 'id',
         },
+        onDelete: 'RESTRICT', // Change to ON DELETE RESTRICT
+        onUpdate: 'CASCADE',  // Keep ON UPDATE CASCADE
       },
       user_id: {
         type: Sequelize.INTEGER,

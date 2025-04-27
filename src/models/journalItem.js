@@ -7,7 +7,8 @@ module.exports = (sequelize, Sequelize, Account, Group, JournalEntry) => {
                 model: JournalEntry,
                 key: 'id'
             },
-            onDelete: 'CASCADE'
+            onDelete: 'RESTRICT', // Change to ON DELETE RESTRICT
+            onUpdate: 'CASCADE',  // Keep ON UPDATE CASCADE
         },
         account_id: {
             type: Sequelize.INTEGER,
@@ -16,7 +17,8 @@ module.exports = (sequelize, Sequelize, Account, Group, JournalEntry) => {
                 model: Account,
                 key: 'id'
             },
-            onDelete: 'CASCADE'
+            onDelete: 'RESTRICT', // Change to ON DELETE RESTRICT
+            onUpdate: 'CASCADE',  // Keep ON UPDATE CASCADE
         },
         group_id: {
             type: Sequelize.INTEGER,
@@ -25,7 +27,8 @@ module.exports = (sequelize, Sequelize, Account, Group, JournalEntry) => {
                 model: Group,
                 key: 'id'
             },
-            onDelete: 'CASCADE'
+            onDelete: 'RESTRICT', // Change to ON DELETE RESTRICT
+            onUpdate: 'CASCADE',  // Keep ON UPDATE CASCADE
         },
         amount: {
             type: Sequelize.DECIMAL(15, 2), // Updated to NUMERIC(10, 2)

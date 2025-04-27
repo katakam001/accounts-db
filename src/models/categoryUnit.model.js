@@ -14,7 +14,7 @@ module.exports = (sequelize, Sequelize, Category, Units) => {
         key: 'id'
       },
       onUpdate: 'CASCADE',
-      onDelete: 'CASCADE'
+      onDelete: 'RESTRICT'
     },
     unit_id: {
       type: Sequelize.INTEGER,
@@ -24,7 +24,7 @@ module.exports = (sequelize, Sequelize, Category, Units) => {
         key: 'id'
       },
       onUpdate: 'CASCADE',
-      onDelete: 'CASCADE'
+      onDelete: 'RESTRICT'
     },
     user_id: {
       type: Sequelize.INTEGER,

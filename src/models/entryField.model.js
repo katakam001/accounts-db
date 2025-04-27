@@ -13,8 +13,8 @@ module.exports = (sequelize, Sequelize, Entry, Fields) => {
         model: Entry,
         key: 'id'
       },
-      onUpdate: 'CASCADE',
-      onDelete: 'CASCADE'
+      onDelete: 'RESTRICT', // Change to ON DELETE RESTRICT
+      onUpdate: 'CASCADE',  // Keep ON UPDATE CASCADE
     },
     field_id: {
       type: Sequelize.INTEGER,
@@ -23,8 +23,8 @@ module.exports = (sequelize, Sequelize, Entry, Fields) => {
         model: Fields,
         key: 'id'
       },
-      onUpdate: 'CASCADE',
-      onDelete: 'CASCADE'
+      onDelete: 'RESTRICT', // Change to ON DELETE RESTRICT
+      onUpdate: 'CASCADE',  // Keep ON UPDATE CASCADE
     },
     field_value: {
       type: Sequelize.TEXT,

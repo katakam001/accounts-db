@@ -14,7 +14,7 @@ module.exports = (sequelize, Sequelize, Categories, Fields,Account) => {
         key: 'id'
       },
       onUpdate: 'CASCADE',
-      onDelete: 'CASCADE'
+      onDelete: 'RESTRICT'
     },
     field_id: {
       type: Sequelize.INTEGER,
@@ -24,7 +24,7 @@ module.exports = (sequelize, Sequelize, Categories, Fields,Account) => {
         key: 'id'
       },
       onUpdate: 'CASCADE',
-      onDelete: 'CASCADE'
+      onDelete: 'RESTRICT'
     },
     field_type: {
       type: Sequelize.STRING,
@@ -52,7 +52,7 @@ module.exports = (sequelize, Sequelize, Categories, Fields,Account) => {
         key: 'id'
       },
       onUpdate: 'CASCADE',
-      onDelete: 'SET NULL'
+      onDelete: 'RESTRICT'
     },
     type: {
       type: Sequelize.INTEGER,

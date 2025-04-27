@@ -113,17 +113,49 @@ exports.updateFieldMapping = async (req, res) => {
 };
 
 exports.deleteFieldMapping = async (req, res) => {
+  const { id } = req.params;
   try {
     const db = getDb();
     const FieldsMapping = db.fieldsMapping;
-    const { id } = req.params;
-    const deletedMapping = await FieldsMapping.destroy({ where: { id } });
-    if (deletedMapping) {
-      res.status(204).send();
-    } else {
-      throw new Error('FieldMapping not found');
+    // Fetch the fields_mapping record by ID to retrieve field_id and category_id
+    const fieldMapping = await FieldsMapping.findOne({ where: { id } });
+    if (!fieldMapping) {
+      return res.status(404).json({ message: 'FieldMapping not found' });
     }
+
+    const { field_id, category_id } = fieldMapping;
+
+    // Check if the combination of category_id and field_id exists in entries and entry_fields
+    const [isCombinationReferenced] = await db.sequelize.query(
+      `SELECT e.category_id,ef.field_id
+       FROM entries e
+       JOIN entry_fields ef ON e.id = ef.entry_id
+       WHERE e.category_id = :category_id AND ef.field_id = :field_id
+       LIMIT 1`,
+      {
+        replacements: { category_id, field_id } // Replace placeholders with actual values
+      }
+    );
+    
+    if (isCombinationReferenced.length > 0) {
+      return res.status(400).json({
+        error: 'foreign key constraint',
+        message: `Cannot delete fields_mapping: The combination of category_id (${category_id}) and field_id (${field_id}) is actively referenced.`,
+        detail: `The combination of category_id (${category_id}) and field_id (${field_id}) is actively referenced in invoices`, // Provide only relevant database details
+      });
+    }
+
+    // Proceed with deletion if no references exist
+    const deletedMapping = await FieldsMapping.destroy({
+      where: { id },
+    });
+
+    if (!deletedMapping) {
+      return res.status(404).json({ message: 'FieldMapping record not found' });
+    }
+    res.status(200).json({ message: 'FieldMapping deleted successfully' });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.log(error);
+    res.status(500).json({ message: 'Internal server error', error: error.message });
   }
 };

@@ -55,14 +55,28 @@ exports.groupDelete = async (req, res) => {
   try {
     const db = getDb();
     const Group = db.group;
+
+    // Check if the group exists
     const group = await Group.findByPk(id);
     if (!group) {
-      return res.status(404).send('Group not found');
+      return res.status(404).json({ message: 'Group not found' });
     }
+
+    // Attempt to delete the group
     await group.destroy();
-    res.status(200).send({ message: 'Group deleted successfully' });
+
+    // Successful deletion
+    res.status(200).json({ message: 'Group deleted successfully' });
   } catch (error) {
-    res.status(500).send(error);
+    if (error.name === 'SequelizeForeignKeyConstraintError') {
+      res.status(400).json({
+        error: 'foreign key constraint',
+        message: `Cannot delete group due to foreign key constraint.`,
+        detail: error.parent.detail || error.message, // Provide only relevant database details
+      });
+    } else {
+      res.status(500).json({ message: 'Internal server error', error: error.message });
+    }
   }
 };
 

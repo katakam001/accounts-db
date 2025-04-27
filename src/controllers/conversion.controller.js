@@ -99,17 +99,31 @@ exports.updateConversion = async (req, res) => {
 
 
 exports.deleteConversion = async (req, res) => {
+  const { id } = req.params;
   try {
     const db = getDb();
-    const Conversion = db.conversions;
-    const { id } = req.params;
-    const deleted = await Conversion.destroy({ where: { id } });
-    if (deleted) {
-      res.status(204).send();
-    } else {
-      throw new Error('Conversion not found');
+    const Conversions = db.conversions;
+
+    // Check if the conversion exists
+    const conversion = await Conversions.findByPk(id);
+    if (!conversion) {
+      return res.status(404).json({ message: 'Conversion not found' });
     }
+
+    // Attempt to delete the conversion
+    await conversion.destroy();
+
+    // Successful deletion
+    res.status(200).json({ message: 'Conversion deleted successfully' });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    if (error.name === 'SequelizeForeignKeyConstraintError') {
+      res.status(400).json({
+        error: 'foreign key constraint',
+        message: `Cannot delete conversion due to foreign key constraint.`,
+        detail: error.parent.detail || error.message, // Provide only relevant database details
+      });
+    } else {
+      res.status(500).json({ message: 'Internal server error', error: error.message });
+    }
   }
 };

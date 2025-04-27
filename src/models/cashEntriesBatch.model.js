@@ -29,7 +29,7 @@ module.exports = (sequelize, Sequelize,Account,Group) => {
           model: Group,
           key: 'id'
         },
-        onDelete: 'CASCADE'
+        onUpdate: 'CASCADE', // Optional: Retains ON UPDATE CASCADE for consistency
       },
       type: {
         type: Sequelize.BOOLEAN,
