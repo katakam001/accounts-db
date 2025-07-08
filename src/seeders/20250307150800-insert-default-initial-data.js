@@ -3,7 +3,7 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
     async up(sequelize, Sequelize) {
-    // Create default_account_list table
+    // Create default_group_mapping table
     await sequelize.bulkInsert('default_group_mapping', [
       { parent_name: null, group_name: 'Current Liabilities', hierarchy_level: 1 },
       { parent_name: 'Current Liabilities', group_name: 'Liability For Expense', hierarchy_level: 2 },

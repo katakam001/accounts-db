@@ -9,17 +9,44 @@ exports.addEntriesService = async (entries) => {
     const EntryField = db.entryField;
     const JournalItem = db.journalItem;
     const JournalEntry = db.journalEntry;
-
+    const InvoiceTracker = db.invoice_tracker;
     const invoiceNumber = entries[0].invoiceNumber;
     const journalDate = entries[0].entry_date;
     const userId = entries[0].user_id;
     const financialYear = entries[0].financial_year;
     const type = entries[0].type;
+    let next_seq_no=entries[0].s_no;
 
     // Step 1: Get the next sequence ID for the invoice group
     const [[{ next_sequence_id }]] = await db.sequelize.query(
       `SELECT nextval('group_entries_seq') AS next_sequence_id`
     );
+
+    // Step 1: Get the latest last_sno for the given combination
+    const existingTracker = await InvoiceTracker.findOne({
+      where: { user_id: userId, financial_year: financialYear, type: type },
+      transaction: t
+    });
+
+    const [updatedTracker] = await InvoiceTracker.upsert(
+      {
+        user_id: userId,
+        financial_year: financialYear,
+        type: type,
+        last_sno: existingTracker ? existingTracker.last_sno + 1 : 1 // ✅ Increment or start from 1
+      },
+      {
+        transaction: t,
+        returning: true,
+        conflictFields: ['user_id', 'financial_year', 'type'], // ✅ Ensure correct conflict resolution
+      }
+    );
+
+
+    if (!next_seq_no) {
+      // Get the latest `last_sNo` for further processing
+      next_seq_no = updatedTracker?.last_sno ?? 1;
+    }
 
     // Step 2: Insert a new journal entry
     const journalEntry = await JournalEntry.create({
@@ -43,6 +70,7 @@ exports.addEntriesService = async (entries) => {
       // Step 2: Insert a new entry with the journal_id
       entryWithoutDynamicFields.journal_id = journalEntry.id;
       entryWithoutDynamicFields.invoice_seq_id = next_sequence_id; // Assign the same sequence ID
+            entryWithoutDynamicFields.sNo = next_seq_no; // Assign the same sequence ID
       const newEntry = await Entry.create(entryWithoutDynamicFields, { transaction: t });
 
       const entryFields = dynamicFields.map(field => ({

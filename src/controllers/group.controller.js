@@ -17,7 +17,8 @@ exports.groupList = async (req, res) => {
       where: {
         user_id: userId,
         financial_year: financialYear
-      }
+      },
+      attributes: { exclude: ['createdAt', 'updatedAt'] } // 🔥 Exclude date fields
     });
 
     res.status(200).json(groups);

@@ -1,4 +1,4 @@
-const {getDb} = require("../utils/getDb");
+const { getDb } = require("../utils/getDb");
 
 exports.accountList = async (req, res) => {
   try {
@@ -161,7 +161,7 @@ exports.getAccount = async (req, res) => {
 };
 
 exports.accountUpdate = async (req, res) => {
-  const { name, gst_no, user_id, debit_balance, credit_balance, financial_year, isDealer, group, address } = req.body;  
+  const { name, gst_no, user_id, debit_balance, credit_balance, financial_year, isDealer, group, address } = req.body;
   try {
     const db = getDb();
     const Account = db.account;
@@ -186,13 +186,19 @@ exports.accountUpdate = async (req, res) => {
 
     let groupData = null;
     if (group) {
-      const existingAccountGroup = await AccountGroup.findOne({ where: { account_id: id } });
-      if (existingAccountGroup) {
-        existingAccountGroup.group_id = group;
-        await existingAccountGroup.save();
-      } else {
+      // Check if the exact mapping already exists
+      const existingPair = await AccountGroup.findOne({
+        where: { account_id: id, group_id: group }
+      });
+
+      if (!existingPair) {
+        // Remove any previous mapping for this account
+        await AccountGroup.destroy({ where: { account_id: id } });
+
+        // Create new mapping
         await AccountGroup.create({ account_id: id, group_id: group });
       }
+
       const groupExist = await Group.findByPk(group);
       if (groupExist) {
         groupData = {
@@ -317,7 +323,7 @@ exports.accountDelete = async (req, res) => {
 };
 
 exports.accountCreate = async (req, res) => {
-  const { name, gst_no, user_id, debit_balance, credit_balance, financial_year, isDealer, group, address } = req.body;  
+  const { name, gst_no, user_id, debit_balance, credit_balance, financial_year, isDealer, group, address } = req.body;
   try {
     const db = getDb();
     const Account = db.account;
@@ -336,7 +342,7 @@ exports.accountCreate = async (req, res) => {
 
     let groupData = null;
     if (group) {
-      await AccountGroup.create({ account_id: newAccount.id, group_id:group });
+      await AccountGroup.create({ account_id: newAccount.id, group_id: group });
       const groupExist = await Group.findByPk(group);
       if (groupExist) {
         groupData = {

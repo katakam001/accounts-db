@@ -3,7 +3,7 @@ const path = require('path');
 const { getDb } = require('./getDb');
 
 const seedersPath = path.join(__dirname, '../seeders');
-const seederFiles = fs.readdirSync(seedersPath);
+const seederFiles = fs.readdirSync(seedersPath).sort().reverse();
 
 (async () => {
   const db = getDb();

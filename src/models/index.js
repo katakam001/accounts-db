@@ -60,6 +60,10 @@ db.production_entries = require("../models/production_entries.model.js")(sequeli
 db.consolidated_stock_register = require("../models/consolidatedStockRegister.model.js")(sequelize, Sequelize);
 db.balance = require("../models/balance.model.js")(sequelize, Sequelize);
 db.globalBatchOperations = require("../models/globalBatchOperations.model.js")(sequelize, Sequelize);
+db.uploadedFileLog = require("../models/uploadedFileLog.model.js")(sequelize, Sequelize);
+db.invoice_tracker = require("../models/invoiceTracker.model.js")(sequelize, Sequelize);
+db.mapping_rules = require("../models/mapping_rules.js")(sequelize, Sequelize);
+
 
 db.fieldsMapping.belongsTo(db.categories, { foreignKey: 'category_id', as: 'category' });
 db.fieldsMapping.belongsTo(db.fields, { foreignKey: 'field_id', as: 'field' });

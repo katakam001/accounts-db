@@ -66,7 +66,6 @@ OpeningBalances AS (
     WHERE 
         user_id = :userId  AND
         al.financial_year = :financialYear
-        AND al.id IN (SELECT DISTINCT account_id FROM CombinedEntries)
 ),
 CombinedWithOpeningBalances AS (
     SELECT 

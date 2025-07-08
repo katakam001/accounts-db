@@ -56,6 +56,30 @@ Parsed url postgres://postgres:*****@localhost:5432/account_db
 == 20250108082956-initial-setup-no-references: reverting =======
 == 20250108082956-initial-setup-no-references: reverted (0.047s)
 
+
+C:\Software\accounts-db\src>npx sequelize-cli seed:generate --name insert-cash-account-to-account-group
+
+Sequelize CLI [Node: 22.11.0, CLI: 6.6.2, ORM: 6.37.6]
+
+seeders folder at "C:\Software\accounts-db\src\seeders" already exists.
+New seed was created at C:\Software\accounts-db\src\seeders\20250705103006-insert-cash-account-to-account-group.js .
+
+before running keep the database details correct in config/db.config.js,then only execute the node seeder-runner.js
+
+C:\Software\accounts-db\src\utils>node seeders-runner.js
+[2025-07-04 23:39:45] Executing (default): SELECT * FROM seeder_logs WHERE seeder_file_name = '20250129162005-insert-default-initial-data.js'
+Seeder 20250129162005-insert-default-initial-data.js has already been executed.
+[2025-07-04 23:39:45] Executing (default): SELECT * FROM seeder_logs WHERE seeder_file_name = '20250307150800-insert-default-initial-data.js'
+Seeder 20250307150800-insert-default-initial-data.js has already been executed.
+[2025-07-04 23:39:45] Executing (default): SELECT * FROM seeder_logs WHERE seeder_file_name = '20250308235500-insert-default-account-group.js'
+Seeder 20250308235500-insert-default-account-group.js has already been executed.
+[2025-07-04 23:39:45] Executing (default): SELECT * FROM seeder_logs WHERE seeder_file_name = '20250316143708-insert-default-suspense-account-and-suspense-group.js'
+Seeder 20250316143708-insert-default-suspense-account-and-suspense-group.js has already been executed.
+[2025-07-04 23:39:45] Executing (default): SELECT * FROM seeder_logs WHERE seeder_file_name = '20250701124935-add-initial-mapping-rules.js'
+Seeder 20250701124935-add-initial-mapping-rules.js has already been executed.
+Seeding completed.
+
+
 C:\Software\accounts-db>npx sequelize db:seed:all --url postgres://postgres:xxxxx@localhost:5432/account_db --seeders-path src/seeders --debug
 
 Sequelize CLI [Node: 22.11.0, CLI: 6.6.2, ORM: 6.37.5]
