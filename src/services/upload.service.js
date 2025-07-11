@@ -326,7 +326,6 @@ exports.processTransactions = async ({ groupedRecords, accountMap, suspenseAccou
         const JournalEntry = db.journalEntry;
         const JournalItem = db.journalItem;
         const CashEntryBatch = db.cashEntriesBatch; // Reference to cash_entries_batch
-        const Balance = db.balance; // Reference to the `balance` table
         const BatchOperations = db.globalBatchOperations; // Reference to the batch tracking table
         const uploadedFileLog = db.uploadedFileLog;
 
@@ -369,6 +368,19 @@ exports.processTransactions = async ({ groupedRecords, accountMap, suspenseAccou
                         user_id: userId,
                         financial_year: financialYear,
                         transaction_id: transactionId,
+                        is_cash_adjustment: false
+                    });
+                    cashEntries.push({
+                        cash_date: journalDate,
+                        narration: bankAccount.account_name,
+                        account_id: accountMap.get("cash").accountId,
+                        group_id: accountMap.get("cash").groupId,
+                        type: checkAmountType(record["Amount(Rs.)"]),
+                        amount,
+                        user_id: userId,
+                        financial_year: financialYear,
+                        transaction_id: transactionId,
+                        is_cash_adjustment: true
                     });
 
                     totalAmount += amount; // Keep track of the total
@@ -449,27 +461,7 @@ exports.processTransactions = async ({ groupedRecords, accountMap, suspenseAccou
             }, { transaction: t });
         }
 
-        // Step 2: Calculate net change for both real-time and batch entries
-        const [netChangeResult] = await db.sequelize.query(
-            `SELECT SUM(CASE WHEN type THEN amount ELSE -amount END) AS net_change
-   FROM combined_cash_entries
-   WHERE user_id = :user_id AND financial_year = :financial_year`,
-            {
-                replacements: { user_id: userId, financial_year: financialYear },
-                type: db.sequelize.QueryTypes.SELECT,
-                transaction: t,
-            }
-        );
-        const netChange = netChangeResult.net_change || 0;
-
-        // Step 3: Directly update the balance table with the net change
-        await Balance.update(
-            { amount: netChange }, // Directly set the balance amount to the calculated net change
-            { where: { user_id: userId, financial_year: financialYear }, transaction: t }
-        );
-
-
-        // Step 5: Mark batch operation as complete
+        // Step 2: Mark batch operation as complete
         await BatchOperations.update(
             { is_batch: false },
             { where: { user_id: userId, financial_year: financialYear }, transaction: t }

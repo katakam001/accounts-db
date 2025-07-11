@@ -43,6 +43,11 @@ module.exports = (sequelize, Sequelize, Account, Group) => {
     transaction_id: {
       type: Sequelize.STRING(30),
       allowNull: true,
+    },
+    is_cash_adjustment: {
+      type: Sequelize.BOOLEAN,
+      allowNull: false,
+      defaultValue: false
     }
   }, {
     tableName: 'cash_entries',

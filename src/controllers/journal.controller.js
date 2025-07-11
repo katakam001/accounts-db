@@ -46,7 +46,9 @@ exports.combinedBookListForDayBook = async (req, res) => {
           public.combined_cash_entries ce
         WHERE
           ce.user_id = :userid AND
-          ce.financial_year = :financial_year
+          ce.financial_year = :financial_year AND
+          ce.is_cash_adjustment IS NOT TRUE
+
       ),
       numbered_entries AS (
         SELECT

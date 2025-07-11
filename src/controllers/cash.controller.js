@@ -1,6 +1,5 @@
-const {getDb} = require("../utils/getDb");
+const { getDb } = require("../utils/getDb");
 const { broadcast } = require('../websocket'); // Import the broadcast function
-
 
 exports.cashBookListForDayBook = async (req, res) => {
   try {
@@ -49,7 +48,6 @@ exports.cashBookListForDayBook = async (req, res) => {
   }
 };
 
-
 exports.getCashEntryById = async (req, res) => {
   try {
     const entryId = req.params.id;
@@ -92,7 +90,7 @@ exports.getCashEntryById = async (req, res) => {
       // Transform the data to match the required format
       const transformedEntry = {
         id: cashEntry.id,
-        unique_entry_id:cashEntry.unique_entry_id,
+        unique_entry_id: cashEntry.unique_entry_id,
         cash_entry_date: new Date(cashEntry.cash_date),
         account_id: cashEntry.account_id,
         account_name: cashEntry.account_name, // Retrieved from the native query
@@ -116,7 +114,6 @@ exports.getCashEntryById = async (req, res) => {
     return res.status(500).json({ error: 'Internal Server Error' });
   }
 };
-
 
 exports.cashBookList = async (req, res) => {
   try {
@@ -142,7 +139,9 @@ exports.cashBookList = async (req, res) => {
       FROM combined_cash_entries AS cce
       LEFT JOIN account_list AS al
       ON cce.account_id = al.id
-      WHERE cce.user_id = :userId AND cce.financial_year = :financialYear
+      WHERE cce.user_id = :userId 
+      AND cce.financial_year = :financialYear
+      AND cce.is_cash_adjustment IS NOT TRUE
       ORDER BY cce.cash_date ASC
       `,
       {
@@ -176,15 +175,15 @@ exports.cashBookList = async (req, res) => {
   }
 };
 
-
 exports.cashEntryUpdate = async (req, res) => {
   const { id } = req.params;
-  const { cash_entry_date, narration_description, account_id, type, amount, user_id, financial_year,group_id } = req.body;
+  const { cash_entry_date, narration_description, account_name, account_id, type, amount, user_id, financial_year, group_id, cash_account_id, cash_group_id } = req.body;
   try {
     const db = getDb();
     const CashEntry = db.cash;
     const CashEntryBatch = db.cashEntriesBatch; // Reference to cash_entries_batch
     let cashEntry;
+    let entryTable;
     let uniqueEntryId;
 
     // Check the prefix of the unique ID to decide which table to query
@@ -192,20 +191,23 @@ exports.cashEntryUpdate = async (req, res) => {
       // Real-time entry
       const extractedId = id.replace('CE_', ''); // Extract the numeric ID
       cashEntry = await CashEntry.findByPk(extractedId); // Query cashEntries table
+      entryTable = CashEntry;
       uniqueEntryId = id; // Assign the original unique_entry_id
     } else if (id.startsWith('CEB_')) {
       // Batch entry
       const extractedId = id.replace('CEB_', ''); // Extract the numeric ID
       cashEntry = await CashEntryBatch.findByPk(extractedId); // Query cashEntriesBatch table
+      entryTable = CashEntryBatch;
+
       uniqueEntryId = id; // Assign the original unique_entry_id
     } else {
       return res.status(400).json({ error: 'Invalid ID format' }); // Handle invalid ID format
     }
 
     // Check if the entry exists
-      if (!cashEntry) {
-        return res.status(404).json({ error: 'Cash entry not found in either table' });
-      }
+    if (!cashEntry) {
+      return res.status(404).json({ error: 'Cash entry not found in either table' });
+    }
 
     // Update the entry
     cashEntry.cash_date = cash_entry_date;
@@ -217,7 +219,29 @@ exports.cashEntryUpdate = async (req, res) => {
     cashEntry.financial_year = financial_year;
     cashEntry.group_id = group_id;
     await cashEntry.save();
-    broadcast({ type: 'UPDATE', data: { ...cashEntry.toJSON(), unique_entry_id: uniqueEntryId }, entryType: 'cash', user_id, financial_year,cash_date:cash_entry_date }); // Emit WebSocket message
+
+    // ✅ Find and update mirror entry by transaction context
+    const mirrorEntry = await entryTable.findOne({
+      where: {
+        transaction_id: cashEntry.transaction_id,
+        user_id: user_id,
+        financial_year: financial_year,
+        is_cash_adjustment: true
+      }
+    });
+
+    if (mirrorEntry) {
+      mirrorEntry.cash_date = cash_entry_date;
+      mirrorEntry.narration = account_name;
+      mirrorEntry.account_id = cash_account_id;
+      mirrorEntry.type = !type; // Flip type
+      mirrorEntry.amount = parseFloat(parseFloat(amount).toFixed(2));
+      mirrorEntry.user_id = user_id;
+      mirrorEntry.financial_year = financial_year;
+      mirrorEntry.group_id = cash_group_id;
+      await mirrorEntry.save();
+    }
+    broadcast({ type: 'UPDATE', data: { ...cashEntry.toJSON(), unique_entry_id: uniqueEntryId }, entryType: 'cash', user_id, financial_year, cash_date: cash_entry_date }); // Emit WebSocket message
     return res.status(200).json({ message: 'Cash entry updated successfully' }); // Simplified response
   } catch (err) {
     console.error(err);
@@ -225,28 +249,74 @@ exports.cashEntryUpdate = async (req, res) => {
   }
 };
 
-// Add a new cash entry
 exports.cashEntryCreate = async (req, res) => {
-  const { cash_entry_date, narration_description, account_id, type, amount, user_id, financial_year,group_id } = req.body;
+  const {
+    cash_entry_date,
+    narration_description,
+    account_name,
+    account_id,
+    type,
+    amount,
+    user_id,
+    financial_year,
+    group_id,
+    cash_account_id,
+    cash_group_id
+  } = req.body;
+
   const cash_date = cash_entry_date;
   const narration = narration_description;
+  const transaction_id = `TXN-${Date.now()}`; // ✅ Safe within 30 characters
+
   try {
     const db = getDb();
     const CashEntry = db.cash;
-    const cashEntry = await CashEntry.create({
-      cash_date,
-      narration,
-      account_id,
-      type,
-      amount,
+
+    const entriesToCreate = [
+      {
+        cash_date,
+        narration,
+        account_id,
+        type,
+        amount,
+        user_id,
+        financial_year,
+        transaction_id,
+        is_cash_adjustment: false,
+        group_id
+      },
+      {
+        cash_date,
+        narration: account_name,
+        account_id: cash_account_id,
+        type: !type, // Flip the type for mirror entry
+        amount,
+        user_id,
+        financial_year,
+        transaction_id,
+        is_cash_adjustment: true,
+        group_id: cash_group_id
+      }
+    ];
+
+    const [mainEntry] = await CashEntry.bulkCreate(entriesToCreate, { returning: true });
+
+    const formattedAmount = parseFloat(amount).toFixed(2);
+
+    broadcast({
+      type: 'INSERT',
+      data: {
+        ...mainEntry.toJSON(),
+        unique_entry_id: `CE_${mainEntry.id}`,
+        amount: parseFloat(formattedAmount)
+      },
+      entryType: 'cash',
       user_id,
       financial_year,
-      group_id
+      cash_date: mainEntry.cash_date
     });
-    const uniqueEntryId = `CE_${cashEntry.id}`; // Prefix the ID with "CE_"
-    const formattedAmount = parseFloat(amount).toFixed(2);
-    broadcast({ type: 'INSERT', data: { ...cashEntry.toJSON(), unique_entry_id: uniqueEntryId,amount:parseFloat(formattedAmount) }, entryType: 'cash', user_id, financial_year,cash_date:cashEntry.cash_date }); // Emit WebSocket message
-    return res.status(201).json({ message: 'Cash entry created successfully' }); // Simplified response
+
+    return res.status(201).json({ message: 'Cash entry created successfully' });
   } catch (err) {
     console.error(err);
     return res.status(500).json({ error: 'Internal server error' });
@@ -261,6 +331,7 @@ exports.cashEntryDelete = async (req, res) => {
     const CashEntry = db.cash;
     const CashEntryBatch = db.cashEntriesBatch; // Reference to cash_entries_batch
     let cashEntry;
+    let entryTable;
     let uniqueEntryId = id; // Use the original unique_entry_id directly
     let extractedId;
     let account_id;
@@ -271,12 +342,14 @@ exports.cashEntryDelete = async (req, res) => {
       // Real-time entry
       extractedId = id.replace('CE_', ''); // Extract the numeric ID
       cashEntry = await CashEntry.findByPk(extractedId); // Query cashEntries table
+      entryTable = CashEntry;
       account_id = cashEntry.account_id;
       cash_date = cashEntry.cash_date;
     } else if (id.startsWith('CEB_')) {
       // Batch entry
       extractedId = id.replace('CEB_', ''); // Extract the numeric ID
       cashEntry = await CashEntryBatch.findByPk(extractedId); // Query cashEntriesBatch table
+      entryTable = CashEntryBatch;
       account_id = cashEntry.account_id;
       cash_date = cashEntry.cash_date;
     } else {
@@ -288,7 +361,17 @@ exports.cashEntryDelete = async (req, res) => {
     await cashEntry.destroy({
       where: { id: id } // Add id to the where clause
     });
-    broadcast({ type: 'DELETE', data: {  unique_entry_id: uniqueEntryId,account_id:account_id }, entryType: 'cash', user_id: cashEntry.user_id, financial_year: cashEntry.financial_year,cash_date:cash_date }); // Emit WebSocket message
+
+    // ✅ Delete mirror entry scoped by transaction_id + user_id + financial_year
+    await entryTable.destroy({
+      where: {
+        transaction_id: cashEntry.transaction_id,
+        user_id: cashEntry.user_id,
+        financial_year: cashEntry.financial_year,
+        is_cash_adjustment: true
+      }
+    });
+    broadcast({ type: 'DELETE', data: { unique_entry_id: uniqueEntryId, account_id: account_id }, entryType: 'cash', user_id: cashEntry.user_id, financial_year: cashEntry.financial_year, cash_date: cash_date }); // Emit WebSocket message
     return res.status(204).send(); // Simplified response
   } catch (err) {
     console.error(err);
