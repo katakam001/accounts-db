@@ -10,7 +10,8 @@ module.exports = function (app) {
     next();
   });
 
-  app.post("/api/trail-balance-report",[authJwt.verifyToken], controller.getTrailBalance);
+  app.post("/api/trail-balance/report",[authJwt.verifyToken], controller.getTrailBalance);
+  app.post("/api/trail-balance/accounts-to-group",[authJwt.verifyToken], controller.getAccountsForGroupForTrailBalance);
 
 
 };

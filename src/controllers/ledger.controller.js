@@ -137,82 +137,157 @@ exports.getLedger = async (req, res) => {
 
     const [entriesBuffer] = await db.sequelize.query(
       `
-      WITH combined_entries AS (
-        SELECT
-          CAST(je.id AS VARCHAR) as entry_id,
-          DATE(je.journal_date) AS date,
-          ji.narration,
-          ji.amount,
-          ji.type,
-          ji.account_id,
-          ji.group_id
-        FROM
-          public.journal_entries je
-        JOIN
-          public.journal_items ji ON je.id = ji.journal_id
-        WHERE
-          je.user_id = :user_id AND
-          je.financial_year = :financial_year ${dateFilterSQLForJE}
+WITH combined_entries AS (
+  -- Journal entries
+  SELECT
+    CAST(je.id AS VARCHAR) AS entry_id,
+    DATE(je.journal_date) AS date,
+    ji.narration,
+    ji.amount,
+    ji.type,
+    ji.account_id,
+    ji.group_id
+  FROM public.journal_entries je
+  JOIN public.journal_items ji ON je.id = ji.journal_id
+  WHERE je.user_id = :user_id AND je.financial_year = :financial_year
+    ${dateFilterSQLForJE}
 
-        UNION ALL
+  UNION ALL
 
-        SELECT
-          ce.unique_entry_id as entry_id,
-          DATE(ce.cash_date) AS date,
-          ce.narration,
-          ce.amount,
-          ce.type,
-          ce.account_id,
-          ce.group_id
-        FROM
-          public.combined_cash_entries ce
-        WHERE
-          ce.user_id = :user_id AND
-          ce.financial_year = :financial_year ${dateFilterSQLForCE}
-      ),
-      entries_with_names AS (
-        SELECT
-          ce.entry_id,
-          ce.date,
-          ce.narration,
-          ce.amount,
-          ce.type,
-          ce.account_id,
-          a.name AS account_name,
-          ce.group_id,
-          g.name AS group_name
-        FROM
-          combined_entries ce
-        LEFT JOIN
-          public.group_list g ON ce.group_id = g.id
-        LEFT JOIN
-          public.account_list a ON ce.account_id = a.id
-        WHERE
-          g.user_id = :user_id AND
-          g.financial_year = :financial_year AND
-          a.user_id = :user_id AND
-          a.financial_year = :financial_year
-      ),
-      numbered_entries AS (
-        SELECT
-          *,
-          ROW_NUMBER() OVER (ORDER BY group_name, account_name, date) AS row_num
-        FROM
-          entries_with_names
-      ),
-      entries_with_balance AS (
-        SELECT
-          *,
-          SUM(CASE WHEN type THEN amount ELSE -amount END) 
-            OVER (PARTITION BY account_id ORDER BY row_num) AS balance
-        FROM
-          numbered_entries
-      )
-      SELECT *
-      FROM entries_with_balance
-      WHERE row_num BETWEEN :startRow AND :endRow
-      ORDER BY group_name, account_name, row_num
-      `,
+  -- Cash entries
+  SELECT
+    ce.unique_entry_id AS entry_id,
+    DATE(ce.cash_date) AS date,
+    ce.narration,
+    ce.amount,
+    ce.type,
+    ce.account_id,
+    ce.group_id
+  FROM public.combined_cash_entries ce
+  WHERE ce.user_id = :user_id AND ce.financial_year = :financial_year
+    ${dateFilterSQLForCE}
+),
+
+entries_with_names AS (
+  SELECT
+    ce.entry_id,
+    ce.date,
+    ce.narration,
+    ce.amount,
+    ce.type,
+    ce.account_id,
+    a.name AS account_name,
+    ce.group_id,
+    g.name AS group_name
+  FROM combined_entries ce
+  LEFT JOIN public.account_list a ON ce.account_id = a.id
+  LEFT JOIN public.group_list g ON ce.group_id = g.id
+  WHERE a.user_id = :user_id AND a.financial_year = :financial_year
+    AND g.user_id = :user_id AND g.financial_year = :financial_year
+),
+
+numbered_entries AS (
+  SELECT
+    *,
+    ROW_NUMBER() OVER (
+      PARTITION BY account_id, group_id 
+      ORDER BY date
+    ) AS inner_row,
+    1 AS row_type_order,
+    'entry' AS row_type,
+    0 AS overall_debit,
+    0 AS overall_credit
+  FROM entries_with_names
+),
+
+opening_entries AS (
+  SELECT
+    'OPENING-' || al.id AS entry_id,
+    DATE(:fromDate) AS date,
+    'Opening Balance' AS narration,
+    CASE 
+      WHEN al.debit_balance > al.credit_balance THEN al.debit_balance - al.credit_balance
+      ELSE al.credit_balance - al.debit_balance
+    END AS amount,
+    CASE 
+      WHEN al.debit_balance > al.credit_balance THEN false
+      ELSE true
+    END AS type,
+    al.id AS account_id,
+    al.name AS account_name,
+    ag.group_id,
+    gl.name AS group_name,
+    0 AS inner_row,
+    0 AS row_type_order,
+    'opening' AS row_type,
+    0 AS overall_debit,
+    0 AS overall_credit
+  FROM account_list al
+  JOIN account_group ag ON al.id = ag.account_id
+  JOIN group_list gl ON ag.group_id = gl.id
+  WHERE al.user_id = :user_id AND al.financial_year = :financial_year
+),
+
+combined_entry_stream AS (
+  SELECT
+    *,
+  0 AS opening_adjustment
+  FROM opening_entries
+
+  UNION ALL
+
+  SELECT
+    *,
+    0 AS opening_adjustment
+  FROM numbered_entries
+),
+
+entries_with_balance AS (
+  SELECT *,
+    SUM(CASE WHEN type THEN amount ELSE -amount END)
+      OVER (PARTITION BY account_id, group_id ORDER BY inner_row)
+    + opening_adjustment AS balance
+  FROM combined_entry_stream
+),
+
+summary_entries AS (
+  SELECT
+    'SUMMARY-' || account_id AS entry_id,
+    DATE(:toDate) AS date,
+    'Summary Total' AS narration,
+    0 AS amount,
+    true AS type,
+    account_id,
+    account_name,
+    group_id,
+    group_name,
+    999999 AS inner_row,
+    2 AS row_type_order,
+    'summary' AS row_type,
+    SUM(CASE WHEN NOT type THEN amount ELSE 0 END) AS overall_debit,
+    SUM(CASE WHEN type THEN amount ELSE 0 END) AS overall_credit,
+    0 AS opening_adjustment,
+    SUM(CASE WHEN type THEN amount ELSE -amount END) AS balance
+  FROM entries_with_balance
+  GROUP BY account_id, account_name, group_id, group_name
+)
+
+-- Final unified rows with pagination
+SELECT *
+FROM (
+  SELECT *,
+    ROW_NUMBER() OVER (
+      ORDER BY group_name, account_name, row_type_order, inner_row
+    ) AS row_num
+  FROM (
+    SELECT * FROM entries_with_balance
+    UNION ALL
+    SELECT * FROM summary_entries
+  ) AS combined
+) AS final_ledger
+WHERE row_num BETWEEN :startRow AND :endRow
+ORDER BY row_num;
+     `,
       {
         replacements: {
           user_id,
@@ -241,6 +316,9 @@ exports.getLedger = async (req, res) => {
       amount: parseFloat(entry.amount).toFixed(2),
       type: entry.type,
       balance: parseFloat(entry.balance).toFixed(2),
+      row_type: entry.row_type,
+      overall_debit: parseFloat(entry.overall_debit).toFixed(2),
+      overall_credit: parseFloat(entry.overall_credit).toFixed(2),
     }));
 
     res.json({
