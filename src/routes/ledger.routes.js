@@ -13,6 +13,6 @@ module.exports = function (app) {
   app.get("/api/ledger/exportLedgerToPDF", [authJwt.verifyToken], controller.exportToPDF);
   app.get("/api/ledger/exportLedgerToExcel", [authJwt.verifyToken], controller.exportToExcel);
   app.get("/api/ledger/fetchLedgerData", [authJwt.verifyToken], controller.getLedger);
-  app.get("/api/ledger/:accountId", [authJwt.verifyToken], controller.getLedgerForAccount);
+  app.get("/api/ledger/fetch-account-copy/:accountId", [authJwt.verifyToken], controller.getLedgerForAccount);
   app.get("/api/ledger/updated/:accountId", [authJwt.verifyToken], controller.getUpdatedLedger);
 };
