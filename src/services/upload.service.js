@@ -108,7 +108,7 @@ exports.getAccountsByGroup = async ({ group_name, user_id, financial_year }) => 
     }
 };
 
-exports.fetchUnitIdsByCategoryIds = async ({ categoryIds, user_id, financial_year }) => {
+exports.fetchUnitIdsByCategoryIds = async ({ categoryIds}) => {
     try {
         // console.log(categoryIds);
         const db = getDb(); // Get the database instance
@@ -136,7 +136,7 @@ exports.fetchUnitIdsByCategoryIds = async ({ categoryIds, user_id, financial_yea
     }
 };
 
-exports.fetchDynamicFieldsByCategoryIds = async ({ categoryIds, user_id, financial_year }) => {
+exports.fetchDynamicFieldsByCategoryIds = async ({ categoryIds}) => {
     try {
         const db = getDb(); // Initialize database instance
 
@@ -320,7 +320,12 @@ exports.processTransactions = async ({ groupedRecords, accountMap, suspenseAccou
 
     const db = getDb(); // Get database instance
     const t = await db.sequelize.transaction(); // Start a transaction
-    const checkAmountType = (input) => input.includes('(Cr)') ? true : input.includes('(Dr)') ? false : null;
+    const checkAmountType = ({ debit, credit }) => {
+        if (debit === '0.00') return true;   // Credit
+        if (credit === '0.00') return false; // Debit
+        return false;                         // Ambiguous or both present
+    };
+
 
     try {
         const JournalEntry = db.journalEntry;
@@ -342,7 +347,7 @@ exports.processTransactions = async ({ groupedRecords, accountMap, suspenseAccou
                 console.log(`Duplicate detected for Transaction ID: ${transactionId}, skipping...`);
                 continue; // Skip processing
             }
-            const journalDate = moment(records[0].Date, 'DD/MM/YYYY').tz('Asia/Kolkata')
+            const journalDate = moment(records[0].date, 'DD/MM/YYYY').tz('Asia/Kolkata')
                 .set({ hour: 5, minute: 30, second: 0 });
             let totalAmount = 0;
             let type;
@@ -351,19 +356,20 @@ exports.processTransactions = async ({ groupedRecords, accountMap, suspenseAccou
             const journalItems = []; // List of journal items for batch processing
 
             for (const record of records) {
-                const remarks = record.Remarks.toLowerCase();
-                const amount = invoiceUtils.extractAmountAndType(record["Amount(Rs.)"]);
+                const remarks = record.description.toLowerCase();
+                const amount = parseFloat(record.debit) > 0 ? parseFloat(record.debit) : parseFloat(record.credit);
 
-                if (remarks.includes("by cash") || remarks.includes("cardless deposit")) {
+
+                if (remarks.includes("by cash") || remarks.includes("cardless deposit") || remarks.includes("cwdr") || remarks.includes("to cash") || remarks.includes("atm cash") || remarks.includes("cash deposit") || remarks.includes("cash dep")) {
                     createCashEntry = true;
 
                     // Prepare a cash entry for batch table
                     cashEntries.push({
                         cash_date: journalDate,
-                        narration: record.Remarks,
+                        narration: record.description,
                         account_id: bankAccount.accountId,
                         group_id: bankAccount.groupId,
-                        type: !checkAmountType(record["Amount(Rs.)"]),
+                        type: checkAmountType(record["debit"],record["credit"]),
                         amount,
                         user_id: userId,
                         financial_year: financialYear,
@@ -375,7 +381,7 @@ exports.processTransactions = async ({ groupedRecords, accountMap, suspenseAccou
                         narration: bankAccount.account_name,
                         account_id: accountMap.get("cash").accountId,
                         group_id: accountMap.get("cash").groupId,
-                        type: checkAmountType(record["Amount(Rs.)"]),
+                        type: !checkAmountType(record["debit"],record["credit"]),
                         amount,
                         user_id: userId,
                         financial_year: financialYear,
@@ -395,7 +401,7 @@ exports.processTransactions = async ({ groupedRecords, accountMap, suspenseAccou
                                 break;
                             }
                         }
-                        type = !checkAmountType(record["Amount(Rs.)"]);
+                        type = !checkAmountType(record["debit"],record["credit"]);
                     }
                     const accountDetails = matchedAccount
                         ? accountMap.get(matchedAccount)
@@ -406,10 +412,10 @@ exports.processTransactions = async ({ groupedRecords, accountMap, suspenseAccou
                     journalItems.push({
                         journal_id: null,
                         account_id: accountDetails.accountId,
-                        narration: record.Remarks,
+                        narration: record.description,
                         group_id: accountDetails.groupId,
                         amount,
-                        type: checkAmountType(record["Amount(Rs.)"]),
+                        type: checkAmountType(record["debit"],record["credit"]),
                     });
                 }
             }
@@ -436,7 +442,7 @@ exports.processTransactions = async ({ groupedRecords, accountMap, suspenseAccou
                     journalItems.push({
                         journal_id: journalEntry.id,
                         account_id: cashAccount.accountId,
-                        narration: records[0].Remarks,
+                        narration: records[0].description,
                         group_id: cashAccount.groupId,
                         amount: totalAmount,
                         type: type,
@@ -477,7 +483,7 @@ exports.processTransactions = async ({ groupedRecords, accountMap, suspenseAccou
 };
 
 
-exports.processInvoiceTransactions = async ({ extractedData, categoryAccountMap, accountMap, categoryMap, itemsMap, unitIdMap, dynamicFieldsMap, suspenseAccountName, userId, financialYear, type }) => {
+exports.processInvoiceTransactions = async ({ extractedData, categoryAccountMap, accountMap, categoryMap, itemsMap, unitIdMap, dynamicFieldsMap, suspenseAccountName, userId, financialYear, type,taxType }) => {
     try {
         // console.log(extractedData);
         // console.log(categoryAccountMap);
@@ -504,7 +510,8 @@ exports.processInvoiceTransactions = async ({ extractedData, categoryAccountMap,
                 dynamicFieldsMap,
                 userId, // userId
                 financialYear, // financialYear
-                type // type
+                type, // type
+                taxType // taxType
             );
             entries.push(...rowEntries);
 

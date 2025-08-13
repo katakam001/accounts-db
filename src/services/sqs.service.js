@@ -64,7 +64,10 @@ function groupMessages(Messages) {
         const attributes = message.MessageAttributes;
         const userId = parseInt(attributes.userId.StringValue);
         const financialYear = attributes.financialYear.StringValue;
-        const type = attributes.type?.StringValue || attributes.statementType?.StringValue;
+        const isInvoiceProcessing = attributes.type?.StringValue && attributes.taxType?.StringValue;
+        const type = isInvoiceProcessing
+            ? `${attributes.type.StringValue}-${attributes.taxType.StringValue}`
+            : attributes.statementType?.StringValue;
 
         const transactionData = JSON.parse(message.Body);
         const isStatement = type === "bank";
@@ -95,10 +98,28 @@ async function processGroupedTransactions(key, transactionRecords) {
     const suspenseAccountName = "Suspense Account";
     const [userId, financialYear, typeOrAccountId] = key.split("_").map(val => isNaN(val) ? val : parseInt(val));
 
-    const isCSVInvoice = typeOrAccountId === 1 || typeOrAccountId === 2;
+    const validCSVIdentifiers = ['1-cgst', '1-igst', '2-cgst', '2-igst'];
+    const isCSVInvoice = validCSVIdentifiers.includes(typeOrAccountId);
     const isTrailBalance = typeOrAccountId === "trialBalance";
     const accountId = isCSVInvoice || isTrailBalance ? null : typeOrAccountId;
-    const type = isCSVInvoice ? typeOrAccountId : null;
+
+
+    const validTypes = ['1', '2'];
+    const validTaxTypes = ['cgst', 'igst'];
+
+    let type = null;
+    let taxType = null;
+
+
+
+    if (isCSVInvoice && typeof typeOrAccountId === 'string') {
+        const [typePart, taxPart] = typeOrAccountId.split('-');
+
+        if (validTypes.includes(typePart) && validTaxTypes.includes(taxPart)) {
+            type = parseInt(typePart, 10); // Now a proper number: 1 or 2
+            taxType = taxPart;             // 'cgst' or 'igst'
+        }
+    }
 
     console.log(`Processing ${isCSVInvoice ? "CSV Invoices" : "PDF"} for User: ${userId}, Financial Year: ${financialYear}, Account ID: ${accountId || "N/A"}`);
 
@@ -149,6 +170,7 @@ async function processGroupedTransactions(key, transactionRecords) {
             userId,
             financialYear,
             type,
+            taxType
         });
     }
 }
@@ -180,11 +202,11 @@ async function loadAndCacheInvoiceData(userId, financialYear, type, cachedData) 
     const categoryIds = Array.from(cachedData[`${selectedPrefix}CategoryMap`]?.values() || []);
 
     if (!cachedData[`${selectedPrefix}UnitIdMap`]) {
-        cachedData[`${selectedPrefix}UnitIdMap`] = await uploadService.fetchUnitIdsByCategoryIds({ categoryIds, user_id: userId, financial_year: financialYear });
+        cachedData[`${selectedPrefix}UnitIdMap`] = await uploadService.fetchUnitIdsByCategoryIds({ categoryIds });
     }
 
     if (!cachedData[`${selectedPrefix}DynamicFieldsMap`]) {
-        cachedData[`${selectedPrefix}DynamicFieldsMap`] = await uploadService.fetchDynamicFieldsByCategoryIds({ categoryIds, user_id: userId, financial_year: financialYear });
+        cachedData[`${selectedPrefix}DynamicFieldsMap`] = await uploadService.fetchDynamicFieldsByCategoryIds({ categoryIds });
     }
 
     cache.setCache(`${userId}_${financialYear}`, cachedData, 3600);

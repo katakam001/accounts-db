@@ -17,20 +17,28 @@ exports.getPresignedUrl = async (req, res) => {
     // 🔹 Extract file extension dynamically
     const fileExtension = fileName.split('.').pop().toLowerCase();
     const validExtensions = ["pdf", "csv", "txt", "xlsx"];
-    const prefix = validExtensions.includes(fileExtension) ? `${fileExtension}/` : "other/";
+    let prefix = validExtensions.includes(fileExtension) ? `${fileExtension}/` : "other/";
     //  Define metadata dynamically
     let metadata = {};
 
     if (fileExtension === "pdf") {
-      const { statementType, bankName, accountId, userId, financialYear } = req.query;
+      const { statementType, bankName, accountId, userId, financialYear,fileSize } = req.query;
       if (statementType === "bank") {
-        metadata = { statementType, bankName, accountId, userId, financialYear };
+        metadata = { statementType, bankName, accountId, userId, financialYear,fileSize };
       } else {
-        metadata = { statementType, userId, financialYear };
+        metadata = { statementType, userId, financialYear,fileSize };
       }
+      let sizeTier = "small"; // default
+      if (parseInt(fileSize, 10) > 1024 * 1024 * 1.07) {
+        sizeTier = "large";
+      } else if (parseInt(fileSize, 10) > 1024 * 1024 * 0.5) {
+        sizeTier = "medium";
+      }
+
+      prefix = `pdf/${sizeTier}/`; // 👈 Update prefix based on size tier
     } else if (fileExtension === "csv") {
-      const { userId, financialYear, type } = req.query;
-      metadata = { userId, financialYear, type };
+      const { userId, financialYear, type, taxType,fileSize } = req.query;
+      metadata = { userId, financialYear, type, taxType,fileSize };
     } else {
       metadata = { fileType: fileExtension, uploadedAt: new Date().toISOString() };
     }

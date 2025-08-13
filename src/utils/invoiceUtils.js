@@ -4,63 +4,78 @@ exports.categorizeCategoriesByGstRate = (categories) => {
   const gstCategoryMap = new Map();
 
   for (const category of categories) {
-    const name = category.name.toLowerCase();
+    const name = category.name.toUpperCase();
 
-    if (name.includes("igst")) continue; // ✅ Skip categories containing "IGST"
+    // 🔍 Determine tax type
+    const taxType = name.includes("IGST") ? "igst" : "cgst";
 
+    // 🔍 Extract GST Rate
     const gstRateMatch = name.match(/(\d+)%/);
     const gstRate = gstRateMatch ? parseInt(gstRateMatch[1], 10) : 0;
 
-    gstCategoryMap.set(gstRate, category.id);
+    // 🔍 Extract item name
+    // Step 1: Remove 'PURCHASE' or 'SALE' from the start
+    const tokens = name.split(" ");
+    tokens.shift(); // removes 'PURCHASE' or 'SALE'
+
+    // Step 2: Find index of token that contains '%' (e.g., '5%')
+    const rateIndex = tokens.findIndex(token => token.includes('%'));
+
+    // Step 3: Extract item name tokens (before rate)
+    const itemTokens = tokens.slice(0, rateIndex);
+    const itemName = itemTokens.join(" ").trim();
+
+    // 🧩 Composite key: ITEM_NAME|RATE|TAX_TYPE
+    const compositeKey = `${itemName}|${gstRate}|${taxType}`;
+
+    gstCategoryMap.set(compositeKey, category.id);
   }
 
   return gstCategoryMap;
 };
 
-
 exports.categorizeItemsByGstRate = (items) => {
-
-  const gstItemMap = new Map();
+  const gstItemMap = new Map(); // Map<string, item_id>
 
   items.forEach((item) => {
-    const name = item.name.toLowerCase(); // Convert to lowercase for consistency
-    const gstRateMatch = name.match(/(\d+)%/); // Check for percentage like "5%" or "12%"
-    const gstRate = gstRateMatch ? parseInt(gstRateMatch[1], 10) : 0; // Default to 0% for no match
+    const name = item.name.toUpperCase().trim(); // Consistent casing
+    const gstRateMatch = name.match(/(\d+)%/);    // Extract GST rate
+    const gstRate = gstRateMatch ? parseInt(gstRateMatch[1], 10) : 0;
 
-    gstItemMap.set(gstRate, item.id); // Map GST rate to category_id (id)
+    // 🔍 Extract item name: all words before the GST rate token
+    const tokens = name.split(" ");
+    const rateIndex = tokens.findIndex(token => token.includes("%"));
+    const itemName = tokens.slice(0, rateIndex).join(" ").trim();
+
+    // 🧩 Composite key: ITEM_NAME|RATE (taxType not applicable here)
+    const compositeKey = `${itemName}|${gstRate}`;
+
+    gstItemMap.set(compositeKey, item.id);
   });
 
-  // Example logging
-
-  return gstItemMap; // Return the Map
+  return gstItemMap;
 };
 
 exports.categorizeAccountsByGstRate = (accounts) => {
-  const categoryAccountMap = new Map();
+  const categoryAccountMap = new Map(); // Map<string, account_id>
 
-  accounts.forEach((account) => {
-    // Extract GST rate from account name (e.g., "5%", "12%", etc.)
-    const gstRateMatch = account.account_name.match(/(\d+)%/);
-    const gstRate = gstRateMatch ? parseInt(gstRateMatch[1], 10) : 0; // Default to 0% if no match
+  // 🔹 Composite key format: "ITEM_NAME|RATE|TAX_TYPE"
+  accounts.forEach(account => {
+    const accountName = account.account_name.toUpperCase();
 
-    // Set the gstRate as key and category_id as value
-    categoryAccountMap.set(gstRate, account.account_id);
+    const gstRateMatch = accountName.match(/(\d+)%/);
+    const gstRate = gstRateMatch ? parseInt(gstRateMatch[1], 10) : 0;
+
+    const taxType = accountName.includes('IGST') ? 'igst' : 'cgst';
+
+    const itemMatch = accountName.match(/OF\s+(.*?)\s+\d+%/);
+    const itemName = itemMatch ? itemMatch[1].trim().toUpperCase() : 'UNKNOWN';
+
+    const compositeKey = `${itemName}|${gstRate}|${taxType}`;
+    categoryAccountMap.set(compositeKey, account.account_id);
   });
 
-  return categoryAccountMap; // Return the Map
-};
-
-exports.extractAmountAndType = (input) => {
-  // Regex to match the amount and the type (Dr or Cr) in braces
-  const regex = /([\d.,]+)\s+\((Dr|Cr)\)/i;
-  const match = input.match(regex);
-
-  if (match) {
-    const amount = parseFloat(match[1].replace(/,/g, '')); // Extract and parse the amount
-    return amount;
-  }
-
-  return null; // Return nulls if no match is found
+  return categoryAccountMap;
 };
 
 exports.createEntriesForInvoice = (
@@ -74,7 +89,8 @@ exports.createEntriesForInvoice = (
   dynamicFieldsMap, // Pass dynamic fields map
   userId,
   financialYear,
-  type
+  type,
+  taxType
 ) => {
   const entries = []; // Initialize an array to store all entries for this invoice
 
@@ -93,11 +109,21 @@ exports.createEntriesForInvoice = (
     const gstValue = extractedData[valueKey]; // Get the GST value for this rate
     // console.log(gstValue);
     if (gstValue > 0) {
+      const itemName = extractedData["ItemName"];
+      // console.log(itemName);
+      const compositeKey = `${itemName}|${rate}|${taxType}`;
+      // console.log(compositeKey);
+      const itemCompositeKey = `${itemName}|${rate}`;
+      // console.log(itemCompositeKey);
       // Retrieve mappings for this GST rate
-      const categoryId = gstCategoryMap.get(rate);
-      const itemId = gstItemMap.get(rate);
-      const categoryAccountId = categoryAccountMap.get(rate);
+      const categoryId = gstCategoryMap.get(compositeKey);
+      // console.log(categoryId);
+      const itemId = gstItemMap.get(itemCompositeKey);
+      // console.log(itemId);
+      const categoryAccountId = categoryAccountMap.get(compositeKey);
+      // console.log(categoryAccountId);
       const unitId = unitIdMap.get(categoryId);
+      // console.log(unitId);
 
       if (!categoryId || !itemId || !categoryAccountId || !unitId) {
         console.error(`Missing mapping for GST rate ${rate}`);
@@ -153,7 +179,7 @@ const createDynamicFields = (categoryId, dynamicFieldsMap, extractedData, gstVal
     if (field_type === 'number') {
       if (field_category === 1 && !exclude_from_total) {
         // Tax calculation logic: extract percentage from field_name
-        const taxPercentageMatch = field_name.match(/(\d+(\.\d+)?)%/); // Match percentage like "2.5%"
+        const taxPercentageMatch = field_name.match(/(\d+(\.\d+)?)%/); // Match percentage like "2.5%","5%","18%"
         const taxPercentage = taxPercentageMatch ? parseFloat(taxPercentageMatch[1]) : 0; // Extract percentage or default to 0
         const field_value = (gstValue * taxPercentage / 100).toFixed(2); // Calculate tax value based on NetAmt
 

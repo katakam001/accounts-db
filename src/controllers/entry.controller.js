@@ -93,6 +93,7 @@ exports.getEntries = async (req, res) => {
       unit_id: entry.unit_id,
       invoiceNumber: entry.invoiceNumber,
       invoice_seq_id:entry.invoice_seq_id,
+      sNo:entry.sNo,
       category_account_id: entry.category_account_id,
       fields: entry.fields ? JSON.parse(JSON.stringify(entry.fields)) : []
     }));
