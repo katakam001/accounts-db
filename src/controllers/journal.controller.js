@@ -609,6 +609,8 @@ exports.getJournalEntries = async (req, res) => {
     const groupId = req.query.groupId || null;
     const pageSize = parseInt(req.query.pageSize) || 10;
     const startRow = parseInt(req.query.nextStartRow) || 1;
+    const fromDate = req.query.fromDate ? new Date(req.query.fromDate) : null;
+    const toDate = req.query.toDate ? new Date(req.query.toDate) : null;
 
     if (!userId) {
       return res.status(400).json({ error: 'userId query parameter is required' });
@@ -620,6 +622,8 @@ exports.getJournalEntries = async (req, res) => {
     const whereClause = `
       WHERE je.user_id = :userId
       AND je.financial_year = :financialYear
+      ${fromDate ? "AND je.journal_date >= :fromDate" : ""}
+      ${toDate ? "AND je.journal_date <= :toDate" : ""}
       ${accountId ? "AND ji.account_id = :accountId" : ""}
       ${groupId ? "AND ji.group_id = :groupId" : ""}
     `;
@@ -660,6 +664,8 @@ exports.getJournalEntries = async (req, res) => {
         replacements: {
           userId,
           financialYear,
+          fromDate: fromDate ? fromDate.toISOString() : undefined,
+          toDate: toDate ? toDate.toISOString() : undefined,
           accountId,
           groupId,
           startRow: startRow,
