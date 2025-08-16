@@ -136,95 +136,148 @@ exports.updateClosingStockValuation = async (req, res) => {
 };
 
 async function generateClosingStockValuationData(user_id, financial_year, start_date, end_date) {
-  const db = getDb();
-  const sequelize = db.sequelize;
-  const config = sequelize.config;
-  const ClosingStockValuation = db.closing_stock_valulation;
+    const db = getDb();
+    const sequelize = db.sequelize;
 
-  // 🧹 Step 1: Delete existing valuations
-  await ClosingStockValuation.destroy({
-    where: { user_id, financial_year }
-  });
+    // Get the connection details from Sequelize
+    const config = sequelize.config;
 
-  // 🧠 Step 2: Fetch item IDs
-  const itemIds = await sequelize.query(`
-    SELECT DISTINCT item_id FROM (
-      SELECT item_id FROM entries WHERE user_id = :userId AND financial_year = :year
-      UNION
-      SELECT item_id FROM opening_stock WHERE user_id = :userId AND financial_year = :year
-    ) AS combined_items
-  `, {
-    replacements: { userId: user_id, year: financial_year },
-    type: sequelize.QueryTypes.SELECT
-  });
+    const ClosingStockValuation = db.closing_stock_valulation;
 
-  console.log(`Found ${itemIds.length} items for stock register generation.`);
+    // 🧹 Delete existing valuations
+    await ClosingStockValuation.destroy({
+        where: { user_id, financial_year }
+    });
 
-  // 🔄 Step 3: Limit parallel connections to 5
-  const limit = pLimit(5);
-
-  await Promise.all(itemIds.map(({ item_id }) =>
-    limit(() => {
-      const client = new Client({
+    const client = new Client({
         user: config.username,
         host: config.host,
         database: config.database,
         password: config.password,
         port: config.port
-      });
+    });
 
-      client.on('notice', (msg) => {
-        console.log(`Notice [item ${item_id}]:`, msg.message);
-      });
+    await client.connect();
 
-      return client.connect()
-        .then(() => client.query('CALL generate_stock_register($1, $2, $3)', [item_id, user_id, financial_year]))
-        .then(() => {
-          console.log(`✅ Completed stock register for item_id: ${item_id}`);
-        })
-        .catch(err => {
-          console.error(`❌ Error for item_id ${item_id}:`, err.message);
-        })
-        .finally(() => client.end());
-    })
-  ));
+    client.on('notice', (msg) => {
+        console.log('Notice:', msg.message);
+    });
 
-  console.log('🧮 All stock registers completed. Now populating closing stock ledger...');
+    await client.query(
+        'CALL generate_closing_stock_for_all_items($1, $2, $3, $4)',
+        [user_id, financial_year, start_date, end_date]
+    );
 
-  // 📦 Step 4: Final ledger population
-  const finalClient = new Client({
-    user: config.username,
-    host: config.host,
-    database: config.database,
-    password: config.password,
-    port: config.port
-  });
+    await client.end();
 
-  finalClient.on('notice', (msg) => {
-    console.log('Notice [ledger]:', msg.message);
-  });
-
-  await finalClient.connect();
-  await finalClient.query('CALL populate_temp_stock_ledger($1, $2, $3, $4)', [user_id, financial_year, start_date, end_date]);
-  await finalClient.end();
-
-  console.log('✅ Closing stock ledger populated.');
-
-  // 📊 Step 5: Return final valuation data
-  return await ClosingStockValuation.findAll({
-    where: { user_id, financial_year },
-    attributes: [
-      'id',
-      'item_id',
-      'start_date',
-      'end_date',
-      'value',
-      'is_manual',
-      [db.sequelize.col('item.name'), 'item_name']
-    ],
-    include: [
-      { model: db.items, as: 'item' },
-    ],
-    order: [['item_id', 'ASC']]
-  });
+    return await ClosingStockValuation.findAll({
+        where: { user_id, financial_year },
+        attributes: [
+            'id',
+            'item_id',
+            'start_date',
+            'end_date',
+            'value',
+            'is_manual',
+            [db.sequelize.col('item.name'), 'item_name']
+        ],
+        include: [
+            { model: db.items, as: 'item' },
+        ],
+        order: [['item_id', 'ASC']]
+    });
 }
+
+// async function generateClosingStockValuationData(user_id, financial_year, start_date, end_date) {
+//   const db = getDb();
+//   const sequelize = db.sequelize;
+//   const config = sequelize.config;
+//   const ClosingStockValuation = db.closing_stock_valulation;
+
+//   // 🧹 Step 1: Delete existing valuations
+//   await ClosingStockValuation.destroy({
+//     where: { user_id, financial_year }
+//   });
+
+//   // 🧠 Step 2: Fetch item IDs
+//   const itemIds = await sequelize.query(`
+//     SELECT DISTINCT item_id FROM (
+//       SELECT item_id FROM entries WHERE user_id = :userId AND financial_year = :year
+//       UNION
+//       SELECT item_id FROM opening_stock WHERE user_id = :userId AND financial_year = :year
+//     ) AS combined_items
+//   `, {
+//     replacements: { userId: user_id, year: financial_year },
+//     type: sequelize.QueryTypes.SELECT
+//   });
+
+//   console.log(`Found ${itemIds.length} items for stock register generation.`);
+
+//   // 🔄 Step 3: Limit parallel connections to 5
+//   const limit = pLimit(5);
+
+//   await Promise.all(itemIds.map(({ item_id }) =>
+//     limit(() => {
+//       const client = new Client({
+//         user: config.username,
+//         host: config.host,
+//         database: config.database,
+//         password: config.password,
+//         port: config.port
+//       });
+
+//       client.on('notice', (msg) => {
+//         console.log(`Notice [item ${item_id}]:`, msg.message);
+//       });
+
+//       return client.connect()
+//         .then(() => client.query('CALL generate_stock_register($1, $2, $3)', [item_id, user_id, financial_year]))
+//         .then(() => {
+//           console.log(`✅ Completed stock register for item_id: ${item_id}`);
+//         })
+//         .catch(err => {
+//           console.error(`❌ Error for item_id ${item_id}:`, err.message);
+//         })
+//         .finally(() => client.end());
+//     })
+//   ));
+
+//   console.log('🧮 All stock registers completed. Now populating closing stock ledger...');
+
+//   // 📦 Step 4: Final ledger population
+//   const finalClient = new Client({
+//     user: config.username,
+//     host: config.host,
+//     database: config.database,
+//     password: config.password,
+//     port: config.port
+//   });
+
+//   finalClient.on('notice', (msg) => {
+//     console.log('Notice [ledger]:', msg.message);
+//   });
+
+//   await finalClient.connect();
+//   await finalClient.query('CALL populate_temp_stock_ledger($1, $2, $3, $4)', [user_id, financial_year, start_date, end_date]);
+//   await finalClient.end();
+
+//   console.log('✅ Closing stock ledger populated.');
+
+//   // 📊 Step 5: Return final valuation data
+//   return await ClosingStockValuation.findAll({
+//     where: { user_id, financial_year },
+//     attributes: [
+//       'id',
+//       'item_id',
+//       'start_date',
+//       'end_date',
+//       'value',
+//       'is_manual',
+//       [db.sequelize.col('item.name'), 'item_name']
+//     ],
+//     include: [
+//       { model: db.items, as: 'item' },
+//     ],
+//     order: [['item_id', 'ASC']]
+//   });
+// }
