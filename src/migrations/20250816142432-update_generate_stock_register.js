@@ -89,7 +89,7 @@ module.exports = {
           $f$,
           p_financial_year, p_user_id, v_date_range_table, p_item_id, p_financial_year, p_user_id,
           v_date_range_table, p_item_id, p_financial_year, p_user_id,
-          p_financial_year, p_user_id, p_item_id, p_user_id, p_financial_year, p_item_id,
+          p_financial_year, p_user_id,p_financial_year, p_item_id, p_user_id, p_financial_year,
           p_financial_year, p_user_id);
 
           EXECUTE format('DROP TABLE IF EXISTS %I', v_temp_stock_table);
