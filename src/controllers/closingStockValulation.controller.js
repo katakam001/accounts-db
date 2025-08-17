@@ -40,7 +40,7 @@ exports.generateClosingStockValuation = async (req, res) => {
                     [db.sequelize.col('item.name'), 'item_name']
                 ],
                 include: [
-                    { model: db.items, as: 'item' },
+                    { model: db.items, as: 'item', attributes: [] },
                 ],
                 order: [['item_id', 'ASC']]
             });
@@ -86,7 +86,7 @@ exports.fetchClosingStockValuation = async (req, res) => {
                 [db.sequelize.col('item.name'), 'item_name']
             ],
             include: [
-                { model: db.items, as: 'item' },
+                { model: db.items, as: 'item', attributes: [] },
             ],
             order: [['item_id', 'ASC']]
         });
@@ -122,7 +122,7 @@ exports.updateClosingStockValuation = async (req, res) => {
                     [db.sequelize.col('item.name'), 'item_name']
                 ],
                 include: [
-                    { model: db.items, as: 'item' },
+                    { model: db.items, as: 'item', attributes: [] },
                 ]
             });
 
@@ -182,7 +182,7 @@ async function generateClosingStockValuationData(user_id, financial_year, start_
             [db.sequelize.col('item.name'), 'item_name']
         ],
         include: [
-            { model: db.items, as: 'item' },
+            { model: db.items, as: 'item', attributes: [] },
         ],
         order: [['item_id', 'ASC']]
     });
@@ -276,7 +276,7 @@ async function generateClosingStockValuationData(user_id, financial_year, start_
 //       [db.sequelize.col('item.name'), 'item_name']
 //     ],
 //     include: [
-//       { model: db.items, as: 'item' },
+//       { model: db.items, as: 'item',attributes: [] },
 //     ],
 //     order: [['item_id', 'ASC']]
 //   });
