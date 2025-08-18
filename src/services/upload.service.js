@@ -369,7 +369,7 @@ exports.processTransactions = async ({ groupedRecords, accountMap, suspenseAccou
                         narration: record.description,
                         account_id: bankAccount.accountId,
                         group_id: bankAccount.groupId,
-                        type: checkAmountType(record["debit"],record["credit"]),
+                        type: checkAmountType({ debit: record["debit"], credit: record["credit"] }),
                         amount,
                         user_id: userId,
                         financial_year: financialYear,
@@ -381,7 +381,7 @@ exports.processTransactions = async ({ groupedRecords, accountMap, suspenseAccou
                         narration: bankAccount.account_name,
                         account_id: accountMap.get("cash").accountId,
                         group_id: accountMap.get("cash").groupId,
-                        type: !checkAmountType(record["debit"],record["credit"]),
+                        type: !checkAmountType({ debit: record["debit"], credit: record["credit"] }),
                         amount,
                         user_id: userId,
                         financial_year: financialYear,
@@ -401,7 +401,7 @@ exports.processTransactions = async ({ groupedRecords, accountMap, suspenseAccou
                                 break;
                             }
                         }
-                        type = !checkAmountType(record["debit"],record["credit"]);
+                        type = !checkAmountType({ debit: record["debit"], credit: record["credit"] });
                     }
                     const accountDetails = matchedAccount
                         ? accountMap.get(matchedAccount)
@@ -415,7 +415,7 @@ exports.processTransactions = async ({ groupedRecords, accountMap, suspenseAccou
                         narration: record.description,
                         group_id: accountDetails.groupId,
                         amount,
-                        type: checkAmountType(record["debit"],record["credit"]),
+                        type: checkAmountType({ debit: record["debit"], credit: record["credit"] }),
                     });
                 }
             }
