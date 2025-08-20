@@ -12,6 +12,36 @@ exports.combinedBookListForDayBook = async (req, res) => {
     const financial_year = req.query.financialYear;
     const limit = parseInt(req.query.limit) || 100;
     const rowCursor = parseInt(req.query.rowCursor) || 0;
+    const fromDate = req.query.fromDate ? new Date(req.query.fromDate) : null;
+    const toDate = req.query.toDate ? new Date(req.query.toDate) : null;
+    const selectedTypes = req.query.selectedTypes
+      ? req.query.selectedTypes.split(',').map(Number)
+      : [];
+
+    const journalTypes = selectedTypes.filter(t => t !== 7);
+    const includeCashEntries = selectedTypes.includes(7);
+
+    const dateFilters = [];
+    if (fromDate) {
+      dateFilters.push("journal_date >= :fromDate");
+    }
+    if (toDate) {
+      dateFilters.push("journal_date <= :toDate");
+    }
+    const journalDateClause = dateFilters.length ? "AND " + dateFilters.join(" AND ") : "";
+
+    const cashDateFilters = [];
+    if (fromDate) {
+      cashDateFilters.push("cash_date >= :fromDate");
+    }
+    if (toDate) {
+      cashDateFilters.push("cash_date <= :toDate");
+    }
+    const cashDateClause = cashDateFilters.length ? "AND " + cashDateFilters.join(" AND ") : "";
+
+    const journalTypeClause = journalTypes.length
+      ? `AND je.type IN (:journalTypes)`
+      : 'AND false'; // Prevent fetching if no journal types selected
 
     const combinedQuery = `
       -- Fetch records from journal_entries and combined_cash_entries within the financial year
@@ -32,6 +62,9 @@ exports.combinedBookListForDayBook = async (req, res) => {
         WHERE
           je.user_id = :userid AND
           je.financial_year = :financial_year
+          ${journalDateClause}
+          ${journalTypeClause}
+          ${includeCashEntries ? `
         UNION ALL
         SELECT
           DATE(ce.cash_date) AS date,
@@ -46,9 +79,10 @@ exports.combinedBookListForDayBook = async (req, res) => {
           public.combined_cash_entries ce
         WHERE
           ce.user_id = :userid AND
-          ce.financial_year = :financial_year AND
-          ce.is_cash_adjustment IS NOT TRUE
-
+          ce.financial_year = :financial_year
+          ${cashDateClause}
+          AND ce.is_cash_adjustment IS NOT TRUE
+        ` : ''}
       ),
       numbered_entries AS (
         SELECT
@@ -69,7 +103,10 @@ exports.combinedBookListForDayBook = async (req, res) => {
       LIMIT :limit + 100; -- Fetch additional records to handle date splitting
     `;
 
-    const replacements = { userid, financial_year, limit, rowCursor };
+    const replacements = {
+      userid, financial_year, limit, rowCursor, ...(fromDate && { fromDate }),
+      ...(toDate && { toDate }), ...(journalTypes.length && { journalTypes })
+    };
 
     const combinedResult = await db.sequelize.query(combinedQuery, {
       replacements,
@@ -251,7 +288,7 @@ async function batchProcessingForDayBook(userid, financial_year, limit, rowCurso
   return { entries: paginatedEntries, nextRowCursor, hasNextPage };
 }
 
-async function processData(daybookEntries,lastPageBalance) {
+async function processData(daybookEntries, lastPageBalance) {
   let totalCashCredit = 0;
   let totalJournalCredit = 0;
   let totalJournalDebit = 0;
@@ -293,14 +330,14 @@ async function processData(daybookEntries,lastPageBalance) {
   if (lastPageBalance && processedEntries.length > 0) {
     const firstDate = Object.keys(groupedEntries)[0];
     groupedEntries[firstDate].unshift({
-        date: firstDate,
-        cashCredit: lastPageBalance, // Use the carry-forward balance from the previous page
-        journalCredit: 0,
-        particular: 'Opening Balance',
-        journalDebit: 0,
-        cashDebit: 0
+      date: firstDate,
+      cashCredit: lastPageBalance, // Use the carry-forward balance from the previous page
+      journalCredit: 0,
+      particular: 'Opening Balance',
+      journalDebit: 0,
+      cashDebit: 0
     });
-}
+  }
 
   // Calculate totals and balance carry forward for each day
   const groupedDayBookEntries = Object.keys(groupedEntries).map((date, index, array) => {
@@ -309,7 +346,7 @@ async function processData(daybookEntries,lastPageBalance) {
     const totalJournalCredit = parseFloat(entries.reduce((sum, entry) => sum + entry.journalCredit, 0)).toFixed(2);
     const totalJournalDebit = parseFloat(entries.reduce((sum, entry) => sum + entry.journalDebit, 0)).toFixed(2);
     const totalCashDebit = parseFloat(entries.reduce((sum, entry) => sum + entry.cashDebit, 0)).toFixed(2);
-    const balanceCarryForward =  parseFloat((parseFloat(totalCashCredit) - parseFloat(totalCashDebit)).toFixed(2));
+    const balanceCarryForward = parseFloat((parseFloat(totalCashCredit) - parseFloat(totalCashDebit)).toFixed(2));
     const journalBalanceCarryForward = parseFloat((parseFloat(totalJournalCredit) - parseFloat(totalJournalDebit)).toFixed(2));
 
     // Add opening balance for the next day
@@ -375,7 +412,7 @@ exports.exportDaybookToExcel = async (req, res) => {
     const limit = 1000; // Define the batch size
     let rowCursor = 0;
     let hasNextPage = true;
-    let lastPageBalance=0;
+    let lastPageBalance = 0;
     const exportsDir = path.join(__dirname, '..', 'exports');
     if (!fs.existsSync(exportsDir)) {
       fs.mkdirSync(exportsDir, { recursive: true });
@@ -387,7 +424,7 @@ exports.exportDaybookToExcel = async (req, res) => {
 
     while (hasNextPage) {
       const { entries, nextRowCursor, hasNextPage: nextPage } = await fetchDaybookEntries(userId, financialYear, limit, rowCursor);
-      const { groupedDayBookEntries, finalBalanceCarryForward } = await processData(entries,lastPageBalance); // Destructure the returned object
+      const { groupedDayBookEntries, finalBalanceCarryForward } = await processData(entries, lastPageBalance); // Destructure the returned object
       lastPageBalance = finalBalanceCarryForward; // Assign the final balance carry forward for the last page
       filteredEntries.push(...groupedDayBookEntries);
       rowCursor = nextRowCursor;
@@ -533,7 +570,7 @@ exports.exportDaybookToPDF = async (req, res) => {
     const rowsPerPage = 40; // Define the number of rows per page
     let rowCursor = 0;
     let hasNextPage = true;
-    let lastPageBalance=0;
+    let lastPageBalance = 0;
 
 
     const exportsDir = path.join(__dirname, '..', 'exports');
@@ -547,7 +584,7 @@ exports.exportDaybookToPDF = async (req, res) => {
 
     while (hasNextPage) {
       const { entries, nextRowCursor, hasNextPage: nextPage } = await fetchDaybookEntries(userId, financialYear, limit, rowCursor);
-      const { groupedDayBookEntries, finalBalanceCarryForward } = await processData(entries,lastPageBalance); // Destructure the returned object
+      const { groupedDayBookEntries, finalBalanceCarryForward } = await processData(entries, lastPageBalance); // Destructure the returned object
       lastPageBalance = finalBalanceCarryForward; // Assign the final balance carry forward for the last page
       filteredEntries.push(...groupedDayBookEntries);
       rowCursor = nextRowCursor;
@@ -830,7 +867,7 @@ exports.deleteJournalEntry = async (req, res) => {
       await transaction.rollback();
       return res.status(404).json({ error: 'Journal entry not found' });
     }
-    
+
     // Retrieve the list of account IDs associated with this journal entry
     const journalItems = await JournalItem.findAll({
       attributes: ['account_id'],
@@ -856,7 +893,7 @@ exports.deleteJournalEntry = async (req, res) => {
     await transaction.commit();
 
     // Broadcast the deletion event
-    broadcast({ type: 'DELETE', data: { id: journal.id, journal_date: journal.journal_date, account_ids: accountIds }, entryType: 'journal', user_id: journal.user_id, financial_year: journal.financial_year,journal_date: journal.journal_date });
+    broadcast({ type: 'DELETE', data: { id: journal.id, journal_date: journal.journal_date, account_ids: accountIds }, entryType: 'journal', user_id: journal.user_id, financial_year: journal.financial_year, journal_date: journal.journal_date });
 
     res.status(204).send(); // Simplified response
   } catch (error) {
@@ -954,7 +991,7 @@ exports.updateJournalEntry = async (req, res) => {
       },
       transaction
     });
-    
+
     const output = {
       id: updatedJournalEntry[0].id,
       journal_date: updatedJournalEntry[0].journal_date,
@@ -973,7 +1010,7 @@ exports.updateJournalEntry = async (req, res) => {
     // Commit the transaction
     await transaction.commit();
 
-    broadcast({ type: 'UPDATE', data: output, entryType: 'journal', user_id: updated.user_id, financial_year: updated.financial_year,journal_date: updatedJournalEntry[0].journal_date }); // Emit WebSocket message
+    broadcast({ type: 'UPDATE', data: output, entryType: 'journal', user_id: updated.user_id, financial_year: updated.financial_year, journal_date: updatedJournalEntry[0].journal_date }); // Emit WebSocket message
 
     res.status(200).json({ message: 'Journal entry updated successfully' }); // Simplified response
   } catch (error) {
@@ -1059,12 +1096,12 @@ exports.createJournalEntryWithItems = async (req, res) => {
         type: item.type,
         narration: item.narration,
       })),
-    };  
+    };
 
     // Commit the transaction
     await transaction.commit();
 
-    broadcast({ type: 'INSERT', data: output, entryType: 'journal', user_id: newEntry.user_id, financial_year: newEntry.financial_year,journal_date: updatedJournalEntry[0].journal_date }); // Emit WebSocket message
+    broadcast({ type: 'INSERT', data: output, entryType: 'journal', user_id: newEntry.user_id, financial_year: newEntry.financial_year, journal_date: updatedJournalEntry[0].journal_date }); // Emit WebSocket message
     res.status(201).json({ message: 'Journal entry created successfully' }); // Simplified response
   } catch (error) {
     // Rollback the transaction in case of error
