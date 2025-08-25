@@ -1,7 +1,15 @@
 const { getDb } = require("../utils/getDb");
-const { broadcast } = require('../websocket'); // Import the broadcast function
 const entryService = require('../services/entry.service');
+require('dotenv').config();
 
+let broadcast = () => {
+  // No-op when WebSocket is disabled
+};
+
+if (process.env.ENABLE_WEBSOCKET === 'true') {
+  const { broadcast: activeBroadcast } = require('../websocket');
+  broadcast = activeBroadcast;
+}
 
 exports.getEntries = async (req, res) => {
   const user_id = req.query.userId;

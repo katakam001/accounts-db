@@ -1,5 +1,14 @@
 const { getDb } = require("../utils/getDb");
-const { broadcast } = require('../websocket'); // Import the broadcast function
+require('dotenv').config();
+
+let broadcast = () => {
+  // No-op when WebSocket is disabled
+};
+
+if (process.env.ENABLE_WEBSOCKET === 'true') {
+  const { broadcast: activeBroadcast } = require('../websocket');
+  broadcast = activeBroadcast;
+}
 
 exports.cashBookListForDayBook = async (req, res) => {
   try {
