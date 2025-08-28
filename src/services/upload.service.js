@@ -227,7 +227,7 @@ exports.processOpeningBalance = async ({
             const normalizedMappedGroup = mappedGroup.toLowerCase().trim();
             const groupId = groupMap.get(normalizedMappedGroup);
             if (!groupId) {
-                console.warn(` Skipping: groupId not found for "${mappedGroup}"`);
+                console.warn(` Skipping: groupId not found for "${normalizedMappedGroup}"`);
                 continue;
             }
 
