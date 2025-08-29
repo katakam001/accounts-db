@@ -154,6 +154,8 @@ async function processGroupedTransactions(key, transactionRecords) {
             groupMappingMap: cachedData.groupMappingMap,
             accountMappingMap: cachedData.accountMappingMap
         });
+        cachedData.accountMap = await uploadService.loadAccountsWithGroupIds({ userId, financialYear });
+        cache.setCache(`${userId}_${financialYear}`, cachedData, 3600);
     } else {
         // ✅ Process CSV invoices
         await loadAndCacheInvoiceData(userId, financialYear, type, cachedData);

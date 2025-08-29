@@ -227,7 +227,7 @@ exports.processOpeningBalance = async ({
             const normalizedMappedGroup = mappedGroup.toLowerCase().trim();
             const groupId = groupMap.get(normalizedMappedGroup);
             if (!groupId) {
-                console.warn(` Skipping: groupId not found for "${mappedGroup}"`);
+                console.warn(` Skipping: groupId not found for "${normalizedMappedGroup}"`);
                 continue;
             }
 
@@ -360,7 +360,7 @@ exports.processTransactions = async ({ groupedRecords, accountMap, suspenseAccou
                 const amount = parseFloat(record.debit) > 0 ? parseFloat(record.debit) : parseFloat(record.credit);
 
 
-                if (remarks.includes("by cash") || remarks.includes("cardless deposit") || remarks.includes("cwdr") || remarks.includes("to cash") || remarks.includes("atm cash") || remarks.includes("cash deposit") || remarks.includes("cash dep")) {
+                if (remarks.includes("by cash") || remarks.includes("cardless deposit") || remarks.includes("cwdr") || remarks.includes("to cash self") || remarks.includes("to self") || remarks.includes("paid to self") || remarks.includes("self") || remarks.includes("to cash") || remarks.includes("atm cash") || remarks.includes("atm wdl") || remarks.includes("atm-nfs") || remarks.includes("atw-") || remarks.includes("cash deposit") || remarks.includes("cash dep") || remarks.includes("csh dep") || remarks.includes("to cheque") || remarks.includes("cam/") || remarks.includes("cash")) {
                     createCashEntry = true;
 
                     // Prepare a cash entry for batch table
@@ -369,7 +369,7 @@ exports.processTransactions = async ({ groupedRecords, accountMap, suspenseAccou
                         narration: record.description,
                         account_id: bankAccount.accountId,
                         group_id: bankAccount.groupId,
-                        type: checkAmountType({ debit: record["debit"], credit: record["credit"] }),
+                        type: !checkAmountType({ debit: record["debit"], credit: record["credit"] }),
                         amount,
                         user_id: userId,
                         financial_year: financialYear,
@@ -381,7 +381,7 @@ exports.processTransactions = async ({ groupedRecords, accountMap, suspenseAccou
                         narration: bankAccount.account_name,
                         account_id: accountMap.get("cash").accountId,
                         group_id: accountMap.get("cash").groupId,
-                        type: !checkAmountType({ debit: record["debit"], credit: record["credit"] }),
+                        type: checkAmountType({ debit: record["debit"], credit: record["credit"] }),
                         amount,
                         user_id: userId,
                         financial_year: financialYear,
