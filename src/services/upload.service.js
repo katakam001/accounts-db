@@ -360,7 +360,7 @@ exports.processTransactions = async ({ groupedRecords, accountMap, suspenseAccou
                 const amount = parseFloat(record.debit) > 0 ? parseFloat(record.debit) : parseFloat(record.credit);
 
 
-                if (remarks.includes("by cash") || remarks.includes("cardless deposit") || remarks.includes("cwdr") || remarks.includes("to cash self") || remarks.includes("to self") || remarks.includes("paid to self") || remarks.includes("self") || remarks.includes("to cash") || remarks.includes("atm cash") || remarks.includes("atm wdl") || remarks.includes("atm-nfs") || remarks.includes("atw-") || remarks.includes("cash deposit") || remarks.includes("cash dep") || remarks.includes("csh dep") || remarks.includes("to cheque") || remarks.includes("cam/") || remarks.includes("cash")) {
+                if (remarks.includes("by cash") || remarks.includes("cardless deposit") || remarks.includes("cwdr") || remarks.includes("to cash self") || remarks.includes("to self") || remarks.includes("paid to self") || remarks.includes("self") || remarks.includes("to cash") || remarks.includes("atm cash") || remarks.includes("atm wdl") || remarks.includes("atm-nfs") || remarks.includes("atw-") || remarks.includes("cash deposit") || remarks.includes("cash dep") || remarks.includes("csh dep") || remarks.includes("to cheque") || remarks.includes("cam/") || remarks.includes("cash") || remarks.includes("atm|")) {
                     createCashEntry = true;
 
                     // Prepare a cash entry for batch table

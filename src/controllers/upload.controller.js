@@ -22,23 +22,23 @@ exports.getPresignedUrl = async (req, res) => {
     let metadata = {};
 
     if (fileExtension === "pdf") {
-      const { statementType, bankName, accountId, userId, financialYear,fileSize } = req.query;
+      const { statementType, bankName, accountId, userId, financialYear, fileSize } = req.query;
       if (statementType === "bank") {
-        metadata = { statementType, bankName, accountId, userId, financialYear,fileSize };
+        metadata = { statementType, bankName, accountId, userId, financialYear, fileSize };
       } else {
-        metadata = { statementType, userId, financialYear,fileSize };
+        metadata = { statementType, userId, financialYear, fileSize };
       }
       let sizeTier = "small"; // default
       if (parseInt(fileSize, 10) > 1024 * 1024 * 1.07) {
         sizeTier = "large";
-      } else if (parseInt(fileSize, 10) > 1024 * 1024 * 0.5) {
+      } else if (parseInt(fileSize, 10) > 470 * 1024) {
         sizeTier = "medium";
       }
 
       prefix = `pdf/${sizeTier}/`; // 👈 Update prefix based on size tier
     } else if (fileExtension === "csv") {
-      const { userId, financialYear, type, taxType,fileSize } = req.query;
-      metadata = { userId, financialYear, type, taxType,fileSize };
+      const { userId, financialYear, type, taxType, fileSize } = req.query;
+      metadata = { userId, financialYear, type, taxType, fileSize };
     } else {
       metadata = { fileType: fileExtension, uploadedAt: new Date().toISOString() };
     }
