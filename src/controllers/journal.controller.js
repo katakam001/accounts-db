@@ -904,7 +904,7 @@ exports.deleteJournalEntry = async (req, res) => {
     // Broadcast the deletion event
     broadcast({ type: 'DELETE', data: { id: journal.id, journal_date: journal.journal_date, account_ids: accountIds }, entryType: 'journal', user_id: journal.user_id, financial_year: journal.financial_year, journal_date: journal.journal_date });
 
-    res.status(204).send(); // Simplified response
+    res.status(200).send({ type: 'DELETE', data: { id: journal.id, journal_date: journal.journal_date, account_ids: accountIds }, entryType: 'journal', user_id: journal.user_id, financial_year: journal.financial_year, journal_date: journal.journal_date }); // Simplified response
   } catch (error) {
     // Rollback the transaction in case of errors
     await transaction.rollback();
@@ -1021,7 +1021,7 @@ exports.updateJournalEntry = async (req, res) => {
 
     broadcast({ type: 'UPDATE', data: output, entryType: 'journal', user_id: updated.user_id, financial_year: updated.financial_year, journal_date: updatedJournalEntry[0].journal_date }); // Emit WebSocket message
 
-    res.status(200).json({ message: 'Journal entry updated successfully' }); // Simplified response
+    res.status(200).json({ type: 'UPDATE', data: output, entryType: 'journal', user_id: updated.user_id, financial_year: updated.financial_year, journal_date: updatedJournalEntry[0].journal_date }); // Simplified response
   } catch (error) {
     // Rollback the transaction in case of error
     await transaction.rollback();
@@ -1111,7 +1111,7 @@ exports.createJournalEntryWithItems = async (req, res) => {
     await transaction.commit();
 
     broadcast({ type: 'INSERT', data: output, entryType: 'journal', user_id: newEntry.user_id, financial_year: newEntry.financial_year, journal_date: updatedJournalEntry[0].journal_date }); // Emit WebSocket message
-    res.status(201).json({ message: 'Journal entry created successfully' }); // Simplified response
+    res.status(201).json({ type: 'INSERT', data: output, entryType: 'journal', user_id: newEntry.user_id, financial_year: newEntry.financial_year, journal_date: updatedJournalEntry[0].journal_date }); // Simplified response
   } catch (error) {
     // Rollback the transaction in case of error
     await transaction.rollback();
