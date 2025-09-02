@@ -42,7 +42,7 @@ exports.getEntries = async (req, res) => {
       dateFilterConditions.push(`e.entry_date <= :toDate`);
     }
     const dateFilterSQL = dateFilterConditions.length > 0 ? `AND ${dateFilterConditions.join(' AND ')}` : '';
-   
+
     const [entriesBuffer] = await db.sequelize.query(
       `WITH CTE AS (
           SELECT e.*, 
@@ -56,12 +56,12 @@ exports.getEntries = async (req, res) => {
       SELECT * FROM CTE
             WHERE row_num BETWEEN :startRow AND :endRow`,
       {
-        replacements: { user_id, financial_year, type, startRow, endRow,fromDate: fromDate ? fromDate.toISOString() : undefined,toDate: toDate ? toDate.toISOString() : undefined }
+        replacements: { user_id, financial_year, type, startRow, endRow, fromDate: fromDate ? fromDate.toISOString() : undefined, toDate: toDate ? toDate.toISOString() : undefined }
       }
     );
 
     // console.log(entriesBuffer);
-    
+
 
     // Step 2: Identify the last invoice number in the batch
     const lastInvoiceNumber = entriesBuffer[pageSize - 1]?.invoice_seq_id;
@@ -100,8 +100,8 @@ exports.getEntries = async (req, res) => {
       type: entry.type,
       unit_id: entry.unit_id,
       invoiceNumber: entry.invoiceNumber,
-      invoice_seq_id:entry.invoice_seq_id,
-      sNo:entry.sNo,
+      invoice_seq_id: entry.invoice_seq_id,
+      sNo: entry.sNo,
       category_account_id: entry.category_account_id,
       fields: entry.fields ? JSON.parse(JSON.stringify(entry.fields)) : []
     }));
@@ -404,17 +404,30 @@ exports.addEntries = async (req, res) => {
       data: {
         entries: updatedEntries,
         group: { type: data.group.type },
-        journalEntry:journalEntry,
+        journalEntry: journalEntry,
         invoiceNumber,      // Ensure invoiceNumber is included
         invoice_seq_id,     // Ensure invoice_seq_id is included
       },
       entryType: 'entry',
       user_id,
       financial_year,
-      journal_date:entry_date,
+      journal_date: entry_date,
     });
 
-    res.status(201).json({ message: result.message }); // Return the result as response
+    res.status(201).json({
+      type: 'INSERT',
+      data: {
+        entries: updatedEntries,
+        group: { type: data.group.type },
+        journalEntry: journalEntry,
+        invoiceNumber,      // Ensure invoiceNumber is included
+        invoice_seq_id,     // Ensure invoice_seq_id is included
+      },
+      entryType: 'entry',
+      user_id,
+      financial_year,
+      journal_date: entry_date,
+    }); // Return the result as response
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -544,7 +557,7 @@ exports.updateEntries = async (req, res) => {
       },
       transaction: t,
     });
-    
+
     const existingEntryIds = existingEntries.map(entry => entry.id);
 
     // Identify and delete entries and their associated fields that are no longer present
@@ -561,7 +574,7 @@ exports.updateEntries = async (req, res) => {
     const updatedEntries = []; // Array to store updated entries
 
     for (const entry of entries) {
-      const { id, dynamicFields,customerName, ...entryWithoutDynamicFields } = entry;
+      const { id, dynamicFields, customerName, ...entryWithoutDynamicFields } = entry;
 
       // Step 2: Update or create new entries with the journal_id
       let updatedEntry;
@@ -595,7 +608,7 @@ exports.updateEntries = async (req, res) => {
       });
 
       // Step 3: Insert journal items for the entry
-      const journalItems = await getJournalItems(entry, dynamicFields, journalEntry.id, amount,customerName);
+      const journalItems = await getJournalItems(entry, dynamicFields, journalEntry.id, amount, customerName);
       allJournalItems.push(...journalItems);
     }
 
@@ -607,8 +620,8 @@ exports.updateEntries = async (req, res) => {
     // Step 4: Delete existing journal items and insert new ones
     await JournalItem.destroy({ where: { journal_id: journalEntry.id }, transaction: t });
     await JournalItem.bulkCreate(allJournalItems, {
-      fields: ['journal_id', 'account_id', 'group_id', 'amount', 'type', 'createdAt', 'updatedAt','narration'],
-      returning: ['journal_id', 'account_id', 'group_id', 'amount', 'type', 'createdAt', 'updatedAt','narration'],
+      fields: ['journal_id', 'account_id', 'group_id', 'amount', 'type', 'createdAt', 'updatedAt', 'narration'],
+      returning: ['journal_id', 'account_id', 'group_id', 'amount', 'type', 'createdAt', 'updatedAt', 'narration'],
       transaction: t
     });
 
@@ -630,9 +643,9 @@ exports.updateEntries = async (req, res) => {
     };
 
 
-    broadcast({ type: 'UPDATE', data: broadcastData, entryType: 'entry', user_id: userId, financial_year: financialYear,journal_date:journalDate });
+    broadcast({ type: 'UPDATE', data: broadcastData, entryType: 'entry', user_id: userId, financial_year: financialYear, journal_date: journalDate });
 
-    res.status(200).json({ message: 'Entries updated successfully' });
+    res.status(200).json({ type: 'UPDATE', data: broadcastData, entryType: 'entry', user_id: userId, financial_year: financialYear, journal_date: journalDate });
   } catch (error) {
     console.log(error);
     await t.rollback();
@@ -641,7 +654,7 @@ exports.updateEntries = async (req, res) => {
 };
 
 exports.deleteEntries = async (req, res) => {
-  const { invoice_seq_id,  type } = req.params; // Include required parameters
+  const { invoice_seq_id, type } = req.params; // Include required parameters
 
   try {
     const db = getDb();
@@ -684,14 +697,14 @@ exports.deleteEntries = async (req, res) => {
 
     }
 
-      // Retrieve the list of account IDs associated with this journal entry
-      const journalItems = await JournalItem.findAll({
-        attributes: ['account_id'],
-        where: { journal_id: journalId },
-        transaction: t
-      });
-  
-      const accountIds = journalItems.map(item => item.account_id);  
+    // Retrieve the list of account IDs associated with this journal entry
+    const journalItems = await JournalItem.findAll({
+      attributes: ['account_id'],
+      where: { journal_id: journalId },
+      transaction: t
+    });
+
+    const accountIds = journalItems.map(item => item.account_id);
 
     // Delete the journal items
     await JournalItem.destroy({ where: { journal_id: journalId }, transaction: t });
@@ -715,7 +728,7 @@ exports.deleteEntries = async (req, res) => {
 
     broadcast({ type: 'DELETE', data: broadcastData, entryType: 'entry', user_id: journalEntryExist.user_id, financial_year: journalEntryExist.financial_year, journal_date: journalEntryExist.journal_date });
 
-    res.status(204).send(); // No content
+    res.status(200).json({ type: 'DELETE', data: broadcastData, entryType: 'entry', user_id: journalEntryExist.user_id, financial_year: journalEntryExist.financial_year, journal_date: journalEntryExist.journal_date });
   } catch (error) {
     console.log(error);
     await t.rollback();
@@ -752,7 +765,7 @@ exports.generateJournalEntriesAndUpdateEntries = async () => {
         'invoiceNumber',
         'invoice_seq_id',
         'category_account_id',
-            ] // Specify the columns you need
+      ] // Specify the columns you need
     });
 
     const cleanEntries = entries.map(entry => entry.dataValues);
@@ -773,34 +786,34 @@ exports.generateJournalEntriesAndUpdateEntries = async () => {
       if (groupedEntries.hasOwnProperty(invoice_seq_id)) {
         const group = groupedEntries[invoice_seq_id];
 
-                // Fetch entry fields and their corresponding field mappings for the current group
-                for (const entry of group) {
-                  // Fetch entry fields for the current entry
-                  const entryFields = await EntryField.findAll({
-                    where: { entry_id: entry.id },
-                    attributes: ['entry_id', 'field_id', 'field_value']
-                  });
-        
-                  // Fetch field mappings for the entry fields
-                  const fieldIds = entryFields.map(field => field.field_id);
-                  const fieldMappings = await FieldsMapping.findAll({
-                    where: { field_id: fieldIds, category_id: entry.category_id },
-                    attributes: ['field_id', 'field_type', 'field_category', 'exclude_from_total','account_id']
-                  });
-        
-                  // Combine entry fields and field mappings based on field_id
-                  entry.dynamicFields = entryFields.map(field => {
-                    const fieldMapping = fieldMappings.find(mapping => mapping.field_id === field.field_id);
-                    return {
-                      field_id: field.field_id,
-                      field_value: field.field_value,
-                      field_type: fieldMapping.field_type,
-                      field_category: fieldMapping.field_category,
-                      exclude_from_total: fieldMapping.exclude_from_total,
-                      tax_account_id:fieldMapping.account_id
-                    };
-                  });
-                }
+        // Fetch entry fields and their corresponding field mappings for the current group
+        for (const entry of group) {
+          // Fetch entry fields for the current entry
+          const entryFields = await EntryField.findAll({
+            where: { entry_id: entry.id },
+            attributes: ['entry_id', 'field_id', 'field_value']
+          });
+
+          // Fetch field mappings for the entry fields
+          const fieldIds = entryFields.map(field => field.field_id);
+          const fieldMappings = await FieldsMapping.findAll({
+            where: { field_id: fieldIds, category_id: entry.category_id },
+            attributes: ['field_id', 'field_type', 'field_category', 'exclude_from_total', 'account_id']
+          });
+
+          // Combine entry fields and field mappings based on field_id
+          entry.dynamicFields = entryFields.map(field => {
+            const fieldMapping = fieldMappings.find(mapping => mapping.field_id === field.field_id);
+            return {
+              field_id: field.field_id,
+              field_value: field.field_value,
+              field_type: fieldMapping.field_type,
+              field_category: fieldMapping.field_category,
+              exclude_from_total: fieldMapping.exclude_from_total,
+              tax_account_id: fieldMapping.account_id
+            };
+          });
+        }
 
         // Remove existing journal_entries and journal_items for each entry in the group
         await removeExistingJournalEntriesAndItems(group);
@@ -854,7 +867,7 @@ const processGroupForJournalEntries = async (entries) => {
       where: { id: entries[0].account_id },
       transaction: t
     });
-    const customerName =account.name;
+    const customerName = account.name;
     // Step 1: Insert a new journal entry
     const journalEntry = await JournalEntry.create({
       journal_date: journalDate,
@@ -876,18 +889,18 @@ const processGroupForJournalEntries = async (entries) => {
     for (const entry of entries) {
       // Fetch entry fields for the current entry
       const dynamicFields = entry.dynamicFields;
-    //  console.log(dynamicFields);
+      //  console.log(dynamicFields);
 
 
       // Determine the amount based on exclude_from_total and field_category
       const amount = dynamicFields.some(field => field.field_category === 1 && field.exclude_from_total) ? entry.value : entry.total_amount;
       // console.log(amount);
       total_amount += parseFloat(amount); // Parse the amount before summation
-            // console.log(total_amount);
+      // console.log(total_amount);
       // console.log(dynamicFields);
 
       // Step 3: Insert journal items for the entry
-      const journalItems = await getJournalItems(entry, dynamicFields, journalEntry.id, amount,customerName);
+      const journalItems = await getJournalItems(entry, dynamicFields, journalEntry.id, amount, customerName);
       allJournalItems.push(...journalItems);
     }
     // console.log(total_amount);
@@ -897,8 +910,8 @@ const processGroupForJournalEntries = async (entries) => {
     allJournalItems.unshift(...partyJournalItems);
 
     await JournalItem.bulkCreate(allJournalItems, {
-      fields: ['journal_id', 'account_id', 'group_id', 'amount', 'type', 'createdAt', 'updatedAt','narration'],
-      returning: ['journal_id', 'account_id', 'group_id', 'amount', 'type', 'createdAt', 'updatedAt','narration'],
+      fields: ['journal_id', 'account_id', 'group_id', 'amount', 'type', 'createdAt', 'updatedAt', 'narration'],
+      returning: ['journal_id', 'account_id', 'group_id', 'amount', 'type', 'createdAt', 'updatedAt', 'narration'],
       transaction: t
     });
 
