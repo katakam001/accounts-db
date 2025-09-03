@@ -115,7 +115,7 @@ exports.createProductionEntry = async (req, res) => {
     // Broadcast the new production entry
     broadcast({ type: 'INSERT', data: formattedProductionEntry, entryType: 'productionEntry', user_id: productionEntry.user_id, financial_year: productionEntry.financial_year });
 
-    res.status(201).json({ message: 'Production entry created successfully' }); // Simplified response
+    res.status(201).json({ type: 'INSERT', data: formattedProductionEntry, entryType: 'productionEntry', user_id: productionEntry.user_id, financial_year: productionEntry.financial_year }); // Simplified response
   } catch (error) {
     await t.rollback();
     res.status(500).json({ error: 'Internal server error' });
@@ -176,8 +176,10 @@ exports.updateProductionEntry = async (req, res) => {
         conversion_rate: updatedProductionEntry.conversion ? updatedProductionEntry.conversion.rate : null,
         processedItems: processedItems.map(item => ({
           item_id: item.item_id,
+          item_name: item.item_name,
           quantity: item.quantity,
           unit_id: item.unit_id,
+          unit_name: item.unit_name,
           percentage: item.percentage,
           conversion_id: item.conversion_id
         }))
@@ -189,7 +191,7 @@ exports.updateProductionEntry = async (req, res) => {
       // Broadcast the updated production entry
       broadcast({ type: 'UPDATE', data: formattedProductionEntry, entryType: 'productionEntry', user_id: updatedProductionEntry.user_id, financial_year: updatedProductionEntry.financial_year });
 
-      res.status(200).json({ message: 'Production entry updated successfully' }); // Simplified response
+      res.status(200).json({ type: 'UPDATE', data: formattedProductionEntry, entryType: 'productionEntry', user_id: updatedProductionEntry.user_id, financial_year: updatedProductionEntry.financial_year }); // Simplified response
     } else {
       throw new Error('Production entry not found');
     }
@@ -226,7 +228,7 @@ exports.deleteProductionEntry = async (req, res) => {
       // Broadcast the deletion event
       broadcast({ type: 'DELETE', data: { id: entry.production_entry_id }, entryType: 'productionEntry', user_id, financial_year });
 
-      res.status(204).send(); // Simplified response
+      res.status(200).send({ type: 'DELETE', data: { id: entry.production_entry_id }, entryType: 'productionEntry', user_id, financial_year }); // Simplified response
     } else {
       await transaction.rollback();
       throw new Error('Production entry not found');
