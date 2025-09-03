@@ -251,7 +251,7 @@ exports.cashEntryUpdate = async (req, res) => {
       await mirrorEntry.save();
     }
     broadcast({ type: 'UPDATE', data: { ...cashEntry.toJSON(), unique_entry_id: uniqueEntryId }, entryType: 'cash', user_id, financial_year, cash_date: cash_entry_date }); // Emit WebSocket message
-    return res.status(200).json({ message: 'Cash entry updated successfully' }); // Simplified response
+    return res.status(200).json({ type: 'UPDATE', data: { ...cashEntry.toJSON(), unique_entry_id: uniqueEntryId }, entryType: 'cash', user_id, financial_year, cash_date: cash_entry_date }); // Simplified response
   } catch (err) {
     console.error(err);
     return res.status(500).json({ error: 'Internal server error' });
@@ -325,7 +325,105 @@ exports.cashEntryCreate = async (req, res) => {
       cash_date: mainEntry.cash_date
     });
 
-    return res.status(201).json({ message: 'Cash entry created successfully' });
+    return res.status(201).json({
+      type: 'INSERT',
+      data: {
+        ...mainEntry.toJSON(),
+        unique_entry_id: `CE_${mainEntry.id}`,
+        amount: parseFloat(formattedAmount)
+      },
+      entryType: 'cash',
+      user_id,
+      financial_year,
+      cash_date: mainEntry.cash_date
+    });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+
+exports.bulkCashEntryCreate = async (req, res) => {
+  const {
+    cash_date,
+    user_id,
+    financial_year,
+    cash_account_id,
+    cash_group_id,
+    entries // array of { narration, account_id, type, amount, group_id, account_name, cash_account_id, cash_group_id }
+  } = req.body;
+
+  const transaction_id = `TXN-${Date.now()}`;
+  const db = getDb();
+  const CashEntry = db.cash;
+
+  try {
+    const allEntriesToCreate = [];
+
+    for (const entry of entries) {
+
+      const mainEntry = {
+        cash_date,
+        narration: entry.narration_description,
+        account_id: entry.account_id,
+        type: entry.type,
+        amount: entry.amount,
+        user_id,
+        financial_year,
+        transaction_id,
+        is_cash_adjustment: false,
+        group_id: entry.group_id
+      };
+
+      const mirrorEntry = {
+        cash_date,
+        narration: entry.account_name,
+        account_id: cash_account_id,
+        type: !entry.type,
+        amount: entry.amount,
+        user_id,
+        financial_year,
+        transaction_id,
+        is_cash_adjustment: true,
+        group_id: cash_group_id
+      };
+
+      allEntriesToCreate.push(mainEntry, mirrorEntry);
+
+    }
+
+    const createdEntries = await CashEntry.bulkCreate(allEntriesToCreate, { returning: true });
+
+    // Filter only main entries (is_cash_adjustment: false)
+    const mainCreatedEntries = createdEntries.filter(e => !e.is_cash_adjustment);
+
+    const responseData = mainCreatedEntries.map(entry => ({
+      ...entry.toJSON(),
+      unique_entry_id: `CE_${entry.id}`,
+      amount: parseFloat(entry.amount)
+    }));
+
+    const resolvedCashDate = mainCreatedEntries[0]?.cash_date;
+
+    broadcast({
+      type: 'BULK_INSERT',
+      entryType: 'cash',
+      user_id,
+      financial_year,
+      cash_date: resolvedCashDate,
+      data: responseData
+    });
+
+    return res.status(201).json({
+      type: 'BULK_INSERT',
+      entryType: 'cash',
+      user_id,
+      financial_year,
+      cash_date: resolvedCashDate,
+      data: responseData
+    });
+
   } catch (err) {
     console.error(err);
     return res.status(500).json({ error: 'Internal server error' });
@@ -381,7 +479,7 @@ exports.cashEntryDelete = async (req, res) => {
       }
     });
     broadcast({ type: 'DELETE', data: { unique_entry_id: uniqueEntryId, account_id: account_id }, entryType: 'cash', user_id: cashEntry.user_id, financial_year: cashEntry.financial_year, cash_date: cash_date }); // Emit WebSocket message
-    return res.status(204).send(); // Simplified response
+    return res.status(200).send({ type: 'DELETE', data: { unique_entry_id: uniqueEntryId, account_id: account_id }, entryType: 'cash', user_id: cashEntry.user_id, financial_year: cashEntry.financial_year, cash_date: cash_date }); // Simplified response
   } catch (err) {
     console.error(err);
     return res.status(500).json({ error: 'Internal server error' });

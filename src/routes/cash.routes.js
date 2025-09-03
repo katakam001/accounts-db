@@ -16,4 +16,5 @@ module.exports = function (app) {
   app.put("/api/cash-entries/:id", [authJwt.verifyToken], controller.cashEntryUpdate);
   app.delete("/api/cash-entries/:id", [authJwt.verifyToken], controller.cashEntryDelete);
   app.post("/api/cash-entries", [authJwt.verifyToken], controller.cashEntryCreate);
+  app.post("/api/cash-entries/bulk", [authJwt.verifyToken], controller.bulkCashEntryCreate);
 };
