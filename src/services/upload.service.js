@@ -482,6 +482,44 @@ exports.processTransactions = async ({ groupedRecords, accountMap, suspenseAccou
     }
 };
 
+exports.processExportStatus = async ({ groupedRecords, userId, financialYear }) => {
+  const db = getDb();
+  const t = await db.sequelize.transaction();
+
+  try {
+    const Exports = db.exports;
+
+    for (const [exportId, records] of Object.entries(groupedRecords)) {
+      for (const record of records) {
+        const { fileName, status, outputKey, timestamp } = record;
+
+        await Exports.update(
+          {
+            file_name: fileName,
+            status,
+            output_key: outputKey,
+            output_key_timestamp: timestamp
+          },
+          {
+            where: {
+              id: parseInt(exportId),
+              user_id: userId,
+              financial_year: financialYear
+            },
+            transaction: t
+          }
+        );
+      }
+    }
+
+    await t.commit();
+    console.log("✅ All Export status processed successfully.");
+  } catch (error) {
+    await t.rollback();
+    console.error("❌ Error processing export status update:", error);
+  }
+};
+
 
 exports.processInvoiceTransactions = async ({ extractedData, categoryAccountMap, accountMap, categoryMap, itemsMap, unitIdMap, dynamicFieldsMap, suspenseAccountName, userId, financialYear, type,taxType }) => {
     try {

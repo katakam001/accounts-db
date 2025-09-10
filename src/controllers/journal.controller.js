@@ -1,10 +1,10 @@
 const { getDb } = require("../utils/getDb");
-const pdf = require('pdf-creator-node');
 const fs = require('fs');
 const path = require('path');
 const ExcelJS = require('exceljs');
 const moment = require('moment'); // Add moment.js for date formatting
 require('dotenv').config();
+const { uploadToS3 } = require("../services/s3Upload.service");
 
 let broadcast = () => {
   // No-op when WebSocket is disabled
@@ -208,7 +208,8 @@ async function fetchBatchEntries(userid, financial_year, limit, rowCursor) {
         public.account_list al ON ce.account_id = al.id
       WHERE
         ce.user_id = :userid AND
-        ce.financial_year = :financial_year
+        ce.financial_year = :financial_year AND
+        ce.is_cash_adjustment IS NOT TRUE
     ),
     numbered_entries AS (
       SELECT
@@ -571,77 +572,123 @@ exports.exportDaybookToExcel = async (req, res) => {
 };
 
 exports.exportDaybookToPDF = async (req, res) => {
+  const { userId, financialYear, companyName, city } = req.query;
+  const limit = 1000;
+  const rowsPerPage = 40;
+  const db = getDb();
+  const Account = db.account;
+  const Exports = db.exports;
+
+  let rowCursor = 0;
+  let hasNextPage = true;
+  let lastPageBalance = 0;
+  const filteredEntries = [];
+
+
   try {
-    const { userId, financialYear } = req.query;
-    const limit = 1000; // Define the batch size
-    const db = getDb();
-    const Account = db.account;
-    const rowsPerPage = 40; // Define the number of rows per page
-    let rowCursor = 0;
-    let hasNextPage = true;
-    let lastPageBalance = 0;
 
+    // Step 1: Fetch account balance
+    const account = await Account.findOne({
+      where: { name: 'CASH', user_id: userId, financial_year: financialYear }
+    });
 
-    const exportsDir = path.join(__dirname, '..', 'exports');
-    if (!fs.existsSync(exportsDir)) {
-      fs.mkdirSync(exportsDir, { recursive: true });
+    if (!account) {
+      await exportRecord.update({ status: 4 }); // DATA GENERATION FAILED
+      return res.status(404).json({ error: 'Account not found.' });
     }
 
-    const filteredEntries = [];
-    const account = await Account.findOne({ where: { name: 'CASH', user_id: userId, financial_year: financialYear } });
     lastPageBalance = parseFloat(account.debit_balance - account.credit_balance);
 
     while (hasNextPage) {
-      const { entries, nextRowCursor, hasNextPage: nextPage } = await fetchDaybookEntries(userId, financialYear, limit, rowCursor);
-      const { groupedDayBookEntries, finalBalanceCarryForward } = await processData(entries, lastPageBalance); // Destructure the returned object
-      lastPageBalance = finalBalanceCarryForward; // Assign the final balance carry forward for the last page
+      const { entries, nextRowCursor, hasNextPage: nextPage } = await fetchDaybookEntries(
+        userId,
+        financialYear,
+        limit,
+        rowCursor
+      );
+
+      const { groupedDayBookEntries, finalBalanceCarryForward } = await processData(entries, lastPageBalance);
+      lastPageBalance = finalBalanceCarryForward;
       filteredEntries.push(...groupedDayBookEntries);
       rowCursor = nextRowCursor;
       hasNextPage = nextPage;
     }
+    const inputKeyTimestamp = new Date().toISOString();
 
+    // Step 2: Insert export record with status = 0 (DATA GENERATED)
+    const exportRecord = await Exports.create({
+      file_type: 'daybook',
+      financial_year: financialYear,
+      status: 0,
+      user_id: userId,
+      input_key: '',
+      input_key_timestamp: inputKeyTimestamp,
+      output_key: '',
+      output_key_timestamp: null
+    });
 
-
-    // Read HTML Template
-    const html = fs.readFileSync(path.join(__dirname, 'templates', 'template.html'), 'utf8');
+    const exportId = exportRecord.id;
 
     const data = {
-      userId: userId,
-      financialYear: financialYear,
-      filteredEntries: filteredEntries,
+      userId,
+      companyName,
+      cityName: city,
+      financialYear,
+      filteredEntries
     };
 
-    const options = {
-      format: 'A4',
-      orientation: 'portrait',
-      border: '10mm',
-      paginationOffset: 10,
-      footer: {
-        height: '20mm',
-        contents: {
-          default: '<span style="color: #444;">{{page}}</span>/<span>{{pages}}</span>',
-        },
-      },
-    };
+    const buffer = Buffer.from(JSON.stringify(data));
 
-    const document = {
-      html: html,
-      data: data,
-      path: path.join(exportsDir, `daybook_${userId}_${financialYear}.pdf`),
-      type: '',
-    };
+    const fileSize = buffer.length; // Get size in bytes
 
-    // Create PDF
-    pdf.create(document, options)
-      .then((result) => {
-        res.download(result.filename);
-      })
-      .catch((error) => {
-        console.error(error);
-        res.status(500).json({ error: 'Internal server error' });
+    // Determine size tier
+    let sizeTier = "small"; // default
+    if (fileSize > 1024 * 1024 * 2.00) {
+      sizeTier = "large";
+    } else if (fileSize > 1024 * 1024 * 1.0) {
+      sizeTier = "medium";
+    }
+
+    // Construct prefix with size tier
+    const keyPrefix = `pdf-inputs/${sizeTier}/${userId}/`;
+    const fileName = `daybook_${financialYear}_${Date.now()}.json`;
+
+    // Step 3: Upload to S3
+    let s3Key;
+    try {
+      s3Key = await uploadToS3({
+        keyPrefix, fileName,
+        dataBuffer: buffer,
+        contentType: 'application/json',
+        metadata: {
+          exportId: exportId.toString(),
+          userId: userId.toString(),
+          fileType: 'daybook',
+          financialYear,
+          generatedAt: inputKeyTimestamp
+        }
       });
+    } catch (uploadErr) {
+      console.error('❌ S3 upload failed:', uploadErr);
+      await exportRecord.update({ status: 5 }); // S3 INPUT KEY UPLOAD FAILED
+      return res.status(500).json({ error: 'Failed to upload input file to S3.' });
+    }
+
+    // Step 4: Update export record with input key and status = 1 (INTRANSIT)
+    await exportRecord.update({
+      input_key: s3Key,
+      status: 1
+    });
+
+    console.log(`✅ Uploaded to S3 at ${s3Key}`);
+    res.status(200).send({ message: 'PDF input data successfully uploaded to S3 and tracked.' });
+
   } catch (err) {
-    console.error(err);
+    console.error('❌ Data generation failed:', err);
+    // If exportRecord exists, mark as failed
+    if (typeof exportRecord !== 'undefined') {
+      await exportRecord.update({ status: 4 }); // DATA GENERATION FAILED
+    }
     res.status(500).json({ error: 'Internal server error' });
   }
 };

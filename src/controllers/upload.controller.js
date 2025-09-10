@@ -3,7 +3,7 @@ require('dotenv').config();
 // Configure AWS S3
 const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
 const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
-const s3 = new S3Client({ region: "ap-south-2" });
+const s3 = new S3Client({ region: process.env.AWS_REGION });
 let isMonitoringActive = false; // 🔹 Prevent duplicate monitoring sessions
 
 // Function to Generate Presigned URL

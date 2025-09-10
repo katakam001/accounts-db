@@ -120,6 +120,8 @@ require("./routes/consolidateStockRegister.routes.js")(app); // Updated from con
 require("./routes/balance.routes.js")(app); // Updated from balance.routes.js
 require("./routes/ledger.routes.js")(app); // Updated from ledger.routes.js
 require("./routes/upload.routes.js")(app); // Updated from upload.routes.js
+require("./routes/download.routes.js")(app); // Updated from download.routes.js
+require("./routes/exports.routes.js")(app); // Updated from exports.routes.js
 require("./routes/sequenceNumber.routes.js")(app); // Updated from sequenceNumber.routes.js
 require("./routes/openingStock.routes.js")(app); // Updated from openingStock.routes.js
 require("./routes/closingStockValuation.routes.js")(app); // Updated from closingStockValuation.routes.js

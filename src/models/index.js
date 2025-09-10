@@ -31,6 +31,7 @@ db.Sequelize = Sequelize;
 db.sequelize = sequelize;
 
 db.user = require("../models/user.model.js")(sequelize, Sequelize);
+db.userDetails = require("../models/userDetails.model.js")(sequelize, Sequelize,db.user);
 db.financial_year_tracking= require("../models/financialYearTracking.model.js")(sequelize, Sequelize);
 db.admin_user = require("../models/adminUser.model.js")(sequelize, Sequelize,db.user);
 db.role = require("../models/role.model.js")(sequelize, Sequelize);
@@ -66,6 +67,7 @@ db.mapping_rules = require("../models/mapping_rules.js")(sequelize, Sequelize);
 db.opening_stock = require("../models/openingStock.model.js")(sequelize, Sequelize,db.items);
 db.closing_stock_valulation = require("../models/closingStockValulation.model.js")(sequelize, Sequelize,db.items);
 db.stock_register = require("../models/stockRegiser.model.js")(sequelize, Sequelize,db.items);
+db.exports = require("../models/exports.model.js")(sequelize, Sequelize);
 
 db.fieldsMapping.belongsTo(db.categories, { foreignKey: 'category_id', as: 'category' });
 db.fieldsMapping.belongsTo(db.fields, { foreignKey: 'field_id', as: 'field' });
@@ -83,6 +85,8 @@ db.user.belongsToMany(db.role, {
 
 db.user.belongsToMany(db.user, { as: 'Users', through: db.admin_user, foreignKey: 'admin_id' });
 db.user.belongsToMany(db.user, { as: 'Admins', through: db.admin_user, foreignKey: 'user_id' });
+db.user.hasOne(db.userDetails, {foreignKey: 'user_id',as: 'user_details',onDelete: 'CASCADE'});
+db.userDetails.belongsTo(db.user, {foreignKey: 'user_id',as: 'Users'});
 db.admin_user.belongsTo(db.user, { foreignKey: "user_id", as: "user" });
 
 db.journalEntry.hasMany(db.journalItem, { as: 'items', foreignKey: 'journal_id' });

@@ -141,14 +141,17 @@ exports.createEntriesForInvoice = (
       // Generate dynamic fields for this entry
       const dynamicFields = createDynamicFields(categoryId, dynamicFieldsMap, extractedData, gstValue);
 
+      const quantity = parseFloat(Number(extractedData.Quantity).toFixed(4));
+
+
       // Construct the entry
       const entry = {
-        s_no:parseInt(extractedData.SNo,10),
+        s_no: parseInt(extractedData.SNo, 10),
         category_id: categoryId,
         item_id: itemId,
-        quantity: 1, // Assuming quantity is 1 for simplicity
+        quantity: quantity,
         unit_id: unitId,
-        unit_price: gstValue, // Assuming unit price equals GST value for simplicity
+        unit_price: parseFloat((gstValue / quantity).toFixed(2)),
         value: gstValue,
         total_amount: parseFloat((gstValue + (gstValue * rate / 100)).toFixed(2)), // Adding GST percentage to the total
         category_account_id: categoryAccountId,

@@ -1,6 +1,6 @@
 const { SQSClient, GetQueueAttributesCommand, ReceiveMessageCommand, DeleteMessageBatchCommand } = require("@aws-sdk/client-sqs");
 const uploadService = require("../services/upload.service");
-const sqs = new SQSClient({ region: "ap-south-2" });
+const sqs = new SQSClient({ region: process.env.AWS_REGION });
 require('dotenv').config();
 const invoiceUtils = require('../utils/invoiceUtils');
 const { fetchCategories } = require('../services/category.service');
@@ -64,16 +64,25 @@ function groupMessages(Messages) {
         const attributes = message.MessageAttributes;
         const userId = parseInt(attributes.userId.StringValue);
         const financialYear = attributes.financialYear.StringValue;
+        const fileType = attributes.fileType?.StringValue;
+        const exportId = attributes.exportId?.StringValue;
         const isInvoiceProcessing = attributes.type?.StringValue && attributes.taxType?.StringValue;
-        const type = isInvoiceProcessing
+
+        let type = isInvoiceProcessing
             ? `${attributes.type.StringValue}-${attributes.taxType.StringValue}`
             : attributes.statementType?.StringValue;
 
+        // ✅ Override type with fileType if exportId exists
+        if (exportId) {
+            type = parseInt(exportId);
+        }
+
         const transactionData = JSON.parse(message.Body);
         const isStatement = type === "bank";
-        const key = isStatement
-            ? `${userId}_${financialYear}_${parseInt(attributes.accountId.StringValue)}`
-            : `${userId}_${financialYear}_${type}`;
+        const key = exportId
+            ? `${userId}_${financialYear}_${fileType}`
+            : isStatement ? `${userId}_${financialYear}_${parseInt(attributes.accountId.StringValue)}`
+                : `${userId}_${financialYear}_${type}`;
 
         if (!groupedMessages.has(key)) groupedMessages.set(key, {});
 
@@ -101,7 +110,8 @@ async function processGroupedTransactions(key, transactionRecords) {
     const validCSVIdentifiers = ['1-cgst', '1-igst', '2-cgst', '2-igst'];
     const isCSVInvoice = validCSVIdentifiers.includes(typeOrAccountId);
     const isTrailBalance = typeOrAccountId === "trialBalance";
-    const accountId = isCSVInvoice || isTrailBalance ? null : typeOrAccountId;
+    const isExport = typeOrAccountId === "daybook";
+    const accountId = isCSVInvoice || isTrailBalance || isExport ? null : typeOrAccountId;
 
 
     const validTypes = ['1', '2'];
@@ -109,8 +119,6 @@ async function processGroupedTransactions(key, transactionRecords) {
 
     let type = null;
     let taxType = null;
-
-
 
     if (isCSVInvoice && typeof typeOrAccountId === 'string') {
         const [typePart, taxPart] = typeOrAccountId.split('-');
@@ -156,6 +164,15 @@ async function processGroupedTransactions(key, transactionRecords) {
         });
         cachedData.accountMap = await uploadService.loadAccountsWithGroupIds({ userId, financialYear });
         cache.setCache(`${userId}_${financialYear}`, cachedData, 3600);
+    }
+    else if (isExport) {
+
+        await uploadService.processExportStatus({
+            groupedRecords: transactionRecords,
+            userId,
+            financialYear,
+        });
+
     } else {
         // ✅ Process CSV invoices
         await loadAndCacheInvoiceData(userId, financialYear, type, cachedData);

@@ -351,17 +351,20 @@ exports.bulkCashEntryCreate = async (req, res) => {
     financial_year,
     cash_account_id,
     cash_group_id,
-    entries // array of { narration, account_id, type, amount, group_id, account_name, cash_account_id, cash_group_id }
+    entries
   } = req.body;
 
-  const transaction_id = `TXN-${Date.now()}`;
   const db = getDb();
   const CashEntry = db.cash;
+  const sequelize = db.sequelize; // Ensure this gives you the Sequelize instance
+
+  const transaction = await sequelize.transaction();
 
   try {
     const allEntriesToCreate = [];
 
     for (const entry of entries) {
+      const pairTransactionId = `TXN-${Date.now()}-${i}`;
 
       const mainEntry = {
         cash_date,
@@ -371,7 +374,7 @@ exports.bulkCashEntryCreate = async (req, res) => {
         amount: entry.amount,
         user_id,
         financial_year,
-        transaction_id,
+        pairTransactionId,
         is_cash_adjustment: false,
         group_id: entry.group_id
       };
@@ -384,18 +387,19 @@ exports.bulkCashEntryCreate = async (req, res) => {
         amount: entry.amount,
         user_id,
         financial_year,
-        transaction_id,
+        pairTransactionId,
         is_cash_adjustment: true,
         group_id: cash_group_id
       };
 
       allEntriesToCreate.push(mainEntry, mirrorEntry);
-
     }
 
-    const createdEntries = await CashEntry.bulkCreate(allEntriesToCreate, { returning: true });
+    const createdEntries = await CashEntry.bulkCreate(allEntriesToCreate, {
+      returning: true,
+      transaction
+    });
 
-    // Filter only main entries (is_cash_adjustment: false)
     const mainCreatedEntries = createdEntries.filter(e => !e.is_cash_adjustment);
 
     const responseData = mainCreatedEntries.map(entry => ({
@@ -415,6 +419,8 @@ exports.bulkCashEntryCreate = async (req, res) => {
       data: responseData
     });
 
+    await transaction.commit();
+
     return res.status(201).json({
       type: 'BULK_INSERT',
       entryType: 'cash',
@@ -425,7 +431,8 @@ exports.bulkCashEntryCreate = async (req, res) => {
     });
 
   } catch (err) {
-    console.error(err);
+    await transaction.rollback();
+    console.error("❌ Transaction failed:", err);
     return res.status(500).json({ error: 'Internal server error' });
   }
 };
