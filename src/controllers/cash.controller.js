@@ -362,7 +362,8 @@ exports.bulkCashEntryCreate = async (req, res) => {
   try {
     const allEntriesToCreate = [];
 
-    for (const entry of entries) {
+    for (let i = 0; i < entries.length; i++) {
+      const entry = entries[i];
       const pairTransactionId = `TXN-${Date.now()}-${i}`;
 
       const mainEntry = {
