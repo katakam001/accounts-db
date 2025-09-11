@@ -1,5 +1,4 @@
 const { checkQueueDepth, monitorQueueAndConsume } = require("../services/sqs.service");
-require('dotenv').config();
 // Configure AWS S3
 const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
 const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");

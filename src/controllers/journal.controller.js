@@ -3,7 +3,6 @@ const fs = require('fs');
 const path = require('path');
 const ExcelJS = require('exceljs');
 const moment = require('moment'); // Add moment.js for date formatting
-require('dotenv').config();
 const { uploadToS3 } = require("../services/s3Upload.service");
 
 let broadcast = () => {
@@ -373,7 +372,7 @@ async function processData(daybookEntries, lastPageBalance) {
     }
 
     return {
-      date,
+      date:formatDate(date),
       entries,
       totalCashCredit,
       totalJournalCredit,
@@ -393,6 +392,11 @@ async function processData(daybookEntries, lastPageBalance) {
     groupedDayBookEntries,
     finalBalanceCarryForward,
   };
+}
+
+function formatDate(date) {
+  const d = new Date(date);
+  return `${d.getDate().toString().padStart(2, '0')}-${(d.getMonth() + 1).toString().padStart(2, '0')}-${d.getFullYear()}`;
 }
 
 function groupByDate(entries) {

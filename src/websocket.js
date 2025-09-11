@@ -1,7 +1,6 @@
 const https = require('https');
 const fs = require('fs');
 const config = require('./config/auth.config'); // Import the configuration
-require('dotenv').config();
 
 // Load SSL/TLS certificates
 const options = {

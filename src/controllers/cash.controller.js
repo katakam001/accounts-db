@@ -1,5 +1,4 @@
 const { getDb } = require("../utils/getDb");
-require('dotenv').config();
 
 let broadcast = () => {
   // No-op when WebSocket is disabled

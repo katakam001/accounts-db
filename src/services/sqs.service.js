@@ -1,7 +1,6 @@
 const { SQSClient, GetQueueAttributesCommand, ReceiveMessageCommand, DeleteMessageBatchCommand } = require("@aws-sdk/client-sqs");
 const uploadService = require("../services/upload.service");
 const sqs = new SQSClient({ region: process.env.AWS_REGION });
-require('dotenv').config();
 const invoiceUtils = require('../utils/invoiceUtils');
 const { fetchCategories } = require('../services/category.service');
 const { getAllItems } = require('../services/items.service');
@@ -110,7 +109,7 @@ async function processGroupedTransactions(key, transactionRecords) {
     const validCSVIdentifiers = ['1-cgst', '1-igst', '2-cgst', '2-igst'];
     const isCSVInvoice = validCSVIdentifiers.includes(typeOrAccountId);
     const isTrailBalance = typeOrAccountId === "trialBalance";
-    const isExport = typeOrAccountId === "daybook";
+    const isExport = typeOrAccountId === "daybook" || typeOrAccountId === "accountCopy" || typeOrAccountId === "ledger";
     const accountId = isCSVInvoice || isTrailBalance || isExport ? null : typeOrAccountId;
 
 

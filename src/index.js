@@ -1,14 +1,20 @@
+const path = require('path');
+const dotenv = require('dotenv');
+
+// Load the correct .env file based on NODE_ENV
+dotenv.config({
+  path: path.resolve(__dirname, `../.env.${process.env.NODE_ENV || 'development'}`)
+});
+
 const express = require("express");
 const cors = require("cors");
 const cookieParser = require('cookie-parser');
-const path = require('path');
 const chokidar = require('chokidar');
 const moment = require('moment-timezone');
 const app = express();
 const syncAndInjectData = require('./syncAndInject');
 const { getDb, reloadDb } = require("./utils/getDb");
 const { server, broadcast } = require('./websocket'); // Import the WebSocket server and broadcast function
-require('dotenv').config();
 
 // Function to reload configuration
 async function reloadConfig() {
@@ -71,7 +77,7 @@ app.use(
   cors({
     credentials: true,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-    origin: ["http://localhost:4200"],
+    origin: [process.env.DOMAIN_URL],
   })
 );
 
