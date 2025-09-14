@@ -374,7 +374,7 @@ exports.bulkCashEntryCreate = async (req, res) => {
         amount: entry.amount,
         user_id,
         financial_year,
-        pairTransactionId,
+        transaction_id:pairTransactionId,
         is_cash_adjustment: false,
         group_id: entry.group_id
       };
@@ -387,7 +387,7 @@ exports.bulkCashEntryCreate = async (req, res) => {
         amount: entry.amount,
         user_id,
         financial_year,
-        pairTransactionId,
+        transaction_id:pairTransactionId,
         is_cash_adjustment: true,
         group_id: cash_group_id
       };

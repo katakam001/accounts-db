@@ -104,12 +104,13 @@ function groupMessages(Messages) {
 
 async function processGroupedTransactions(key, transactionRecords) {
     const suspenseAccountName = "Suspense Account";
+    const exportTypes = ["daybook", "accountCopy", "ledger", "trailBalance"];
     const [userId, financialYear, typeOrAccountId] = key.split("_").map(val => isNaN(val) ? val : parseInt(val));
 
     const validCSVIdentifiers = ['1-cgst', '1-igst', '2-cgst', '2-igst'];
     const isCSVInvoice = validCSVIdentifiers.includes(typeOrAccountId);
     const isTrailBalance = typeOrAccountId === "trialBalance";
-    const isExport = typeOrAccountId === "daybook" || typeOrAccountId === "accountCopy" || typeOrAccountId === "ledger";
+    const isExport = exportTypes.includes(typeOrAccountId);
     const accountId = isCSVInvoice || isTrailBalance || isExport ? null : typeOrAccountId;
 
 
