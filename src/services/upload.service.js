@@ -108,7 +108,7 @@ exports.getAccountsByGroup = async ({ group_name, user_id, financial_year }) => 
     }
 };
 
-exports.fetchUnitIdsByCategoryIds = async ({ categoryIds}) => {
+exports.fetchUnitIdsByCategoryIds = async ({ categoryIds }) => {
     try {
         // console.log(categoryIds);
         const db = getDb(); // Get the database instance
@@ -136,7 +136,7 @@ exports.fetchUnitIdsByCategoryIds = async ({ categoryIds}) => {
     }
 };
 
-exports.fetchDynamicFieldsByCategoryIds = async ({ categoryIds}) => {
+exports.fetchDynamicFieldsByCategoryIds = async ({ categoryIds }) => {
     try {
         const db = getDb(); // Initialize database instance
 
@@ -308,12 +308,12 @@ exports.processOpeningBalance = async ({
 
 
 function syncAccountIntoCache({ userId, financialYear, accountName, accountId, groupId }) {
-  const cacheKey = `${userId}_${financialYear}`;
-  const cachedData = cache.getCache(cacheKey) || {};
-  cachedData.accountMap = cachedData.accountMap || {};
-  const key = accountName.toLowerCase().trim();
-  cachedData.accountMap[key] = { accountId, groupId };
-  cache.setCache(cacheKey, cachedData);
+    const cacheKey = `${userId}_${financialYear}`;
+    const cachedData = cache.getCache(cacheKey) || {};
+    cachedData.accountMap = cachedData.accountMap || {};
+    const key = accountName.toLowerCase().trim();
+    cachedData.accountMap[key] = { accountId, groupId };
+    cache.setCache(cacheKey, cachedData);
 }
 
 exports.processTransactions = async ({ groupedRecords, accountMap, suspenseAccountName, bankAccount, userId, financialYear }) => {
@@ -356,11 +356,37 @@ exports.processTransactions = async ({ groupedRecords, accountMap, suspenseAccou
             const journalItems = []; // List of journal items for batch processing
 
             for (const record of records) {
+
+                if (parseFloat(record.debit) === parseFloat(record.credit) && parseFloat(record.credit) === 0.00) {
+                    continue;
+                }
                 const remarks = record.description.toLowerCase();
                 const amount = parseFloat(record.debit) > 0 ? parseFloat(record.debit) : parseFloat(record.credit);
 
-
-                if (remarks.includes("by cash") || remarks.includes("cardless deposit") || remarks.includes("cwdr") || remarks.includes("to cash self") || remarks.includes("to self") || remarks.includes("paid to self") || remarks.includes("self") || remarks.includes("to cash") || remarks.includes("atm cash") || remarks.includes("atm wdl") || remarks.includes("atm-nfs") || remarks.includes("atw-") || remarks.includes("cash deposit") || remarks.includes("cash dep") || remarks.includes("csh dep") || remarks.includes("to cheque") || remarks.includes("cam/") || remarks.includes("cash") || remarks.includes("atm|")) {
+                if (
+                    !remarks.includes("cash dep chrgs") && (
+                        remarks.includes("by cash") ||
+                        remarks.includes("cardless deposit") ||
+                        remarks.includes("cwdr") ||
+                        remarks.includes("to cash self") ||
+                        remarks.includes("to self") ||
+                        remarks.includes("paid to self") ||
+                        remarks.includes("self") ||
+                        remarks.includes("to cash") ||
+                        remarks.includes("atm cash") ||
+                        remarks.includes("atm wdl") ||
+                        remarks.includes("atm-nfs") ||
+                        remarks.includes("atw-") ||
+                        remarks.includes("cash deposit") ||
+                        remarks.includes("cash dep") ||
+                        remarks.includes("csh dep") ||
+                        remarks.includes("to cheque") ||
+                        remarks.includes("cam/") ||
+                        remarks.includes("cash") ||
+                        remarks.includes("atm|") ||
+                        remarks.includes("atm/")
+                    )
+                ) {
                     createCashEntry = true;
 
                     // Prepare a cash entry for batch table
@@ -392,7 +418,7 @@ exports.processTransactions = async ({ groupedRecords, accountMap, suspenseAccou
                     totalAmount += amount; // Keep track of the total
                 } else {
                     let matchedAccount = null;
-                    if (remarks.includes("charges")) {
+                    if (remarks.includes("charges") || remarks.includes("chrgs")) {
                         matchedAccount = "bank charges";
                     } else {
                         for (const accountName of accountMap.keys()) {
@@ -483,45 +509,45 @@ exports.processTransactions = async ({ groupedRecords, accountMap, suspenseAccou
 };
 
 exports.processExportStatus = async ({ groupedRecords, userId, financialYear }) => {
-  const db = getDb();
-  const t = await db.sequelize.transaction();
+    const db = getDb();
+    const t = await db.sequelize.transaction();
 
-  try {
-    const Exports = db.exports;
+    try {
+        const Exports = db.exports;
 
-    for (const [exportId, records] of Object.entries(groupedRecords)) {
-      for (const record of records) {
-        const { fileName, status, outputKey, timestamp } = record;
+        for (const [exportId, records] of Object.entries(groupedRecords)) {
+            for (const record of records) {
+                const { fileName, status, outputKey, timestamp } = record;
 
-        await Exports.update(
-          {
-            file_name: fileName,
-            status,
-            output_key: outputKey,
-            output_key_timestamp: timestamp
-          },
-          {
-            where: {
-              id: parseInt(exportId),
-              user_id: userId,
-              financial_year: financialYear
-            },
-            transaction: t
-          }
-        );
-      }
+                await Exports.update(
+                    {
+                        file_name: fileName,
+                        status,
+                        output_key: outputKey,
+                        output_key_timestamp: timestamp
+                    },
+                    {
+                        where: {
+                            id: parseInt(exportId),
+                            user_id: userId,
+                            financial_year: financialYear
+                        },
+                        transaction: t
+                    }
+                );
+            }
+        }
+
+        await t.commit();
+        console.log("✅ All Export status processed successfully.");
+    } catch (error) {
+        await t.rollback();
+        console.error("❌ Error processing export status update:", error);
     }
-
-    await t.commit();
-    console.log("✅ All Export status processed successfully.");
-  } catch (error) {
-    await t.rollback();
-    console.error("❌ Error processing export status update:", error);
-  }
 };
 
 
-exports.processInvoiceTransactions = async ({ extractedData, categoryAccountMap, accountMap, categoryMap, itemsMap, unitIdMap, dynamicFieldsMap, suspenseAccountName, userId, financialYear, type,taxType }) => {
+exports.processInvoiceTransactions = async ({ extractedData, categoryAccountMap, accountMap, categoryMap, itemsMap, unitIdMap, dynamicFieldsMap, suspenseAccountName, userId, financialYear, type, taxType }) => {
     try {
         // console.log(extractedData);
         // console.log(categoryAccountMap);
