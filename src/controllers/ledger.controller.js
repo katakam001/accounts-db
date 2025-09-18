@@ -322,7 +322,7 @@ entries_with_names AS (
     AND g.user_id = :user_id AND g.financial_year = :financial_year
 ),
 
-numbered_entries AS (
+numbered_entries AS MATERIALIZED (
   SELECT
     *,
     ROW_NUMBER() OVER (
@@ -364,7 +364,7 @@ opening_entries AS (
   WHERE al.user_id = :user_id AND al.financial_year = :financial_year
 ),
 
-combined_entry_stream AS (
+combined_entry_stream AS MATERIALIZED (
   SELECT
     *,
   0 AS opening_adjustment
@@ -378,7 +378,7 @@ combined_entry_stream AS (
   FROM numbered_entries
 ),
 
-entries_with_balance AS (
+entries_with_balance AS MATERIALIZED (
   SELECT *,
     SUM(CASE WHEN type THEN amount ELSE -amount END)
       OVER (PARTITION BY account_id, group_id ORDER BY inner_row)
@@ -816,7 +816,7 @@ entries_with_names AS (
     AND g.user_id = :user_id AND g.financial_year = :financial_year
 ),
 
-numbered_entries AS (
+numbered_entries AS MATERIALIZED (
   SELECT
     *,
     ROW_NUMBER() OVER (
@@ -858,7 +858,7 @@ opening_entries AS (
   WHERE al.user_id = :user_id AND al.financial_year = :financial_year
 ),
 
-combined_entry_stream AS (
+combined_entry_stream AS MATERIALIZED (
   SELECT
     *,
   0 AS opening_adjustment
@@ -872,7 +872,7 @@ combined_entry_stream AS (
   FROM numbered_entries
 ),
 
-entries_with_balance AS (
+entries_with_balance AS MATERIALIZED (
   SELECT *,
     SUM(CASE WHEN type THEN amount ELSE -amount END)
       OVER (PARTITION BY account_id, group_id ORDER BY inner_row)
