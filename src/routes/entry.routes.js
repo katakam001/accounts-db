@@ -15,7 +15,10 @@ module.exports = function (app) {
   app.get('/api/entries/getEntryTypeSummary', [authJwt.verifyToken], controller.getEntryTypeSummary);
   app.get('/api/entries/updationJournalEntries', [authJwt.verifyToken], controller.generateJournalEntriesAndUpdateEntries);
   app.get('/api/entries/:invoice_seq_id/:type', [authJwt.verifyToken], controller.getEntryByInvoiceNumberByType); // Add this line
-  app.post('/api/entries/bulk', [authJwt.verifyToken], controller.addEntries);
-  app.put('/api/entries/bulk', [authJwt.verifyToken], controller.updateEntries);
-  app.delete('/api/entries/:invoice_seq_id/:type', [authJwt.verifyToken], controller.deleteEntries);
+  app.post('/api/entries/bulkEntries', [authJwt.verifyToken], controller.addEntries);
+  app.put('/api/entries/bulkEntries', [authJwt.verifyToken], controller.updateEntries);
+  app.delete('/api/entries/bulkEntries/:invoice_seq_id/:type', [authJwt.verifyToken], controller.deleteEntries);
+  app.post('/api/entries/bulkCashEntries', [authJwt.verifyToken], controller.addCashEntries);
+  app.put('/api/entries/bulkCashEntries', [authJwt.verifyToken], controller.updateCashEntries);
+  app.delete('/api/entries/bulkCashEntries/:invoice_seq_id/:type', [authJwt.verifyToken], controller.deleteCashEntries);
 };

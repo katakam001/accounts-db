@@ -48,6 +48,10 @@ db.fieldsMapping = require("./fieldsMapping.model.js")(sequelize, Sequelize, db.
 db.units = require("../models/units.model.js")(sequelize, Sequelize);
 db.categoryUnits = require("../models/categoryUnit.model.js")(sequelize, Sequelize, db.categories, db.units);
 db.items=require("../models/item.model.js")(sequelize,Sequelize)
+db.cashSaleEntries = require("../models/cashSaleEntries.model.js")(sequelize, Sequelize, db.categories, db.account, db.units, db.items);
+db.cashEntryFields = require("../models/cashEntryFields.model.js")(sequelize, Sequelize, db.cashSaleEntries,db.fields);
+db.dailyCashEntrySummary = require("../models/dailyCashEntrySummary.model.js")(sequelize, Sequelize,  db.account);
+db.cashSaleEntryLinks = require("../models/cashSaleEntryLinks.model.js")(sequelize, Sequelize,  db.cashSaleEntries, db.dailyCashEntrySummary);
 db.entry = require("../models/entry.model.js")(sequelize, Sequelize, db.categories, db.account, db.units, db.journalEntry,db.items);
 db.entryField = require("../models/entryField.model.js")(sequelize, Sequelize, db.entry,db.fields);
 db.address=require("../models/address.model.js")(sequelize,Sequelize)
@@ -136,6 +140,32 @@ db.production_entries.belongsTo(db.items, { foreignKey: 'item_id', as: 'processe
 db.production_entries.belongsTo(db.units, { foreignKey: 'unit_id', as: 'unit' });
 db.production_entries.belongsTo(db.conversions, { foreignKey: 'conversion_id', as: 'conversion' });
 db.production_entries.hasMany(db.production_entries, { foreignKey: 'production_entry_id', as: 'processedItems' });
+
+db.cashSaleEntries.belongsTo(db.categories, { foreignKey: 'category_id', as: 'category' });
+db.cashSaleEntries.belongsTo(db.account, { foreignKey: 'category_account_id', as: 'categoryAccount' });
+db.cashSaleEntries.belongsTo(db.units, { foreignKey: 'unit_id', as: 'unit' });
+db.cashSaleEntries.belongsTo(db.items, { foreignKey: 'item_id', as: 'item' });
+db.cashSaleEntries.belongsTo(db.account, { foreignKey: 'account_id', as: 'account' });
+
+
+db.categories.hasMany(db.cashSaleEntries, { foreignKey: 'category_id', as: 'cashSaleEntries' });
+db.account.hasMany(db.cashSaleEntries, { foreignKey: 'category_account_id', as: 'cashSaleEntries' });
+db.units.hasMany(db.cashSaleEntries, { foreignKey: 'unit_id', as: 'cashSaleEntries' });
+db.items.hasMany(db.cashSaleEntries, { foreignKey: 'item_id', as: 'cashSaleEntries' });
+db.account.hasMany(db.cashSaleEntries, { foreignKey: 'account_id', as: 'partyCashSaleEntries' });
+
+db.cashEntryFields.belongsTo(db.cashSaleEntries, { foreignKey: 'cash_sale_entry_id', as: 'cashSaleEntry' });
+db.cashEntryFields.belongsTo(db.fields, { foreignKey: 'field_id', as: 'field' });
+
+db.cashSaleEntries.hasMany(db.cashEntryFields, { foreignKey: 'cash_sale_entry_id', as: 'fields' });
+db.fields.hasMany(db.cashEntryFields, { foreignKey: 'field_id', as: 'cashEntryFields' });
+db.dailyCashEntrySummary.belongsTo(db.account, { foreignKey: 'account_id', as: 'account' });
+db.account.hasMany(db.dailyCashEntrySummary, { foreignKey: 'account_id', as: 'dailySummaries' });
+db.cashSaleEntryLinks.belongsTo(db.cashSaleEntries, { foreignKey: 'cash_sale_entry_id', as: 'cashSaleEntry' });
+db.cashSaleEntryLinks.belongsTo(db.dailyCashEntrySummary, { foreignKey: 'summary_id', as: 'summary' });
+
+db.cashSaleEntries.hasMany(db.cashSaleEntryLinks, { foreignKey: 'cash_sale_entry_id', as: 'summaryLinks' });
+db.dailyCashEntrySummary.hasMany(db.cashSaleEntryLinks, { foreignKey: 'summary_id', as: 'entryLinks' });
 
 
 // Conversion associations

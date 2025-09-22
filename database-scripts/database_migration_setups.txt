@@ -56,6 +56,10 @@ Parsed url postgres://postgres:*****@localhost:5432/account_db
 == 20250108082956-initial-setup-no-references: reverting =======
 == 20250108082956-initial-setup-no-references: reverted (0.047s)
 
+undo single file change:
+
+npx sequelize-cli db:migrate:undo  --url postgres://postgres:xxxxx@localhost:5432/account_test_db  --migrations-path src/migrations --name 20250920181341-create-cash-sale-entries-table.js --debug
+
 
 C:\Software\accounts-db\src>npx sequelize-cli seed:generate --name insert-cash-account-to-account-group
 

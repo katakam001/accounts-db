@@ -150,7 +150,7 @@ exports.cashBookList = async (req, res) => {
       WHERE cce.user_id = :userId 
       AND cce.financial_year = :financialYear
       AND cce.is_cash_adjustment IS NOT TRUE
-      ORDER BY cce.cash_date ASC
+      ORDER BY cce.cash_date ASC,al.name ASC
       `,
       {
         replacements: { userId: userid, financialYear: financial_year },

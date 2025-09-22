@@ -97,16 +97,17 @@ exports.createEntriesForInvoice = (
   // Define GST fields and rates
   const gstFields = [
     { rate: 0, valueKey: 'GstValue0' },
-    { rate: 5, valueKey: 'GstValue5' },
-    { rate: 12, valueKey: 'GstValue12' },
-    { rate: 18, valueKey: 'GstValue18' },
-    { rate: 28, valueKey: 'GstValue28' },
+    { rate: 5, valueKey: 'GstValue5', field: "gst5" },
+    { rate: 12, valueKey: 'GstValue12', field: "gst12" },
+    { rate: 18, valueKey: 'GstValue18', field: "gst18" },
+    { rate: 28, valueKey: 'GstValue28', field: "gst28" },
   ];
 
-  gstFields.forEach(({ rate, valueKey }) => {
+  gstFields.forEach(({ rate, valueKey,field }) => {
     // console.log(extractedData);
     // console.log(extractedData[valueKey]);
     const gstValue = extractedData[valueKey]; // Get the GST value for this rate
+        const gst = field ? extractedData[field] : 0;
     // console.log(gstValue);
     if (gstValue > 0) {
       const itemName = extractedData["ItemName"];
@@ -139,7 +140,7 @@ exports.createEntriesForInvoice = (
       }
 
       // Generate dynamic fields for this entry
-      const dynamicFields = createDynamicFields(categoryId, dynamicFieldsMap, extractedData, gstValue);
+      const dynamicFields = createDynamicFields(categoryId, dynamicFieldsMap, extractedData, gstValue,gst,taxType);
 
       const quantity = parseFloat(Number(extractedData.Quantity).toFixed(4));
 
@@ -153,7 +154,7 @@ exports.createEntriesForInvoice = (
         unit_id: unitId,
         unit_price: parseFloat((gstValue / quantity).toFixed(2)),
         value: gstValue,
-        total_amount: parseFloat((gstValue + (gstValue * rate / 100)).toFixed(2)), // Adding GST percentage to the total
+        total_amount: parseFloat((gstValue + gst).toFixed(2)),
         category_account_id: categoryAccountId,
         entry_date: moment(extractedData.FeedDate, 'DD/MM/YYYY').tz('Asia/Kolkata').set({ hour: 5, minute: 30, second: 0 }).format('YYYY-MM-DD HH:mm:ss.SSS Z'),
         user_id: userId,
@@ -171,7 +172,7 @@ exports.createEntriesForInvoice = (
   // console.log(entries);
   return entries;
 };
-const createDynamicFields = (categoryId, dynamicFieldsMap, extractedData, gstValue) => {
+const createDynamicFields = (categoryId, dynamicFieldsMap, extractedData, gstValue,gst,taxType) => {
   const dynamicFields = []; // Initialize the dynamic fields array
 
   const fields = dynamicFieldsMap.get(categoryId) || []; // Retrieve fields for the category_id
@@ -184,7 +185,27 @@ const createDynamicFields = (categoryId, dynamicFieldsMap, extractedData, gstVal
         // Tax calculation logic: extract percentage from field_name
         const taxPercentageMatch = field_name.match(/(\d+(\.\d+)?)%/); // Match percentage like "2.5%","5%","18%"
         const taxPercentage = taxPercentageMatch ? parseFloat(taxPercentageMatch[1]) : 0; // Extract percentage or default to 0
-        const field_value = (gstValue * taxPercentage / 100).toFixed(2); // Calculate tax value based on NetAmt
+       let field_value = "0.00";
+
+        if (taxType === 'igst') {
+          field_value = gst.toFixed(2);
+        } else {
+          // Calculate expected tax value from NetAmt
+          const calculatedTax = parseFloat((gstValue * taxPercentage / 100).toFixed(2));
+          const actualTax = parseFloat((gst / 2).toFixed(2)); // CGST or SGST portion
+
+          const difference = Math.abs(calculatedTax - actualTax);
+
+          // If difference exceeds tolerance, log warning (optional)
+          if (difference > 0.25) {
+            console.warn(
+              `Tax mismatch for field "${field_name}": Expected ${actualTax}, Calculated ${calculatedTax}, Difference ${difference}`
+            );
+          }
+
+          // Use actual tax value for CGST/SGST
+          field_value = actualTax.toFixed(2);
+        }
 
         dynamicFields.push({
           field_id,
