@@ -20,6 +20,19 @@ class CacheService {
     deleteCache(key) {
         this.cache.del(key);
     }
+
+    getTtl(key) {
+        const ttl = this.cache.getTtl(key);
+        return ttl ? Math.floor(ttl / 1000) : null;
+    }
+
+    ttl(key, seconds) {
+        return this.cache.ttl(key, seconds);
+    }
+
+    has(key) {
+        return this.cache.has(key);
+    }
 }
 
 const cacheInstance = new CacheService();

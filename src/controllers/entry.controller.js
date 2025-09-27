@@ -375,24 +375,24 @@ exports.getEntryByInvoiceNumberByType = async (req, res) => {
 
 exports.addEntries = async (req, res) => {
   const { entries } = req.body;
+  const db = getDb();
+  const t = await db.sequelize.transaction();
 
   try {
-    const result = await entryService.addEntriesService(entries);
+    const result = await entryService.addEntriesService(entries, t); // 👈 Pass transaction
 
-    // Extract data from the service result
     const { data } = result;
-    const { journalEntry, entries: updatedEntries, invoiceNumber, invoice_seq_id } = data; // Include invoiceNumber and invoice_seq_id
+    const { journalEntry, entries: updatedEntries, invoiceNumber, invoice_seq_id } = data;
     const { user_id, financial_year, entry_date } = entries[0];
 
-    // Include invoiceNumber and invoice_seq_id in broadcastData
     broadcast({
       type: 'INSERT',
       data: {
         entries: updatedEntries,
         group: { type: data.group.type },
-        journalEntry: journalEntry,
-        invoiceNumber,      // Ensure invoiceNumber is included
-        invoice_seq_id,     // Ensure invoice_seq_id is included
+        journalEntry,
+        invoiceNumber,
+        invoice_seq_id,
       },
       entryType: 'entry',
       user_id,
@@ -400,21 +400,24 @@ exports.addEntries = async (req, res) => {
       journal_date: entry_date,
     });
 
+    await t.commit(); // 👈 Commit here
+
     res.status(201).json({
       type: 'INSERT',
       data: {
         entries: updatedEntries,
         group: { type: data.group.type },
-        journalEntry: journalEntry,
-        invoiceNumber,      // Ensure invoiceNumber is included
-        invoice_seq_id,     // Ensure invoice_seq_id is included
+        journalEntry,
+        invoiceNumber,
+        invoice_seq_id,
       },
       entryType: 'entry',
       user_id,
       financial_year,
       journal_date: entry_date,
-    }); // Return the result as response
+    });
   } catch (error) {
+    await t.rollback(); // 👈 Rollback here
     res.status(500).json({ error: error.message });
   }
 };

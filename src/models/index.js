@@ -2,7 +2,7 @@
 const Sequelize = require("sequelize");
 const moment = require('moment-timezone');
 // Access the global dbConfig
-global.dbConfig = require('../config/db.config'); 
+global.dbConfig = require('../config/db.config');
 const dbConfig = global.dbConfig;
 
 const sequelize = global.sequelize || new Sequelize(
@@ -31,47 +31,49 @@ db.Sequelize = Sequelize;
 db.sequelize = sequelize;
 
 db.user = require("../models/user.model.js")(sequelize, Sequelize);
-db.userDetails = require("../models/userDetails.model.js")(sequelize, Sequelize,db.user);
-db.financial_year_tracking= require("../models/financialYearTracking.model.js")(sequelize, Sequelize);
-db.admin_user = require("../models/adminUser.model.js")(sequelize, Sequelize,db.user);
+db.userDetails = require("../models/userDetails.model.js")(sequelize, Sequelize, db.user);
+db.financial_year_tracking = require("../models/financialYearTracking.model.js")(sequelize, Sequelize);
+db.admin_user = require("../models/adminUser.model.js")(sequelize, Sequelize, db.user);
 db.role = require("../models/role.model.js")(sequelize, Sequelize);
 db.account = require("../models/account.model.js")(sequelize, Sequelize);
 db.group = require("../models/group.model.js")(sequelize, Sequelize);
 db.accountGroup = require("../models/accountGroup.model.js")(sequelize, Sequelize, db.account, db.group);
-db.cash = require("../models/cashEntry.model.js")(sequelize, Sequelize, db.account,db.group);
-db.cashEntriesBatch = require("../models/cashEntriesBatch.model.js")(sequelize, Sequelize, db.account,db.group);
+db.cash = require("../models/cashEntry.model.js")(sequelize, Sequelize, db.account, db.group);
+db.cashEntriesBatch = require("../models/cashEntriesBatch.model.js")(sequelize, Sequelize, db.account, db.group);
 db.journalEntry = require("../models/journalEntry.js")(sequelize, Sequelize);
 db.journalItem = require("../models/journalItem.js")(sequelize, Sequelize, db.account, db.group, db.journalEntry);
 db.categories = require("../models/categories.model.js")(sequelize, Sequelize);
 db.fields = require("./fields.model.js")(sequelize, Sequelize);
-db.fieldsMapping = require("./fieldsMapping.model.js")(sequelize, Sequelize, db.categories,db.fields,db.account);
+db.fieldsMapping = require("./fieldsMapping.model.js")(sequelize, Sequelize, db.categories, db.fields, db.account);
 db.units = require("../models/units.model.js")(sequelize, Sequelize);
 db.categoryUnits = require("../models/categoryUnit.model.js")(sequelize, Sequelize, db.categories, db.units);
-db.items=require("../models/item.model.js")(sequelize,Sequelize)
+db.items = require("../models/item.model.js")(sequelize, Sequelize)
 db.cashSaleEntries = require("../models/cashSaleEntries.model.js")(sequelize, Sequelize, db.categories, db.account, db.units, db.items);
-db.cashEntryFields = require("../models/cashEntryFields.model.js")(sequelize, Sequelize, db.cashSaleEntries,db.fields);
-db.dailyCashEntrySummary = require("../models/dailyCashEntrySummary.model.js")(sequelize, Sequelize,  db.account);
-db.cashSaleEntryLinks = require("../models/cashSaleEntryLinks.model.js")(sequelize, Sequelize,  db.cashSaleEntries, db.dailyCashEntrySummary);
-db.entry = require("../models/entry.model.js")(sequelize, Sequelize, db.categories, db.account, db.units, db.journalEntry,db.items);
-db.entryField = require("../models/entryField.model.js")(sequelize, Sequelize, db.entry,db.fields);
-db.address=require("../models/address.model.js")(sequelize,Sequelize)
-db.groupMapping=require("../models/groupMapping.model.js")(sequelize,Sequelize,db.groupMapping,db.group);
+db.cashEntryFields = require("../models/cashEntryFields.model.js")(sequelize, Sequelize, db.cashSaleEntries, db.fields);
+db.dailyCashEntrySummary = require("../models/dailyCashEntrySummary.model.js")(sequelize, Sequelize, db.account);
+db.cashSaleEntryLinks = require("../models/cashSaleEntryLinks.model.js")(sequelize, Sequelize, db.cashSaleEntries, db.dailyCashEntrySummary);
+db.entry = require("../models/entry.model.js")(sequelize, Sequelize, db.categories, db.account, db.units, db.journalEntry, db.items);
+db.entryField = require("../models/entryField.model.js")(sequelize, Sequelize, db.entry, db.fields);
+db.address = require("../models/address.model.js")(sequelize, Sequelize)
+db.groupMapping = require("../models/groupMapping.model.js")(sequelize, Sequelize, db.groupMapping, db.group);
 db.areas = require("../models/area.model.js")(sequelize, Sequelize);
 db.brokers = require("../models/broker.model.js")(sequelize, Sequelize);
-db.raw_items=require("../models/rawItem.model.js")(sequelize,Sequelize,db.items,db.units);
-db.conversions = require("../models/conversion.model.js")(sequelize, Sequelize,db.units);
-db.processed_items = require("../models/processedItems.model.js")(sequelize, Sequelize,db.raw_items,db.items,db.units,db.conversions);
-db.production_entries = require("../models/production_entries.model.js")(sequelize, Sequelize,db.items,db.units,db.conversions,db.production_entries);
+db.raw_items = require("../models/rawItem.model.js")(sequelize, Sequelize, db.items, db.units);
+db.conversions = require("../models/conversion.model.js")(sequelize, Sequelize, db.units);
+db.processed_items = require("../models/processedItems.model.js")(sequelize, Sequelize, db.raw_items, db.items, db.units, db.conversions);
+db.production_entries = require("../models/production_entries.model.js")(sequelize, Sequelize, db.items, db.units, db.conversions, db.production_entries);
 db.consolidated_stock_register = require("../models/consolidatedStockRegister.model.js")(sequelize, Sequelize);
 db.balance = require("../models/balance.model.js")(sequelize, Sequelize);
 db.globalBatchOperations = require("../models/globalBatchOperations.model.js")(sequelize, Sequelize);
 db.uploadedFileLog = require("../models/uploadedFileLog.model.js")(sequelize, Sequelize);
 db.invoice_tracker = require("../models/invoiceTracker.model.js")(sequelize, Sequelize);
 db.mapping_rules = require("../models/mapping_rules.js")(sequelize, Sequelize);
-db.opening_stock = require("../models/openingStock.model.js")(sequelize, Sequelize,db.items);
-db.closing_stock_valulation = require("../models/closingStockValulation.model.js")(sequelize, Sequelize,db.items);
-db.stock_register = require("../models/stockRegiser.model.js")(sequelize, Sequelize,db.items);
+db.opening_stock = require("../models/openingStock.model.js")(sequelize, Sequelize, db.items);
+db.closing_stock_valulation = require("../models/closingStockValulation.model.js")(sequelize, Sequelize, db.items);
+db.stock_register = require("../models/stockRegiser.model.js")(sequelize, Sequelize, db.items);
 db.exports = require("../models/exports.model.js")(sequelize, Sequelize);
+db.uploadHistory = require('../models/uploadHistory.model.js')(sequelize, Sequelize);
+db.messageTrackingLog = require('../models/messageTrackingLog.model.js')(sequelize, Sequelize, db.uploadHistory);
 
 db.fieldsMapping.belongsTo(db.categories, { foreignKey: 'category_id', as: 'category' });
 db.fieldsMapping.belongsTo(db.fields, { foreignKey: 'field_id', as: 'field' });
@@ -89,8 +91,8 @@ db.user.belongsToMany(db.role, {
 
 db.user.belongsToMany(db.user, { as: 'Users', through: db.admin_user, foreignKey: 'admin_id' });
 db.user.belongsToMany(db.user, { as: 'Admins', through: db.admin_user, foreignKey: 'user_id' });
-db.user.hasOne(db.userDetails, {foreignKey: 'user_id',as: 'user_details',onDelete: 'CASCADE'});
-db.userDetails.belongsTo(db.user, {foreignKey: 'user_id',as: 'Users'});
+db.user.hasOne(db.userDetails, { foreignKey: 'user_id', as: 'user_details', onDelete: 'CASCADE' });
+db.userDetails.belongsTo(db.user, { foreignKey: 'user_id', as: 'Users' });
 db.admin_user.belongsTo(db.user, { foreignKey: "user_id", as: "user" });
 
 db.journalEntry.hasMany(db.journalItem, { as: 'items', foreignKey: 'journal_id' });
@@ -112,8 +114,8 @@ db.categoryUnits.belongsTo(db.units, { foreignKey: 'unit_id', as: 'unit' });
 db.entryField.belongsTo(db.fields, { foreignKey: 'field_id', as: 'field' });
 db.entryField.belongsTo(db.entry, { foreignKey: 'entry_id', as: 'entry' });
 db.account.hasMany(db.entry, { foreignKey: 'account_id', as: 'entries' });
-db.account.hasOne(db.address, {foreignKey: 'account_id',as: 'address',onDelete: 'CASCADE',});
-db.address.belongsTo(db.account, {foreignKey: 'account_id',as: 'account',});
+db.account.hasOne(db.address, { foreignKey: 'account_id', as: 'address', onDelete: 'CASCADE', });
+db.address.belongsTo(db.account, { foreignKey: 'account_id', as: 'account', });
 db.ROLES = ["user", "admin", "moderator"];
 db.entry.belongsTo(db.journalEntry, { foreignKey: 'journal_id', as: 'journal' });
 db.entry.belongsTo(db.account, { foreignKey: 'account_id', as: 'account' });
@@ -125,8 +127,8 @@ db.groupMapping.hasMany(db.groupMapping, { as: 'children', foreignKey: 'parent_i
 db.groupMapping.belongsTo(db.groupMapping, { as: 'parent', foreignKey: 'parent_id' });
 db.groupMapping.belongsTo(db.group, { foreignKey: 'group_id' });
 db.group.hasMany(db.groupMapping, { foreignKey: 'group_id' });
-db.account.belongsToMany(db.group, { through: db.accountGroup, as: 'group', foreignKey: 'account_id' , otherKey: 'group_id'});
-db.group.belongsToMany(db.account, { through: db.accountGroup, as: 'accounts', foreignKey: 'group_id', otherKey: 'account_id'});
+db.account.belongsToMany(db.group, { through: db.accountGroup, as: 'group', foreignKey: 'account_id', otherKey: 'group_id' });
+db.group.belongsToMany(db.account, { through: db.accountGroup, as: 'accounts', foreignKey: 'group_id', otherKey: 'account_id' });
 db.items.hasMany(db.raw_items, { foreignKey: 'item_id', as: 'rawItems' });
 db.raw_items.belongsTo(db.items, { foreignKey: 'item_id', as: 'item' });
 db.raw_items.belongsTo(db.units, { foreignKey: 'unit_id', as: 'unit' });
@@ -166,6 +168,8 @@ db.cashSaleEntryLinks.belongsTo(db.dailyCashEntrySummary, { foreignKey: 'summary
 
 db.cashSaleEntries.hasMany(db.cashSaleEntryLinks, { foreignKey: 'cash_sale_entry_id', as: 'summaryLinks' });
 db.dailyCashEntrySummary.hasMany(db.cashSaleEntryLinks, { foreignKey: 'summary_id', as: 'entryLinks' });
+db.uploadHistory.hasMany(db.messageTrackingLog, { foreignKey: 'batch_id', sourceKey: 'id', as: 'messages' });
+db.messageTrackingLog.belongsTo(db.uploadHistory, { foreignKey: 'batch_id', targetKey: 'id', as: 'upload' });
 
 
 // Conversion associations

@@ -316,7 +316,7 @@ ORDER BY
 
         // Step 2: Insert export record with status = 0 (DATA GENERATED)
         const exportRecord = await Exports.create({
-            file_type: 'trailBalance',
+            file_type: 'trailBalanceExport',
             financial_year: financialYear,
             status: 0,
             user_id: userId,
@@ -365,7 +365,7 @@ ORDER BY
                 metadata: {
                     exportId: exportId.toString(),
                     userId: userId.toString(),
-                    fileType: 'trailBalance',
+                    fileType: 'trailBalanceExport',
                     financialYear,
                     generatedAt: inputKeyTimestamp
                 }

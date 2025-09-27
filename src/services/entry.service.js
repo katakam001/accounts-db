@@ -1,136 +1,117 @@
 const { getDb } = require("../utils/getDb");
 
-exports.addEntriesService = async (entries) => {
+exports.addEntriesService = async (entries, transaction) => {
+  const db = getDb();
+  const Entry = db.entry;
+  const EntryField = db.entryField;
+  const JournalItem = db.journalItem;
+  const JournalEntry = db.journalEntry;
+  const InvoiceTracker = db.invoice_tracker;
 
-  try {
-    const db = getDb();
-    const t = await db.sequelize.transaction();
-    const Entry = db.entry;
-    const EntryField = db.entryField;
-    const JournalItem = db.journalItem;
-    const JournalEntry = db.journalEntry;
-    const InvoiceTracker = db.invoice_tracker;
-    const invoiceNumber = entries[0].invoiceNumber;
-    const journalDate = entries[0].entry_date;
-    const userId = entries[0].user_id;
-    const financialYear = entries[0].financial_year;
-    const type = entries[0].type;
-    let next_seq_no = entries[0].s_no;
+  const invoiceNumber = entries[0].invoiceNumber;
+  const journalDate = entries[0].entry_date;
+  const userId = entries[0].user_id;
+  const financialYear = entries[0].financial_year;
+  const type = entries[0].type;
+  let next_seq_no = entries[0].s_no;
 
-    // Step 1: Get the next sequence ID for the invoice group
-    const [[{ next_sequence_id }]] = await db.sequelize.query(
-      `SELECT nextval('group_entries_seq') AS next_sequence_id`
-    );
+  const [[{ next_sequence_id }]] = await db.sequelize.query(
+    `SELECT nextval('group_entries_seq') AS next_sequence_id`
+  );
 
-    // Step 1: Get the latest last_sno for the given combination
-    const existingTracker = await InvoiceTracker.findOne({
-      where: { user_id: userId, financial_year: financialYear, type: type },
-      transaction: t
-    });
+  const existingTracker = await InvoiceTracker.findOne({
+    where: { user_id: userId, financial_year: financialYear, type },
+    transaction
+  });
 
-    const [updatedTracker] = await InvoiceTracker.upsert(
-      {
-        user_id: userId,
-        financial_year: financialYear,
-        type: type,
-        last_sno: existingTracker ? existingTracker.last_sno + 1 : 1 // ✅ Increment or start from 1
-      },
-      {
-        transaction: t,
-        returning: true,
-        conflictFields: ['user_id', 'financial_year', 'type'], // ✅ Ensure correct conflict resolution
-      }
-    );
-
-
-    if (!next_seq_no) {
-      // Get the latest `last_sNo` for further processing
-      next_seq_no = updatedTracker?.last_sno ?? 1;
-    }
-
-    // Step 2: Insert a new journal entry
-    const journalEntry = await JournalEntry.create({
-      journal_date: journalDate,
+  const [updatedTracker] = await InvoiceTracker.upsert(
+    {
       user_id: userId,
       financial_year: financialYear,
-      type: type,
-      invoiceNumber: invoiceNumber,
-      invoice_seq_id: next_sequence_id // Store the sequence ID
-    }, { transaction: t });
-
-    const allJournalItems = [];
-    let total_amount = 0;
-
-    const updatedEntries = []; // Array to store entries with assigned IDs
-
-    for (const entry of entries) {
-      // Remove dynamicFields from entry before creating new Entry
-      const { dynamicFields, id, customerName, ...entryWithoutDynamicFields } = entry;
-
-      // Step 2: Insert a new entry with the journal_id
-      entryWithoutDynamicFields.journal_id = journalEntry.id;
-      entryWithoutDynamicFields.invoice_seq_id = next_sequence_id; // Assign the same sequence ID
-      entryWithoutDynamicFields.sNo = next_seq_no; // Assign the same sequence ID
-      const newEntry = await Entry.create(entryWithoutDynamicFields, { transaction: t });
-
-      const entryFields = dynamicFields.map(field => ({
-        entry_id: newEntry.id,
-        field_id: field.field_id,
-        field_value: field.field_value
-      }));
-      await EntryField.bulkCreate(entryFields, { transaction: t });
-
-      // Determine the amount based on exclude_from_total and field_category
-      const amount = dynamicFields.some(field => field.field_category === 1 && field.exclude_from_total) ? entry.value : entry.total_amount;
-      total_amount += parseFloat(amount); // Parse the amount before summation
-
-      // Add new entry with assigned ID to updatedEntries array, keeping dynamicFields the same
-      updatedEntries.push({
-        ...newEntry.toJSON(),
-        dynamicFields: dynamicFields,
-      });
-
-      // Step 3: Insert journal items for the entry
-      const journalItems = await getJournalItems(entry, dynamicFields, journalEntry.id, amount, customerName);
-      allJournalItems.push(...journalItems);
+      type,
+      last_sno: existingTracker ? existingTracker.last_sno + 1 : 1
+    },
+    {
+      transaction,
+      returning: true,
+      conflictFields: ['user_id', 'financial_year', 'type'],
     }
+  );
 
-    // Create party journal item once per invoice
-    const partyJournalItems = await getPartyJournalItems(entries[0], total_amount, journalEntry.id);
-    // Add partyJournalItems to the front of the allJournalItems array
-    allJournalItems.unshift(...partyJournalItems);
+  if (!next_seq_no) {
+    next_seq_no = updatedTracker?.last_sno ?? 1;
+  }
 
-    // console.log(allJournalItems.length);
+  const journalEntry = await JournalEntry.create({
+    journal_date: journalDate,
+    user_id: userId,
+    financial_year: financialYear,
+    type,
+    invoiceNumber,
+    invoice_seq_id: next_sequence_id
+  }, { transaction });
 
-    await JournalItem.bulkCreate(allJournalItems, {
-      fields: ['journal_id', 'account_id', 'group_id', 'amount', 'type', 'createdAt', 'updatedAt', 'narration'],
-      returning: ['journal_id', 'account_id', 'group_id', 'amount', 'type', 'createdAt', 'updatedAt', 'narration'],
-      transaction: t
+  const allJournalItems = [];
+  let total_amount = 0;
+  const updatedEntries = [];
+
+  for (const entry of entries) {
+    const { dynamicFields, id, customerName, ...entryWithoutDynamicFields } = entry;
+
+    entryWithoutDynamicFields.journal_id = journalEntry.id;
+    entryWithoutDynamicFields.invoice_seq_id = next_sequence_id;
+    entryWithoutDynamicFields.sNo = next_seq_no;
+
+    const newEntry = await Entry.create(entryWithoutDynamicFields, { transaction });
+
+    const entryFields = dynamicFields.map(field => ({
+      entry_id: newEntry.id,
+      field_id: field.field_id,
+      field_value: field.field_value
+    }));
+    await EntryField.bulkCreate(entryFields, { transaction });
+
+    const amount = dynamicFields.some(field => field.field_category === 1 && field.exclude_from_total)
+      ? entry.value
+      : entry.total_amount;
+
+    total_amount += parseFloat(amount);
+
+    updatedEntries.push({
+      ...newEntry.toJSON(),
+      dynamicFields
     });
 
-    await t.commit();
-
-    return {
-      message: 'Entries created successfully',
-      data: {
-        entries: updatedEntries,
-        group: { type },
-        journalEntry: {
-          id: journalEntry.id,
-          journal_date: journalEntry.journal_date,
-          type: journalEntry.type,
-          items: allJournalItems,
-        },
-        invoiceNumber,
-        invoice_seq_id: next_sequence_id,
-      },
-    };
-  } catch (error) {
-    console.error(error);
-    await t.rollback();
-    throw new Error('Internal server error');
+    const journalItems = await getJournalItems(entry, dynamicFields, journalEntry.id, amount, customerName);
+    allJournalItems.push(...journalItems);
   }
+
+  const partyJournalItems = await getPartyJournalItems(entries[0], total_amount, journalEntry.id);
+  allJournalItems.unshift(...partyJournalItems);
+
+  await JournalItem.bulkCreate(allJournalItems, {
+    fields: ['journal_id', 'account_id', 'group_id', 'amount', 'type', 'createdAt', 'updatedAt', 'narration'],
+    returning: ['journal_id', 'account_id', 'group_id', 'amount', 'type', 'createdAt', 'updatedAt', 'narration'],
+    transaction
+  });
+
+  return {
+    message: 'Entries created successfully',
+    data: {
+      entries: updatedEntries,
+      group: { type },
+      journalEntry: {
+        id: journalEntry.id,
+        journal_date: journalEntry.journal_date,
+        type: journalEntry.type,
+        items: allJournalItems,
+      },
+      invoiceNumber,
+      invoice_seq_id: next_sequence_id,
+    },
+  };
 };
+
 
 exports.addCashEntriesService = async (entries, transaction) => {
   const db = getDb();

@@ -65,6 +65,8 @@ function groupMessages(Messages) {
         const financialYear = attributes.financialYear.StringValue;
         const fileType = attributes.fileType?.StringValue;
         const exportId = attributes.exportId?.StringValue;
+        const batchId = attributes.batchId?.StringValue;
+        const messageType = attributes.messageType?.StringValue;
         const isInvoiceProcessing = attributes.type?.StringValue && attributes.taxType?.StringValue;
 
         let type = isInvoiceProcessing
@@ -75,13 +77,16 @@ function groupMessages(Messages) {
         if (exportId) {
             type = parseInt(exportId);
         }
+        if (messageType) {
+            type = parseInt(batchId);
+        }
 
         const transactionData = JSON.parse(message.Body);
         const isStatement = type === "bank";
-        const key = exportId
+        const key = exportId || messageType
             ? `${userId}_${financialYear}_${fileType}`
-            : isStatement ? `${userId}_${financialYear}_${parseInt(attributes.accountId.StringValue)}`
-                : `${userId}_${financialYear}_${type}`;
+            : isStatement ? `${userId}_${financialYear}_${parseInt(attributes.accountId.StringValue)}_${parseInt(batchId)}`
+                : `${userId}_${financialYear}_${type}_${parseInt(batchId)}`;
 
         if (!groupedMessages.has(key)) groupedMessages.set(key, {});
 
@@ -104,17 +109,19 @@ function groupMessages(Messages) {
 
 async function processGroupedTransactions(key, transactionRecords) {
     const suspenseAccountName = "Suspense Account";
-    const exportTypes = ["daybook", "accountCopy", "ledger", "trailBalance"];
-    const [userId, financialYear, typeOrAccountId] = key.split("_").map(val => isNaN(val) ? val : parseInt(val));
+    const exportTypes = ["daybook", "accountCopy", "ledger", "trailBalanceExport"];
+    const uploadTypes = ["bankStatement", "trailBalanceUpload", "purchaseCgst", "purchaseIgst", "creditSaleCgst", "creditSaleIgst", "cashSaleCgst", "cashSaleIgst"];
+    const [userId, financialYear, typeOrAccountId, batchId] = key.split("_").map(val => isNaN(val) ? val : parseInt(val));
 
-    const validCSVIdentifiers = ['1-cgst', '1-igst', '2-cgst', '2-igst'];
+    const validCSVIdentifiers = ['1-cgst', '1-igst', '2-cgst', '2-igst', '8-cgst', '8-igst'];
     const isCSVInvoice = validCSVIdentifiers.includes(typeOrAccountId);
-    const isTrailBalance = typeOrAccountId === "trialBalance";
+    const isTrailBalance = typeOrAccountId === "trailBalance";
     const isExport = exportTypes.includes(typeOrAccountId);
-    const accountId = isCSVInvoice || isTrailBalance || isExport ? null : typeOrAccountId;
+    const isSummary = uploadTypes.includes(typeOrAccountId);
+    const accountId = isCSVInvoice || isTrailBalance || isExport || isSummary ? null : typeOrAccountId;
 
 
-    const validTypes = ['1', '2'];
+    const validTypes = ['1', '2', '8'];
     const validTaxTypes = ['cgst', 'igst'];
 
     let type = null;
@@ -129,7 +136,7 @@ async function processGroupedTransactions(key, transactionRecords) {
         }
     }
 
-    console.log(`Processing ${isCSVInvoice ? "CSV Invoices" : "PDF"} for User: ${userId}, Financial Year: ${financialYear}, Account ID: ${accountId || "N/A"}`);
+    console.log(`Processing ${isCSVInvoice ? "CSV Invoices" : "PDF"} for User: ${userId}, Financial Year: ${financialYear},batch Id :${batchId} || "N/A", Account ID: ${accountId || "N/A"}`);
 
     let cachedData;
     // console.log(cachedData);
@@ -147,7 +154,8 @@ async function processGroupedTransactions(key, transactionRecords) {
             suspenseAccountName: suspenseAccountName.toLowerCase(),
             bankAccount: findBankAccountById(cachedData.accountMap, accountId),
             userId,
-            financialYear
+            financialYear,
+            batchId
         });
 
     } else if (isTrailBalance) {
@@ -173,6 +181,12 @@ async function processGroupedTransactions(key, transactionRecords) {
             financialYear,
         });
 
+    } else if (isSummary) {
+
+        await uploadService.processSummaryStatus({
+            groupedRecords: transactionRecords
+        });
+
     } else {
         // ✅ Process CSV invoices
         await loadAndCacheInvoiceData(userId, financialYear, type, cachedData);
@@ -189,7 +203,8 @@ async function processGroupedTransactions(key, transactionRecords) {
             userId,
             financialYear,
             type,
-            taxType
+            taxType,
+            batchId
         });
     }
 }
@@ -209,7 +224,8 @@ async function loadAndCacheInvoiceData(userId, financialYear, type, cachedData) 
     }
 
     if (!cachedData[`${selectedPrefix}CategoryMap`]) {
-        cachedData[`${selectedPrefix}Categories`] = await fetchCategories({ type, userId, financialYear });
+        const normalizedType = type === 8 ? 2 : type; // 👈 Treat type 8 as 2
+        cachedData[`${selectedPrefix}Categories`] = await fetchCategories({ type: normalizedType, userId, financialYear });
         cachedData[`${selectedPrefix}CategoryMap`] = invoiceUtils.categorizeCategoriesByGstRate(cachedData[`${selectedPrefix}Categories`]);
     }
 

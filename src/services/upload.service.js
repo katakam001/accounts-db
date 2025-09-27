@@ -3,6 +3,7 @@ const moment = require('moment-timezone');
 const { v5: uuidv5 } = require("uuid");
 const invoiceUtils = require('../utils/invoiceUtils');
 const entryService = require('../services/entry.service');
+const messageTrackingService = require('../services/messageTrackingLog.service');
 const cache = require("../services/cache.service"); // ✅ Import shared cache service
 
 const NAMESPACE = "6ba7b810-9dad-11d1-80b4-00c04fd430c8"; // A predefined namespace
@@ -316,7 +317,7 @@ function syncAccountIntoCache({ userId, financialYear, accountName, accountId, g
     cache.setCache(cacheKey, cachedData);
 }
 
-exports.processTransactions = async ({ groupedRecords, accountMap, suspenseAccountName, bankAccount, userId, financialYear }) => {
+exports.processTransactions = async ({ groupedRecords, accountMap, suspenseAccountName, bankAccount, userId, financialYear, batchId }) => {
 
     const db = getDb(); // Get database instance
     const t = await db.sequelize.transaction(); // Start a transaction
@@ -344,153 +345,158 @@ exports.processTransactions = async ({ groupedRecords, accountMap, suspenseAccou
         for (const [transactionId, records] of Object.entries(groupedRecords)) {
             // ✅ Check if transaction was already processed
             if (await isDuplicateEntry(transactionId, userId, financialYear, 0)) {
+                await messageTrackingService.insertTrackingRecord({ batchId, transactionId, userId, financialYear, type: 0, status: 1 }, t); // optional Sequelize transaction
+                await trackMessageAndCheck(batchId, 1, t);
                 console.log(`Duplicate detected for Transaction ID: ${transactionId}, skipping...`);
-                continue; // Skip processing
-            }
-            const journalDate = moment(records[0].date, 'DD/MM/YYYY').tz('Asia/Kolkata')
-                .set({ hour: 5, minute: 30, second: 0 });
-            let totalAmount = 0;
-            let type;
-            let createCashEntry = false;
-            const cashEntries = []; // List of cash entries for batch processing
-            const journalItems = []; // List of journal items for batch processing
-
-            for (const record of records) {
-
-                if (parseFloat(record.debit) === parseFloat(record.credit) && parseFloat(record.credit) === 0.00) {
-                    continue;
-                }
-                const remarks = record.description.toLowerCase();
-                const amount = parseFloat(record.debit) > 0 ? parseFloat(record.debit) : parseFloat(record.credit);
-
-                if (
-                    !remarks.includes("cash dep chrgs") && (
-                        remarks.includes("by cash") ||
-                        remarks.includes("cardless deposit") ||
-                        remarks.includes("cwdr") ||
-                        remarks.includes("to cash self") ||
-                        remarks.includes("to self") ||
-                        remarks.includes("paid to self") ||
-                        remarks.includes("self") ||
-                        remarks.includes("to cash") ||
-                        remarks.includes("atm cash") ||
-                        remarks.includes("atm wdl") ||
-                        remarks.includes("atm-nfs") ||
-                        remarks.includes("atw-") ||
-                        remarks.includes("cash deposit") ||
-                        remarks.includes("cash dep") ||
-                        remarks.includes("csh dep") ||
-                        remarks.includes("to cheque") ||
-                        remarks.includes("cam/") ||
-                        remarks.includes("cash") ||
-                        remarks.includes("atm|") ||
-                        remarks.includes("atm/")
-                    )
-                ) {
-                    createCashEntry = true;
-
-                    // Prepare a cash entry for batch table
-                    cashEntries.push({
-                        cash_date: journalDate,
-                        narration: record.description,
-                        account_id: bankAccount.accountId,
-                        group_id: bankAccount.groupId,
-                        type: !checkAmountType({ debit: record["debit"], credit: record["credit"] }),
-                        amount,
-                        user_id: userId,
-                        financial_year: financialYear,
-                        transaction_id: transactionId,
-                        is_cash_adjustment: false
-                    });
-                    cashEntries.push({
-                        cash_date: journalDate,
-                        narration: bankAccount.account_name,
-                        account_id: accountMap.get("cash").accountId,
-                        group_id: accountMap.get("cash").groupId,
-                        type: checkAmountType({ debit: record["debit"], credit: record["credit"] }),
-                        amount,
-                        user_id: userId,
-                        financial_year: financialYear,
-                        transaction_id: transactionId,
-                        is_cash_adjustment: true
-                    });
-
-                    totalAmount += amount; // Keep track of the total
-                } else {
-                    let matchedAccount = null;
-                    if (remarks.includes("charges") || remarks.includes("chrgs")) {
-                        matchedAccount = "bank charges";
-                    } else {
-                        for (const accountName of accountMap.keys()) {
-                            if (remarks.includes(accountName.toLowerCase())) {
-                                matchedAccount = accountName;
-                                break;
-                            }
-                        }
-                        type = !checkAmountType({ debit: record["debit"], credit: record["credit"] });
-                    }
-                    const accountDetails = matchedAccount
-                        ? accountMap.get(matchedAccount)
-                        : accountMap.get(suspenseAccountName);
-
-                    totalAmount += amount;
-
-                    journalItems.push({
-                        journal_id: null,
-                        account_id: accountDetails.accountId,
-                        narration: record.description,
-                        group_id: accountDetails.groupId,
-                        amount,
-                        type: checkAmountType({ debit: record["debit"], credit: record["credit"] }),
-                    });
-                }
-            }
-
-            if (createCashEntry) {
-                // Insert cash entries into cash_entries_batch
-                await CashEntryBatch.bulkCreate(cashEntries, { transaction: t });
-                console.log(`Batch cash entries created for transactionId: ${transactionId}`);
             } else {
-                const journalEntry = await JournalEntry.create({
-                    journal_date: journalDate,
+                const journalDate = moment(records[0].date, 'DD/MM/YYYY').tz('Asia/Kolkata')
+                    .set({ hour: 5, minute: 30, second: 0 });
+                let totalAmount = 0;
+                let type;
+                let createCashEntry = false;
+                const cashEntries = []; // List of cash entries for batch processing
+                const journalItems = []; // List of journal items for batch processing
+
+                for (const record of records) {
+
+                    if (parseFloat(record.debit) === parseFloat(record.credit) && parseFloat(record.credit) === 0.00) {
+                        continue;
+                    }
+                    const remarks = record.description.toLowerCase();
+                    const amount = parseFloat(record.debit) > 0 ? parseFloat(record.debit) : parseFloat(record.credit);
+
+                    if (
+                        !remarks.includes("cash dep chrgs") && (
+                            remarks.includes("by cash") ||
+                            remarks.includes("cardless deposit") ||
+                            remarks.includes("cwdr") ||
+                            remarks.includes("to cash self") ||
+                            remarks.includes("to self") ||
+                            remarks.includes("paid to self") ||
+                            remarks.includes("self") ||
+                            remarks.includes("to cash") ||
+                            remarks.includes("atm cash") ||
+                            remarks.includes("atm wdl") ||
+                            remarks.includes("atm-nfs") ||
+                            remarks.includes("atw-") ||
+                            remarks.includes("cash deposit") ||
+                            remarks.includes("cash dep") ||
+                            remarks.includes("csh dep") ||
+                            remarks.includes("to cheque") ||
+                            remarks.includes("cam/") ||
+                            remarks.includes("cash") ||
+                            remarks.includes("atm|") ||
+                            remarks.includes("atm/")
+                        )
+                    ) {
+                        createCashEntry = true;
+
+                        // Prepare a cash entry for batch table
+                        cashEntries.push({
+                            cash_date: journalDate,
+                            narration: record.description,
+                            account_id: bankAccount.accountId,
+                            group_id: bankAccount.groupId,
+                            type: !checkAmountType({ debit: record["debit"], credit: record["credit"] }),
+                            amount,
+                            user_id: userId,
+                            financial_year: financialYear,
+                            transaction_id: transactionId,
+                            is_cash_adjustment: false
+                        });
+                        cashEntries.push({
+                            cash_date: journalDate,
+                            narration: bankAccount.account_name,
+                            account_id: accountMap.get("cash").accountId,
+                            group_id: accountMap.get("cash").groupId,
+                            type: checkAmountType({ debit: record["debit"], credit: record["credit"] }),
+                            amount,
+                            user_id: userId,
+                            financial_year: financialYear,
+                            transaction_id: transactionId,
+                            is_cash_adjustment: true
+                        });
+
+                        totalAmount += amount; // Keep track of the total
+                    } else {
+                        let matchedAccount = null;
+                        if (remarks.includes("charges") || remarks.includes("chrgs")) {
+                            matchedAccount = "bank charges";
+                        } else {
+                            for (const accountName of accountMap.keys()) {
+                                if (remarks.includes(accountName.toLowerCase())) {
+                                    matchedAccount = accountName;
+                                    break;
+                                }
+                            }
+                            type = !checkAmountType({ debit: record["debit"], credit: record["credit"] });
+                        }
+                        const accountDetails = matchedAccount
+                            ? accountMap.get(matchedAccount)
+                            : accountMap.get(suspenseAccountName);
+
+                        totalAmount += amount;
+
+                        journalItems.push({
+                            journal_id: null,
+                            account_id: accountDetails.accountId,
+                            narration: record.description,
+                            group_id: accountDetails.groupId,
+                            amount,
+                            type: checkAmountType({ debit: record["debit"], credit: record["credit"] }),
+                        });
+                    }
+                }
+
+                if (createCashEntry) {
+                    // Insert cash entries into cash_entries_batch
+                    await CashEntryBatch.bulkCreate(cashEntries, { transaction: t });
+                    console.log(`Batch cash entries created for transactionId: ${transactionId}`);
+                } else {
+                    const journalEntry = await JournalEntry.create({
+                        journal_date: journalDate,
+                        transaction_id: transactionId,
+                        user_id: userId,
+                        financial_year: financialYear,
+                        type: 0,
+                    }, { transaction: t });
+
+                    journalItems.forEach((item) => {
+                        item.journal_id = journalEntry.id;
+                    });
+
+                    const cashAccount = accountMap.get(bankAccount.accountName);
+                    if (cashAccount) {
+                        journalItems.push({
+                            journal_id: journalEntry.id,
+                            account_id: cashAccount.accountId,
+                            narration: records[0].description,
+                            group_id: cashAccount.groupId,
+                            amount: totalAmount,
+                            type: type,
+                        });
+                    }
+
+                    await JournalItem.bulkCreate(journalItems, {
+                        fields: ['journal_id', 'account_id', 'group_id', 'amount', 'type', 'createdAt', 'updatedAt', 'narration'],
+                        returning: ['journal_id', 'account_id', 'group_id', 'amount', 'type', 'createdAt', 'updatedAt', 'narration'],
+                        transaction: t,
+                    });
+
+                    console.log(`Journal entry and items created for transactionId: ${transactionId}`);
+                }
+                // ✅ Insert the processed transaction into `uploaded_file_log` to prevent duplicates
+                await uploadedFileLog.create({
+                    hash: generateUniqueId(transactionId, userId, financialYear,0),
                     transaction_id: transactionId,
                     user_id: userId,
                     financial_year: financialYear,
-                    type: 0,
+                    type: 0
                 }, { transaction: t });
-
-                journalItems.forEach((item) => {
-                    item.journal_id = journalEntry.id;
-                });
-
-                const cashAccount = accountMap.get(bankAccount.accountName);
-                if (cashAccount) {
-                    journalItems.push({
-                        journal_id: journalEntry.id,
-                        account_id: cashAccount.accountId,
-                        narration: records[0].description,
-                        group_id: cashAccount.groupId,
-                        amount: totalAmount,
-                        type: type,
-                    });
-                }
-
-                await JournalItem.bulkCreate(journalItems, {
-                    fields: ['journal_id', 'account_id', 'group_id', 'amount', 'type', 'createdAt', 'updatedAt', 'narration'],
-                    returning: ['journal_id', 'account_id', 'group_id', 'amount', 'type', 'createdAt', 'updatedAt', 'narration'],
-                    transaction: t,
-                });
-
-                console.log(`Journal entry and items created for transactionId: ${transactionId}`);
+                await messageTrackingService.insertTrackingRecord({ batchId, transactionId, userId, financialYear, type: 0, status: 0 }, t); // optional Sequelize transaction
+                // 🔹 Track and check for completion
+                await trackMessageAndCheck(batchId, 0, t);
             }
-            // ✅ Insert the processed transaction into `uploaded_file_log` to prevent duplicates
-            await uploadedFileLog.create({
-                hash: generateUniqueId(transactionId, userId, financialYear),
-                transaction_id: transactionId,
-                user_id: userId,
-                financial_year: financialYear,
-                type: 0
-            }, { transaction: t });
         }
 
         // Step 2: Mark batch operation as complete
@@ -546,8 +552,28 @@ exports.processExportStatus = async ({ groupedRecords, userId, financialYear }) 
     }
 };
 
+exports.processSummaryStatus = async ({ groupedRecords }) => {
+    const db = getDb();
+    const t = await db.sequelize.transaction();
 
-exports.processInvoiceTransactions = async ({ extractedData, categoryAccountMap, accountMap, categoryMap, itemsMap, unitIdMap, dynamicFieldsMap, suspenseAccountName, userId, financialYear, type, taxType }) => {
+    try {
+        const Exports = db.exports;
+
+        for (const [batchId, records] of Object.entries(groupedRecords)) {
+            for (const record of records) {
+                await handleSummaryMessage(record, t);
+            }
+        }
+        await t.commit();
+        console.log("✅ All Export status processed successfully.");
+    } catch (error) {
+        await t.rollback();
+        console.error("❌ Error processing export status update:", error);
+    }
+};
+
+
+exports.processInvoiceTransactions = async ({ extractedData, categoryAccountMap, accountMap, categoryMap, itemsMap, unitIdMap, dynamicFieldsMap, suspenseAccountName, userId, financialYear, type, taxType, batchId }) => {
     try {
         // console.log(extractedData);
         // console.log(categoryAccountMap);
@@ -597,30 +623,47 @@ exports.processInvoiceTransactions = async ({ extractedData, categoryAccountMap,
         }, new Map());
 
         // Process each group of entries by invoiceNumber
-        for (const [invoiceNumber, invoiceEntries] of groupedEntries) {
-            console.log(`Processing invoice ${invoiceNumber} with ${invoiceEntries.length} entries.`);
-            // console.log(`Processing invoice ${invoiceNumber} with ${JSON.stringify(invoiceEntries, null, 2)} entries.`);
-            try {
-                const db = getDb(); // Get database instance
-                const uploadedFileLog = db.uploadedFileLog;
-                if (await isDuplicateEntry(invoiceNumber, userId, financialYear, type)) {
-                    console.log(`Duplicate detected for Invoice Number: ${invoiceNumber}, skipping...`);
-                    continue; // Skip processing
-                }
-                const items = await entryService.addEntriesService(invoiceEntries); // Process each group
-                await uploadedFileLog.create({
-                    hash: generateUniqueId(invoiceNumber, userId, financialYear),
-                    transaction_id: invoiceNumber,
-                    user_id: userId,
-                    financial_year: financialYear,
-                    type: type
-                });
-                console.log(`Invoice ${invoiceNumber} processed successfully:`, items);
+        const db = getDb();
+        const uploadedFileLog = db.uploadedFileLog;
+        const t = await db.sequelize.transaction(); // ✅ Create transaction once
 
-            } catch (error) {
-                console.error(error);
-                throw new Error('Internal server error');
+        try {
+            for (const [invoiceNumber, invoiceEntries] of groupedEntries) {
+                console.log(`Processing invoice ${invoiceNumber} with ${invoiceEntries.length} entries.`);
+
+                if (await isDuplicateEntry(invoiceNumber, userId, financialYear, type)) {
+                    await messageTrackingService.insertTrackingRecord({ batchId, transactionId: invoiceNumber, userId, financialYear, type, status: 1 }, t); // optional Sequelize transaction
+                    await trackMessageAndCheck(batchId, 1, t);
+                    console.log(`Duplicate detected for Invoice Number: ${invoiceNumber}, skipping...`);
+                } else {
+                    let result;
+                    if (type === 8) {
+                        result = await entryService.addCashEntriesService(invoiceEntries, t);
+                    } else if (type === 1 || type === 2) {
+                        result = await entryService.addEntriesService(invoiceEntries, t);
+                    } else {
+                        throw new Error(`Unsupported type: ${type}`);
+                    }
+
+                    await uploadedFileLog.create({
+                        hash: generateUniqueId(invoiceNumber, userId, financialYear, type),
+                        transaction_id: invoiceNumber,
+                        user_id: userId,
+                        financial_year: financialYear,
+                        type: type
+                    }, { transaction: t });
+
+                    await messageTrackingService.insertTrackingRecord({ batchId, transactionId: invoiceNumber, userId, financialYear, type, status: 0 }, t); // optional Sequelize transaction
+                    await trackMessageAndCheck(batchId, 0, t);
+                    console.log(`Invoice ${invoiceNumber} processed successfully:`, result);
+                }
             }
+
+            await t.commit(); // ✅ Commit once after all invoices
+        } catch (error) {
+            console.error(error);
+            await t.rollback(); // ❌ Rollback everything if any invoice fails
+            throw new Error('Internal server error');
         }
 
     } catch (error) {
@@ -628,8 +671,130 @@ exports.processInvoiceTransactions = async ({ extractedData, categoryAccountMap,
     }
 };
 
-const generateUniqueId = (transactionId, userId, financialYear) => {
-    return uuidv5(`${transactionId}-${userId}-${financialYear}`, NAMESPACE);
+async function handleSummaryMessage(summary, transaction = null) {
+    const db = getDb();
+    const UploadHistory = db.uploadHistory;
+
+    try {
+        const { batchId, totalMessages, status, timestamp, errorMessage = null } = summary;
+
+        // 🔹 Step 1: Update upload_history with summary status and total_messages
+        await UploadHistory.update(
+            {
+                status,
+                total_messages: totalMessages,
+                error_message: errorMessage,
+                completed_at: timestamp ? new Date(timestamp) : null
+            },
+            { where: { id: batchId }, transaction }
+        );
+
+        // 🔹 Step 2: Cache total_messages for tracking
+        cache.setCache(`${batchId}_total`, totalMessages, 3600);
+
+        // 🔹 Step 3: Fetch processed and skipped counts from cache
+        const processedCount = cache.getCache(`${batchId}_processed`) || 0;
+        const skippedCount = cache.getCache(`${batchId}_skipped`) || 0;
+
+        // 🔹 Step 4: Check for completion
+        if (totalMessages > 0 && (processedCount + skippedCount === totalMessages)) {
+            await UploadHistory.update(
+                {
+                    status: 7,
+                    completed_at: new Date(),
+                    processed_messages: processedCount,
+                    skipped_messages: skippedCount
+                },
+                { where: { id: batchId }, transaction }
+            );
+
+            // 🔹 Step 5: Cleanup cache
+            cache.deleteCache(`${batchId}_processed`);
+            cache.deleteCache(`${batchId}_skipped`);
+            cache.deleteCache(`${batchId}_total`);
+
+            console.log(`✅ Batch ${batchId} completed with ${processedCount} processed and ${skippedCount} skipped.`);
+        } else {
+            console.log(`⏳ Summary received for batch ${batchId}, waiting for messages...`);
+        }
+    } catch (error) {
+        console.error(`❌ Error in handleSummaryMessage for batch ${summary?.batchId}:`, error.message);
+        throw error;
+    }
+}
+
+async function trackMessageAndCheck(batchId, messageStatus, transaction = null) {
+    const db = getDb();
+    const UploadHistory = db.uploadHistory;
+
+    try {
+        console.log(`🧠 batchId type:`, typeof batchId, `value:`, batchId);
+
+        // 🔹 Step 1: Increment correct counter in cache
+        if (messageStatus === 0) {
+            const currentProcessed = cache.getCache(`${batchId}_processed`) || 0;
+            cache.setCache(`${batchId}_processed`, currentProcessed + 1);
+        } else if (messageStatus === 1) {
+            const currentSkipped = cache.getCache(`${batchId}_skipped`) || 0;
+            cache.setCache(`${batchId}_skipped`, currentSkipped + 1);
+        }
+
+        // 🔹 Step 2: Fetch total_messages from cache or DB
+        let totalMessages = cache.getCache(`${batchId}_total`);
+        if (!totalMessages) {
+            const upload = await UploadHistory.findByPk(batchId, { transaction });
+            totalMessages = upload?.total_messages;
+            cache.setCache(`${batchId}_total`, totalMessages, 3600);
+        }
+
+        // 🔹 Step 3: Extend TTL if close to expiry and large batch
+        const now = Math.floor(Date.now() / 1000);
+        const ttl = cache.getTtl(`${batchId}_processed`);
+        const remainingTTL = ttl ? ttl - now : 0;
+
+        const processedCount = cache.getCache(`${batchId}_processed`) || 0;
+        const skippedCount = cache.getCache(`${batchId}_skipped`) || 0;
+        const remainingMessages = totalMessages - (processedCount + skippedCount);
+
+        if (remainingTTL < 900) {
+            if (remainingMessages > 10000) {
+                cache.ttl(`${batchId}_processed`, 10800);
+                cache.ttl(`${batchId}_skipped`, 10800);
+            } else if (remainingMessages > 5000) {
+                cache.ttl(`${batchId}_processed`, 7200);
+                cache.ttl(`${batchId}_skipped`, 7200);
+            } else {
+                cache.ttl(`${batchId}_processed`, 3600);
+                cache.ttl(`${batchId}_skipped`, 3600);
+            }
+            console.log(`⏳ TTL extended for batch ${batchId} (remaining: ${remainingMessages} messages)`);
+        }
+
+        // 🔹 Step 4: Check for completion
+        if (processedCount + skippedCount === totalMessages) {
+            await UploadHistory.update(
+                {
+                    status: 7,
+                    completed_at: new Date(),
+                    processed_messages: processedCount,
+                    skipped_messages: skippedCount
+                },
+                { where: { id: batchId }, transaction }
+            );
+
+            cache.deleteCache(`${batchId}_processed`);
+            cache.deleteCache(`${batchId}_skipped`);
+            cache.deleteCache(`${batchId}_total`);
+            console.log(`🎉 Batch ${batchId} marked as completed with ${processedCount} processed and ${skippedCount} skipped.`);
+        }
+    } catch (error) {
+        console.error(`❌ Error in trackMessageAndCheck for batch ${batchId}:`, error.message);
+        throw error;
+    }
+}
+
+const generateUniqueId = (transactionId, userId, financialYear, type) => {
+    return uuidv5(`${transactionId}-${userId}-${financialYear}-${type}`, NAMESPACE);
 };
 
 const isDuplicateEntry = async (transactionId, userId, financialYear, type) => {

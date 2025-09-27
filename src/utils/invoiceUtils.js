@@ -103,11 +103,11 @@ exports.createEntriesForInvoice = (
     { rate: 28, valueKey: 'GstValue28', field: "gst28" },
   ];
 
-  gstFields.forEach(({ rate, valueKey,field }) => {
+  gstFields.forEach(({ rate, valueKey, field }) => {
     // console.log(extractedData);
     // console.log(extractedData[valueKey]);
     const gstValue = extractedData[valueKey]; // Get the GST value for this rate
-        const gst = field ? extractedData[field] : 0;
+    const gst = field ? extractedData[field] : 0;
     // console.log(gstValue);
     if (gstValue > 0) {
       const itemName = extractedData["ItemName"];
@@ -133,14 +133,14 @@ exports.createEntriesForInvoice = (
 
       // Retrieve account_id using extractedData.Name (lowercase) or use Suspense Account
       const accountNameKey = extractedData.Name.toLowerCase();
-      const account = accountMap.get(accountNameKey) || accountMap.get(suspenseAccountName.toLowerCase());
+      const account = type === 8 ? accountMap.get(accountNameKey) || null : accountMap.get(accountNameKey) || accountMap.get(suspenseAccountName.toLowerCase());
       const customerName = accountMap.has(accountNameKey) ? extractedData.Name : suspenseAccountName;
       if (!account) {
         console.error(`Missing account ID for Name: ${accountNameKey}. Defaulting to Suspense Account.`);
       }
 
       // Generate dynamic fields for this entry
-      const dynamicFields = createDynamicFields(categoryId, dynamicFieldsMap, extractedData, gstValue,gst,taxType);
+      const dynamicFields = createDynamicFields(categoryId, dynamicFieldsMap, extractedData, gstValue, gst, taxType);
 
       const quantity = parseFloat(Number(extractedData.Quantity).toFixed(4));
 
@@ -152,7 +152,7 @@ exports.createEntriesForInvoice = (
         item_id: itemId,
         quantity: quantity,
         unit_id: unitId,
-        unit_price: parseFloat((gstValue / quantity).toFixed(2)),
+        unit_price: parseFloat((type === 8 ? (gstValue + gst) / quantity : gstValue / quantity).toFixed(2)),
         value: gstValue,
         total_amount: parseFloat((gstValue + gst).toFixed(2)),
         category_account_id: categoryAccountId,
@@ -161,7 +161,7 @@ exports.createEntriesForInvoice = (
         type, // Hardcoded type
         financial_year: financialYear,
         invoiceNumber: extractedData.FeedNo, // Invoice number from extractedData
-        account_id: account.accountId, // Use accountMap or default to Suspense Account
+        account_id: account ? account.accountId : null, // ✅ Safe fallback
         customerName: customerName,
         dynamicFields, // Populate dynamic fields here
       };
@@ -172,7 +172,7 @@ exports.createEntriesForInvoice = (
   // console.log(entries);
   return entries;
 };
-const createDynamicFields = (categoryId, dynamicFieldsMap, extractedData, gstValue,gst,taxType) => {
+const createDynamicFields = (categoryId, dynamicFieldsMap, extractedData, gstValue, gst, taxType) => {
   const dynamicFields = []; // Initialize the dynamic fields array
 
   const fields = dynamicFieldsMap.get(categoryId) || []; // Retrieve fields for the category_id
@@ -185,7 +185,7 @@ const createDynamicFields = (categoryId, dynamicFieldsMap, extractedData, gstVal
         // Tax calculation logic: extract percentage from field_name
         const taxPercentageMatch = field_name.match(/(\d+(\.\d+)?)%/); // Match percentage like "2.5%","5%","18%"
         const taxPercentage = taxPercentageMatch ? parseFloat(taxPercentageMatch[1]) : 0; // Extract percentage or default to 0
-       let field_value = "0.00";
+        let field_value = "0.00";
 
         if (taxType === 'igst') {
           field_value = gst.toFixed(2);

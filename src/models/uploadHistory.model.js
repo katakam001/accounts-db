@@ -1,0 +1,57 @@
+module.exports = (sequelize, Sequelize) => {
+  const UploadHistory = sequelize.define('UploadHistory', {
+    id: {
+      type: Sequelize.INTEGER,
+      autoIncrement: true,
+      primaryKey: true
+    },
+    user_id: {
+      type: Sequelize.INTEGER,
+      allowNull: false
+    },
+    financial_year: {
+      type: Sequelize.STRING(10),
+      allowNull: false
+    },
+    file_name: {
+      type: Sequelize.STRING(255),
+      allowNull: true
+    },
+    file_type: {
+      type: Sequelize.STRING(25),
+      allowNull: true
+    },
+    total_messages: {
+      type: Sequelize.INTEGER,
+      defaultValue: 0
+    },
+    processed_messages: {
+      type: Sequelize.INTEGER,
+      defaultValue: 0
+    },
+    skipped_messages: {
+      type: Sequelize.INTEGER,
+      defaultValue: 0
+    },
+    status: {
+      type: Sequelize.INTEGER,
+      allowNull: false
+    },
+    error_message: {
+      type: Sequelize.TEXT,
+      allowNull: true
+    },
+    started_at: {
+      type: Sequelize.DATE,
+      defaultValue: Sequelize.literal('CURRENT_TIMESTAMP')
+    },
+    completed_at: {
+      type: Sequelize.DATE,
+      allowNull: true
+    }
+  }, {
+    tableName: 'upload_history'
+  });
+
+  return UploadHistory;
+};
