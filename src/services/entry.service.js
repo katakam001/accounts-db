@@ -348,6 +348,24 @@ exports.processCashEntryLedgerService = async (entries, transaction) => {
   return { message: 'Cash entry ledger processed successfully' };
 };
 
+exports.runCashSalesLedgerJob = async (user_id, financial_year, transaction = null) => {
+  const db = getDb();
+  const sequelize = db.sequelize;
+  try {
+    await sequelize.query(
+      `CALL process_cash_sales_to_entries(:user_id, :financial_year)`,
+      {
+        replacements: { user_id, financial_year },
+        transaction
+      }
+    );
+    return { success: true, message: 'Ledger job executed successfully' };
+  } catch (error) {
+    console.error('Ledger job failed:', error.message);
+    throw new Error('Failed to execute ledger job');
+  }
+};
+
 async function getGroupIdFromAccountId(accountId, userId, financialYear) {
   const db = getDb();
   const Account = db.account;

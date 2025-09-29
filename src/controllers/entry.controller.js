@@ -471,6 +471,37 @@ exports.addCashEntries = async (req, res) => {
   }
 };
 
+exports.triggerLedgerJob = async (req, res) => {
+  const { uploadId } = req.params;
+
+  const db = getDb();
+  const UploadHistory = db.uploadHistory;
+  const transaction = await db.sequelize.transaction();
+  try {
+    const upload = await UploadHistory.findByPk(uploadId, { transaction });
+    if (!upload) {
+      await transaction.rollback();
+      return res.status(404).json({ error: 'Upload not found' });
+    }
+
+    if (
+      upload.status === 7 &&
+      ['cashSaleCgst', 'cashSaleIgst'].includes(upload.file_type)
+    ) {
+      await entryService.runCashSalesLedgerJob(upload.user_id, upload.financial_year, transaction);
+      await upload.update({ status: 8 }, { transaction }); // mark as ledger processed
+      await transaction.commit();
+      return res.json({ message: 'Ledger job triggered successfully' });
+    }
+
+    await transaction.rollback();
+    return res.status(400).json({ error: 'Upload not eligible for ledger job' });
+  } catch (error) {
+    await transaction.rollback();
+    console.error('Ledger job error:', error.message);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+};
 
 async function getGroupIdFromAccountId(accountId, userId, financialYear) {
   const db = getDb();
@@ -756,6 +787,7 @@ exports.updateCashEntries = async (req, res) => {
 
     const deltaMap = new Map();
     const updatedEntries = [];
+    const pendingLinks = [];
 
     const cashAccount = await Account.findOne({
       where: { name: 'CASH', user_id: userId, financial_year: financialYear },
@@ -846,44 +878,18 @@ exports.updateCashEntries = async (req, res) => {
       }));
 
       await CashEntryField.bulkCreate(entryFields, { transaction: t });
-
-      // 🔹 Link to summaries
-      const saleSummary = await DailySummary.findOne({
-        where: {
-          entry_date: newDate,
-          account_id: updatedEntry.category_account_id
-        },
-        transaction: t
+      pendingLinks.push({
+        entry_id: updatedEntry.id,
+        entry_date: newDate,
+        account_id: updatedEntry.category_account_id
       });
 
-      if (saleSummary) {
-        await CashSaleEntryLink.findOrCreate({
-          where: {
-            cash_sale_entry_id: updatedEntry.id,
-            summary_id: saleSummary.id
-          },
-          transaction: t
-        });
-      }
-
       for (const field of dynamicFields || []) {
-        const taxSummary = await DailySummary.findOne({
-          where: {
-            entry_date: newDate,
-            account_id: field.tax_account_id
-          },
-          transaction: t
+        pendingLinks.push({
+          entry_id: updatedEntry.id,
+          entry_date: newDate,
+          account_id: field.tax_account_id
         });
-
-        if (taxSummary) {
-          await CashSaleEntryLink.findOrCreate({
-            where: {
-              cash_sale_entry_id: updatedEntry.id,
-              summary_id: taxSummary.id
-            },
-            transaction: t
-          });
-        }
       }
 
       updatedEntries.push({
@@ -899,8 +905,8 @@ exports.updateCashEntries = async (req, res) => {
       const netAmount = parseFloat((delta.add - delta.subtract).toFixed(2));
       if (netAmount === 0) continue;
 
-      const summary = await DailySummary.findOne({
-        where: { entry_date, account_id },
+      let summary = await DailySummary.findOne({
+        where: { entry_date, account_id, user_id: userId, financial_year: financialYear },
         transaction: t
       });
 
@@ -908,11 +914,33 @@ exports.updateCashEntries = async (req, res) => {
         summary.total_amount = parseFloat(summary.total_amount) + netAmount;
         await summary.save({ transaction: t });
       } else {
-        await DailySummary.create({
+        summary = await DailySummary.create({
           entry_date,
           account_id,
-          total_amount: netAmount
+          total_amount: netAmount,
+          user_id: userId,
+          financial_year: financialYear
         }, { transaction: t });
+      }
+
+      // 🔹 Link to summary immediately
+      console.log(pendingLinks);
+      const linkedEntries = pendingLinks.filter(link =>
+        link.entry_date === entry_date && link.account_id === parseInt(account_id, 10)
+      );
+
+      for (const { entry_id } of linkedEntries) {
+        const exists = await CashSaleEntryLink.findOne({
+          where: { cash_sale_entry_id: entry_id, summary_id: summary.id },
+          transaction: t
+        });
+
+        if (!exists) {
+          await CashSaleEntryLink.create({
+            cash_sale_entry_id: entry_id,
+            summary_id: summary.id
+          }, { transaction: t });
+        }
       }
 
       const account = await Account.findOne({
@@ -1173,7 +1201,7 @@ exports.deleteCashEntries = async (req, res) => {
       if (netAmount === 0) continue;
 
       const summary = await DailySummary.findOne({
-        where: { entry_date, account_id },
+        where: { entry_date, account_id, user_id, financial_year },
         transaction: t
       });
 

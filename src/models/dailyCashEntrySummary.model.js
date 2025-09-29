@@ -22,7 +22,15 @@ module.exports = (sequelize, Sequelize, Account) => {
     total_amount: {
       type: Sequelize.DECIMAL(15, 2),
       allowNull: false
-    }
+    },
+    user_id: {
+      type: Sequelize.INTEGER,
+      allowNull: false
+    },
+    financial_year: {
+      type: Sequelize.TEXT,
+      allowNull: false
+    },
   }, {
     tableName: 'daily_cash_entry_summary'
   });

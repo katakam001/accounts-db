@@ -19,6 +19,7 @@ module.exports = function (app) {
   app.put('/api/entries/bulkEntries', [authJwt.verifyToken], controller.updateEntries);
   app.delete('/api/entries/bulkEntries/:invoice_seq_id/:type', [authJwt.verifyToken], controller.deleteEntries);
   app.post('/api/entries/bulkCashEntries', [authJwt.verifyToken], controller.addCashEntries);
+  app.post('/api/entries/ledgerProcess/:uploadId', [authJwt.verifyToken], controller.triggerLedgerJob);
   app.put('/api/entries/bulkCashEntries', [authJwt.verifyToken], controller.updateCashEntries);
   app.delete('/api/entries/bulkCashEntries/:invoice_seq_id/:type', [authJwt.verifyToken], controller.deleteCashEntries);
 };
