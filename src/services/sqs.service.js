@@ -110,10 +110,10 @@ function groupMessages(Messages) {
 async function processGroupedTransactions(key, transactionRecords) {
     const suspenseAccountName = "Suspense Account";
     const exportTypes = ["daybook", "accountCopy", "ledger", "trailBalanceExport"];
-    const uploadTypes = ["bankStatement", "trailBalanceUpload", "purchaseCgst", "purchaseIgst", "creditSaleCgst", "creditSaleIgst", "cashSaleCgst", "cashSaleIgst"];
+    const uploadTypes = ["bankStatement", "trailBalanceUpload", "purchaseCgst", "purchaseIgst", "creditSaleCgst", "creditSaleIgst", "cashSaleCgst", "cashSaleIgst", "creditNoteCgst", "creditNoteIgst", "debitNoteCgst", "debitNoteIgst",];
     const [userId, financialYear, typeOrAccountId, batchId] = key.split("_").map(val => isNaN(val) ? val : parseInt(val));
 
-    const validCSVIdentifiers = ['1-cgst', '1-igst', '2-cgst', '2-igst', '8-cgst', '8-igst'];
+    const validCSVIdentifiers = ['1-cgst', '1-igst', '2-cgst', '2-igst', '5-cgst', '5-igst', '6-cgst', '6-igst', '8-cgst', '8-igst'];
     const isCSVInvoice = validCSVIdentifiers.includes(typeOrAccountId);
     const isTrailBalance = typeOrAccountId === "trailBalance";
     const isExport = exportTypes.includes(typeOrAccountId);
@@ -121,7 +121,7 @@ async function processGroupedTransactions(key, transactionRecords) {
     const accountId = isCSVInvoice || isTrailBalance || isExport || isSummary ? null : typeOrAccountId;
 
 
-    const validTypes = ['1', '2', '8'];
+    const validTypes = ['1', '2', '5', '6', '8'];
     const validTaxTypes = ['cgst', 'igst'];
 
     let type = null;
@@ -131,7 +131,7 @@ async function processGroupedTransactions(key, transactionRecords) {
         const [typePart, taxPart] = typeOrAccountId.split('-');
 
         if (validTypes.includes(typePart) && validTaxTypes.includes(taxPart)) {
-            type = parseInt(typePart, 10); // Now a proper number: 1 or 2
+            type = parseInt(typePart, 10); // Now a proper number: 1,2,5,6,8
             taxType = taxPart;             // 'cgst' or 'igst'
         }
     }
@@ -190,15 +190,21 @@ async function processGroupedTransactions(key, transactionRecords) {
     } else {
         // ✅ Process CSV invoices
         await loadAndCacheInvoiceData(userId, financialYear, type, cachedData);
+        const accountPrefix =
+            type === 1 ? "purchase" :
+                type === 2 || type === 8 ? "sale" :
+                    type === 5 ? "creditNote" :
+                        type === 6 ? "debitNote" :
+                            "unknown";
 
         await uploadService.processInvoiceTransactions({
             extractedData: transactionRecords[typeOrAccountId],
-            categoryAccountMap: cachedData[type === 1 ? "purchaseCategoryAccountMap" : "saleCategoryAccountMap"],
+            categoryAccountMap: cachedData[`${accountPrefix}CategoryAccountMap`],
             accountMap: cachedData.accountMap,
-            categoryMap: cachedData[type === 1 ? "purchaseCategoryMap" : "saleCategoryMap"],
+            categoryMap: cachedData[type === 1 || type === 5 ? "purchaseCategoryMap" : "saleCategoryMap"],
             itemsMap: cachedData.itemsMap,
-            unitIdMap: cachedData[type === 1 ? "purchaseUnitIdMap" : "saleUnitIdMap"],
-            dynamicFieldsMap: cachedData[type === 1 ? "purchaseDynamicFieldsMap" : "saleDynamicFieldsMap"],
+            unitIdMap: cachedData[type === 1 || type === 5 ? "purchaseUnitIdMap" : "saleUnitIdMap"],
+            dynamicFieldsMap: cachedData[type === 1 || type === 5 ? "purchaseDynamicFieldsMap" : "saleDynamicFieldsMap"],
             suspenseAccountName: suspenseAccountName.toLowerCase(),
             userId,
             financialYear,
@@ -212,23 +218,53 @@ async function processGroupedTransactions(key, transactionRecords) {
 
 // 🔹 Function to load and cache invoice data
 async function loadAndCacheInvoiceData(userId, financialYear, type, cachedData) {
-    const selectedPrefix = type === 1 ? "purchase" : "sale"; // ✅ Load only the required cache
+    // ✅ Prefix for account-related caching
+    const accountPrefix =
+        type === 1 ? "purchase" :
+            type === 2 || type === 8 ? "sale" :
+                type === 5 ? "creditNote" :
+                    type === 6 ? "debitNote" :
+                        "unknown";
 
-    if (!cachedData[`${selectedPrefix}Account`]) {
-        cachedData[`${selectedPrefix}Account`] = await uploadService.getAccountsByGroup({
-            group_name: type === 1 ? "Purchase Account" : "Sale Account",
+    // ✅ Group name mapping for account fetch
+    const groupName =
+        type === 2 || type === 8 ? "Sale Account" :
+            type === 1 ? "Purchase Account" :
+                type === 6 ? "Debit Note Account" :
+                    type === 5 ? "Credit Note Account" :
+                        "Unknown Account";
+
+    // ✅ Fetch and cache account data
+    if (!cachedData[`${accountPrefix}Account`]) {
+        cachedData[`${accountPrefix}Account`] = await uploadService.getAccountsByGroup({
+            group_name: groupName,
             user_id: userId,
             financial_year: financialYear
         });
-        cachedData[`${selectedPrefix}CategoryAccountMap`] = invoiceUtils.categorizeAccountsByGstRate(cachedData[`${selectedPrefix}Account`]);
+        cachedData[`${accountPrefix}CategoryAccountMap`] = invoiceUtils.categorizeAccountsByGstRate(
+            cachedData[`${accountPrefix}Account`]
+        );
     }
 
+    // ✅ Prefix for category/item/unit/dynamic field caching
+    const selectedPrefix = type === 1 || type === 5 ? "purchase" : "sale";
+
+    // ✅ Normalize type for category fetch
+    const normalizedType = type === 2 || type === 6 || type === 8 ? 2 : 1;
+
+    // ✅ Fetch and cache category data
     if (!cachedData[`${selectedPrefix}CategoryMap`]) {
-        const normalizedType = type === 8 ? 2 : type; // 👈 Treat type 8 as 2
-        cachedData[`${selectedPrefix}Categories`] = await fetchCategories({ type: normalizedType, userId, financialYear });
-        cachedData[`${selectedPrefix}CategoryMap`] = invoiceUtils.categorizeCategoriesByGstRate(cachedData[`${selectedPrefix}Categories`]);
+        cachedData[`${selectedPrefix}Categories`] = await fetchCategories({
+            type: normalizedType,
+            userId,
+            financialYear
+        });
+        cachedData[`${selectedPrefix}CategoryMap`] = invoiceUtils.categorizeCategoriesByGstRate(
+            cachedData[`${selectedPrefix}Categories`]
+        );
     }
 
+    // ✅ Fetch and cache item data
     if (!cachedData.itemsMap) {
         cachedData.items = await getAllItems({ userId, financialYear });
         cachedData.itemsMap = invoiceUtils.categorizeItemsByGstRate(cachedData.items);
@@ -236,14 +272,17 @@ async function loadAndCacheInvoiceData(userId, financialYear, type, cachedData) 
 
     const categoryIds = Array.from(cachedData[`${selectedPrefix}CategoryMap`]?.values() || []);
 
+    // ✅ Fetch and cache unit IDs
     if (!cachedData[`${selectedPrefix}UnitIdMap`]) {
         cachedData[`${selectedPrefix}UnitIdMap`] = await uploadService.fetchUnitIdsByCategoryIds({ categoryIds });
     }
 
+    // ✅ Fetch and cache dynamic fields
     if (!cachedData[`${selectedPrefix}DynamicFieldsMap`]) {
         cachedData[`${selectedPrefix}DynamicFieldsMap`] = await uploadService.fetchDynamicFieldsByCategoryIds({ categoryIds });
     }
 
+    // ✅ Final cache set
     cache.setCache(`${userId}_${financialYear}`, cachedData, 3600);
 }
 

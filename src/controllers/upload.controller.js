@@ -33,10 +33,10 @@ exports.getPresignedUrl = async (req, res) => {
 
       if (statementType === "bank") {
         fileType = "bankStatement";
-        metadata = { statementType, bankName, accountId, userId, financialYear, fileSize,fileType };
+        metadata = { statementType, bankName, accountId, userId, financialYear, fileSize, fileType };
       } else if (statementType === "trailBalance") {
         fileType = "trailBalanceUpload";
-        metadata = { statementType, userId, financialYear, fileSize,fileType };
+        metadata = { statementType, userId, financialYear, fileSize, fileType };
       }
 
       let sizeTier = "small";
@@ -54,7 +54,9 @@ exports.getPresignedUrl = async (req, res) => {
       const typeMap = {
         1: "purchase",
         2: "creditSale",
-        8: "cashSale"
+        8: "cashSale",
+        5: "creditNote",
+        6: "debitNote",
       };
 
       const taxMap = {

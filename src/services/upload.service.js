@@ -639,7 +639,7 @@ exports.processInvoiceTransactions = async ({ extractedData, categoryAccountMap,
                     let result;
                     if (type === 8) {
                         result = await entryService.addCashEntriesService(invoiceEntries, t);
-                    } else if (type === 1 || type === 2) {
+                    } else if (type === 1 || type === 2 || type === 5 || type === 6) {
                         result = await entryService.addEntriesService(invoiceEntries, t);
                     } else {
                         throw new Error(`Unsupported type: ${type}`);
