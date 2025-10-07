@@ -1060,7 +1060,7 @@ exports.updateJournalEntry = async (req, res) => {
         journal_id: item.journal_id,
         account_id: item.account_id,
         group_id: item.group_id,
-        amount: parseFloat(item.amount), // Convert amount to a float
+        amount: item.amount, // Convert amount to a float
         type: item.type,
         narration: item.narration,
       })),
@@ -1152,7 +1152,7 @@ exports.createJournalEntryWithItems = async (req, res) => {
         journal_id: item.journal_id,
         account_id: item.account_id,
         group_id: item.group_id,
-        amount: parseFloat(item.amount), // Convert amount to a float
+        amount: item.amount, 
         type: item.type,
         narration: item.narration,
       })),

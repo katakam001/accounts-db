@@ -1,4 +1,6 @@
 const { getDb } = require("../utils/getDb");
+const cache = require("../services/cache.service"); // ✅ Import shared cache service
+
 
 exports.accountList = async (req, res) => {
   try {
@@ -252,6 +254,34 @@ exports.accountUpdate = async (req, res) => {
       } : null
     };
 
+    const cacheKey = `${account.user_id}_${account.financial_year}`;
+    const cachedData = cache.getCache(cacheKey);
+
+    if (cachedData?.accountMap instanceof Map) {
+      // Step 1: Find the old key (account name) by matching accountId
+      let oldKey = null;
+
+      for (const [key, value] of cachedData.accountMap.entries()) {
+        if (value.accountId === account.id) {
+          oldKey = key;
+          break;
+        }
+      }
+      // Step 2: Remove old entry if found
+      if (oldKey) {
+        cachedData.accountMap.delete(oldKey);
+      }
+      // Step 3: Insert updated entry
+      const normalizedName = name.toLowerCase();
+      cachedData.accountMap.set(normalizedName, {
+        accountId: account.id,
+        groupId: groupData.id
+      });
+      // Step 4: Write back to cache
+      cache.setCache(cacheKey, cachedData, 3600);
+    }
+
+
     res.send(response);
   } catch (error) {
     if (error.name === "SequelizeUniqueConstraintError" && error.parent?.code === "23505") {
@@ -301,6 +331,15 @@ exports.accountDelete = async (req, res) => {
 
     // Delete the account
     await account.destroy({ transaction });
+
+    const cacheKey = `${account.user_id}_${account.financial_year}`;
+    const cachedData = cache.getCache(cacheKey);
+
+    if (cachedData?.accountMap instanceof Map) {
+      const normalizedName = account.name.toLowerCase();
+      cachedData.accountMap.delete(normalizedName);
+      cache.setCache(cacheKey, cachedData, 3600);
+    }
 
     // Commit the transaction after successful deletions
     await transaction.commit();
@@ -386,6 +425,17 @@ exports.accountCreate = async (req, res) => {
       group: groupData,
       address: addressData
     };
+    const cacheKey = `${newAccount.user_id}_${newAccount.financial_year}`;
+    const cachedData = cache.getCache(cacheKey);
+
+    if (cachedData?.accountMap instanceof Map) {
+      const normalizedName = name.toLowerCase();
+      cachedData.accountMap.set(normalizedName, {
+        accountId: newAccount.id,
+        groupId: groupData.id
+      });
+      cache.setCache(cacheKey, cachedData, 3600); // refresh TTL if needed
+    }
 
     res.status(201).send(response);
   } catch (error) {
