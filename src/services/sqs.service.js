@@ -110,10 +110,10 @@ function groupMessages(Messages) {
 async function processGroupedTransactions(key, transactionRecords) {
     const suspenseAccountName = "Suspense Account";
     const exportTypes = ["daybook", "accountCopy", "ledger", "trailBalanceExport"];
-    const uploadTypes = ["bankStatement", "trailBalanceUpload", "purchaseCgst", "purchaseIgst", "creditSaleCgst", "creditSaleIgst", "cashSaleCgst", "cashSaleIgst", "creditNoteCgst", "creditNoteIgst", "debitNoteCgst", "debitNoteIgst",];
+    const uploadTypes = ["bankStatement", "trailBalanceUpload", "purchaseCgst", "purchaseIgst", "purchaseTcs", "creditSaleCgst", "creditSaleIgst", "cashSaleCgst", "cashSaleIgst", "creditNoteCgst", "creditNoteIgst", "debitNoteCgst", "debitNoteIgst",];
     const [userId, financialYear, typeOrAccountId, batchId] = key.split("_").map(val => isNaN(val) ? val : parseInt(val));
 
-    const validCSVIdentifiers = ['1-cgst', '1-igst', '2-cgst', '2-igst', '5-cgst', '5-igst', '6-cgst', '6-igst', '8-cgst', '8-igst'];
+    const validCSVIdentifiers = ['1-cgst', '1-igst', '1-tcs', '2-cgst', '2-igst', '5-cgst', '5-igst', '6-cgst', '6-igst', '8-cgst', '8-igst'];
     const isCSVInvoice = validCSVIdentifiers.includes(typeOrAccountId);
     const isTrailBalance = typeOrAccountId === "trailBalance";
     const isExport = exportTypes.includes(typeOrAccountId);
@@ -122,7 +122,7 @@ async function processGroupedTransactions(key, transactionRecords) {
 
 
     const validTypes = ['1', '2', '5', '6', '8'];
-    const validTaxTypes = ['cgst', 'igst'];
+    const validTaxTypes = ['cgst', 'igst', 'tcs'];
 
     let type = null;
     let taxType = null;
@@ -132,7 +132,7 @@ async function processGroupedTransactions(key, transactionRecords) {
 
         if (validTypes.includes(typePart) && validTaxTypes.includes(taxPart)) {
             type = parseInt(typePart, 10); // Now a proper number: 1,2,5,6,8
-            taxType = taxPart;             // 'cgst' or 'igst'
+            taxType = taxPart;             // 'cgst','igst','tcs'
         }
     }
 
@@ -241,7 +241,7 @@ async function loadAndCacheInvoiceData(userId, financialYear, type, cachedData) 
             user_id: userId,
             financial_year: financialYear
         });
-        cachedData[`${accountPrefix}CategoryAccountMap`] = invoiceUtils.categorizeAccountsByGstRate(
+        cachedData[`${accountPrefix}CategoryAccountMap`] = invoiceUtils.categorizeAccountsByTaxRate(
             cachedData[`${accountPrefix}Account`]
         );
     }
@@ -259,7 +259,7 @@ async function loadAndCacheInvoiceData(userId, financialYear, type, cachedData) 
             userId,
             financialYear
         });
-        cachedData[`${selectedPrefix}CategoryMap`] = invoiceUtils.categorizeCategoriesByGstRate(
+        cachedData[`${selectedPrefix}CategoryMap`] = invoiceUtils.categorizeCategoriesByTaxRate(
             cachedData[`${selectedPrefix}Categories`]
         );
     }
@@ -267,7 +267,7 @@ async function loadAndCacheInvoiceData(userId, financialYear, type, cachedData) 
     // ✅ Fetch and cache item data
     if (!cachedData.itemsMap) {
         cachedData.items = await getAllItems({ userId, financialYear });
-        cachedData.itemsMap = invoiceUtils.categorizeItemsByGstRate(cachedData.items);
+        cachedData.itemsMap = invoiceUtils.categorizeItemsByTaxRate(cachedData.items);
     }
 
     const categoryIds = Array.from(cachedData[`${selectedPrefix}CategoryMap`]?.values() || []);

@@ -61,7 +61,8 @@ exports.getPresignedUrl = async (req, res) => {
 
       const taxMap = {
         cgst: "Cgst",
-        igst: "Igst"
+        igst: "Igst",
+        tcs: "Tcs"
       };
 
       const typeLabel = typeMap[type];

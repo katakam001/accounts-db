@@ -1,17 +1,28 @@
 const moment = require('moment-timezone');
 
-exports.categorizeCategoriesByGstRate = (categories) => {
+exports.categorizeCategoriesByTaxRate = (categories) => {
   const gstCategoryMap = new Map();
 
   for (const category of categories) {
     const name = category.name.toUpperCase();
 
     // 🔍 Determine tax type
-    const taxType = name.includes("IGST") ? "igst" : "cgst";
+    let taxType = 'cgst';
+    if (name.includes('IGST')) {
+      taxType = 'igst';
+    } else if (name.includes('TCS')) {
+      taxType = 'tcs';
+    }
 
-    // 🔍 Extract GST Rate
-    const gstRateMatch = name.match(/(\d+)%/);
-    const gstRate = gstRateMatch ? parseInt(gstRateMatch[1], 10) : 0;
+    // 🔍 Extract rate based on tax type
+    let rate = 0;
+    if (taxType === 'tcs') {
+      const taxRateMatch = name.match(/(\d+(\.\d+)?)%/);
+      rate = taxRateMatch ? parseFloat(taxRateMatch[1]) : 0;
+    } else {
+      const gstRateMatch = name.match(/(\d+)%/);
+      rate = gstRateMatch ? parseInt(gstRateMatch[1], 10) : 0;
+    }
 
     // 🔍 Extract item name
     // Step 1: Remove 'PURCHASE' or 'SALE' from the start
@@ -26,7 +37,7 @@ exports.categorizeCategoriesByGstRate = (categories) => {
     const itemName = itemTokens.join(" ").trim();
 
     // 🧩 Composite key: ITEM_NAME|RATE|TAX_TYPE
-    const compositeKey = `${itemName}|${gstRate}|${taxType}`;
+    const compositeKey = `${itemName}|${rate}|${taxType}`;
 
     gstCategoryMap.set(compositeKey, category.id);
   }
@@ -34,13 +45,15 @@ exports.categorizeCategoriesByGstRate = (categories) => {
   return gstCategoryMap;
 };
 
-exports.categorizeItemsByGstRate = (items) => {
+exports.categorizeItemsByTaxRate = (items) => {
   const gstItemMap = new Map(); // Map<string, item_id>
 
   items.forEach((item) => {
     const name = item.name.toUpperCase().trim(); // Consistent casing
-    const gstRateMatch = name.match(/(\d+)%/);    // Extract GST rate
-    const gstRate = gstRateMatch ? parseInt(gstRateMatch[1], 10) : 0;
+
+    const taxRateMatch = name.match(/(\d+(\.\d+)?)%/); // Handles both integer and decimal rates
+    const taxRate = taxRateMatch ? parseFloat(taxRateMatch[1]) : 0;
+
 
     // 🔍 Extract item name: all words before the GST rate token
     const tokens = name.split(" ");
@@ -48,7 +61,7 @@ exports.categorizeItemsByGstRate = (items) => {
     const itemName = tokens.slice(0, rateIndex).join(" ").trim();
 
     // 🧩 Composite key: ITEM_NAME|RATE (taxType not applicable here)
-    const compositeKey = `${itemName}|${gstRate}`;
+    const compositeKey = `${itemName}|${taxRate}`;
 
     gstItemMap.set(compositeKey, item.id);
   });
@@ -56,22 +69,42 @@ exports.categorizeItemsByGstRate = (items) => {
   return gstItemMap;
 };
 
-exports.categorizeAccountsByGstRate = (accounts) => {
+exports.categorizeAccountsByTaxRate = (accounts) => {
   const categoryAccountMap = new Map(); // Map<string, account_id>
 
-  // 🔹 Composite key format: "ITEM_NAME|RATE|TAX_TYPE"
   accounts.forEach(account => {
     const accountName = account.account_name.toUpperCase();
 
-    const gstRateMatch = accountName.match(/(\d+)%/);
-    const gstRate = gstRateMatch ? parseInt(gstRateMatch[1], 10) : 0;
+    // 🔍 Determine tax type
+    let taxType = 'cgst';
+    if (accountName.includes('IGST')) {
+      taxType = 'igst';
+    } else if (accountName.includes('TCS')) {
+      taxType = 'tcs';
+    }
 
-    const taxType = accountName.includes('IGST') ? 'igst' : 'cgst';
+    // 🔍 Extract rate based on tax type
+    let rate = 0;
+    if (taxType === 'tcs') {
+      const taxRateMatch = accountName.match(/(\d+(\.\d+)?)%/);
+      rate = taxRateMatch ? parseFloat(taxRateMatch[1]) : 0;
+    } else {
+      const gstRateMatch = accountName.match(/(\d+)%/);
+      rate = gstRateMatch ? parseInt(gstRateMatch[1], 10) : 0;
+    }
 
-    const itemMatch = accountName.match(/OF\s+(.*?)\s+\d+%/);
-    const itemName = itemMatch ? itemMatch[1].trim().toUpperCase() : 'UNKNOWN';
+    // 🔍 Extract item name based on tax type
+    let itemName = 'UNKNOWN';
+    if (taxType === 'tcs') {
+      const itemMatch = accountName.match(/OF\s+(.*?)\s+\d+(\.\d+)?%/);
+      itemName = itemMatch ? itemMatch[1].trim().toUpperCase() : 'UNKNOWN';
+    } else {
+      const itemMatch = accountName.match(/OF\s+(.*?)\s+\d+%/);
+      itemName = itemMatch ? itemMatch[1].trim().toUpperCase() : 'UNKNOWN';
+    }
 
-    const compositeKey = `${itemName}|${gstRate}|${taxType}`;
+    // 🔑 Composite key
+    const compositeKey = `${itemName}|${rate}|${taxType}`;
     categoryAccountMap.set(compositeKey, account.account_id);
   });
 
@@ -93,82 +126,141 @@ exports.createEntriesForInvoice = (
   taxType
 ) => {
   const entries = []; // Initialize an array to store all entries for this invoice
+  if (taxType === 'tcs') {
+    // 🔹 For TCS: loop through each item in the invoice
+    extractedData.items.forEach(item => {
+      const itemName = item.itemName;
+      const unitName = item.unitName?.toLowerCase().trim(); // normalize input
 
-  // Define GST fields and rates
-  const gstFields = [
-    { rate: 0, valueKey: 'GstValue0' },
-    { rate: 5, valueKey: 'GstValue5', field: "gst5" },
-    { rate: 12, valueKey: 'GstValue12', field: "gst12" },
-    { rate: 18, valueKey: 'GstValue18', field: "gst18" },
-    { rate: 28, valueKey: 'GstValue28', field: "gst28" },
-  ];
 
-  gstFields.forEach(({ rate, valueKey, field }) => {
-    // console.log(extractedData);
-    // console.log(extractedData[valueKey]);
-    const gstValue = extractedData[valueKey]; // Get the GST value for this rate
-    const gst = field ? extractedData[field] : 0;
-    // console.log(gstValue);
-    if (gstValue > 0) {
-      const itemName = extractedData["ItemName"];
-      // console.log(itemName);
+      const rate = parseFloat(item.taxRate);
       const compositeKey = `${itemName}|${rate}|${taxType}`;
-      // console.log(compositeKey);
       const itemCompositeKey = `${itemName}|${rate}`;
-      // console.log(itemCompositeKey);
-      // Retrieve mappings for this GST rate
+
       const categoryId = gstCategoryMap.get(compositeKey);
-      // console.log(categoryId);
       const itemId = gstItemMap.get(itemCompositeKey);
-      // console.log(itemId);
       const categoryAccountId = categoryAccountMap.get(compositeKey);
-      // console.log(categoryAccountId);
-      const unitId = unitIdMap.get(categoryId);
-      // console.log(unitId);
+      const unitEntries = unitIdMap.get(categoryId) || [];
+      const matchedUnit = unitEntries.find(u => u.name === unitName);
+      const unitId = matchedUnit?.id;
 
       if (!categoryId || !itemId || !categoryAccountId || !unitId) {
-        console.error(`Missing mapping for GST rate ${rate}`);
+        console.error(`Missing mapping for TCS item ${itemName} at rate ${rate}`);
         return;
       }
 
-      // Retrieve account_id using extractedData.Name (lowercase) or use Suspense Account
       const accountNameKey = extractedData.Name.toLowerCase();
-      const account = type === 8 ? accountMap.get(accountNameKey) || null : accountMap.get(accountNameKey) || accountMap.get(suspenseAccountName.toLowerCase());
+      const account = accountMap.get(accountNameKey) || accountMap.get(suspenseAccountName.toLowerCase());
       const customerName = accountMap.has(accountNameKey) ? extractedData.Name : suspenseAccountName;
-      if (!account) {
-        console.error(`Missing account ID for Name: ${accountNameKey}. Defaulting to Suspense Account.`);
-      }
 
-      // Generate dynamic fields for this entry
-      const dynamicFields = createDynamicFields(categoryId, dynamicFieldsMap, extractedData, gstValue, gst, taxType);
+      const dynamicFields = createDynamicFields(categoryId, dynamicFieldsMap, item, item.amount, item.tax, taxType);
+      const quantity = parseFloat(Number(item.quantity).toFixed(4));
 
-      const quantity = parseFloat(Number(extractedData.Quantity).toFixed(4));
-
-
-      // Construct the entry
       const entry = {
         s_no: parseInt(extractedData.SNo, 10),
         category_id: categoryId,
         item_id: itemId,
         quantity: quantity,
         unit_id: unitId,
-        unit_price: parseFloat((type === 8 ? (gstValue + gst) / quantity : gstValue / quantity).toFixed(2)),
-        value: gstValue,
-        total_amount: parseFloat((gstValue + gst).toFixed(2)),
+        unit_price: item.rate,
+        value: item.amount,
+        total_amount: item.total_amount,
         category_account_id: categoryAccountId,
         entry_date: moment(extractedData.FeedDate, 'DD/MM/YYYY').tz('Asia/Kolkata').set({ hour: 5, minute: 30, second: 0 }).format('YYYY-MM-DD HH:mm:ss.SSS Z'),
         user_id: userId,
-        type, // Hardcoded type
+        type,
         financial_year: financialYear,
-        invoiceNumber: extractedData.FeedNo, // Invoice number from extractedData
-        account_id: account ? account.accountId : null, // ✅ Safe fallback
-        customerName: customerName,
-        dynamicFields, // Populate dynamic fields here
+        invoiceNumber: extractedData.FeedNo,
+        account_id: account ? account.accountId : null,
+        customerName,
+        dynamicFields,
       };
 
-      entries.push(entry); // Add the entry to the entries array
-    }
-  });
+      entries.push(entry);
+    });
+  } else {
+    // 🔹 For CGST/IGST: use existing logic
+    // Define GST fields and rates
+    const gstFields = [
+      { rate: 0, valueKey: 'GstValue0' },
+      { rate: 5, valueKey: 'GstValue5', field: "gst5" },
+      { rate: 12, valueKey: 'GstValue12', field: "gst12" },
+      { rate: 18, valueKey: 'GstValue18', field: "gst18" },
+      { rate: 28, valueKey: 'GstValue28', field: "gst28" },
+    ];
+
+    gstFields.forEach(({ rate, valueKey, field }) => {
+      // console.log(extractedData);
+      // console.log(extractedData[valueKey]);
+      const gstValue = extractedData[valueKey]; // Get the GST value for this rate
+      const gst = field ? extractedData[field] : 0;
+      // console.log(gstValue);
+      if (gstValue > 0) {
+        const itemName = extractedData["ItemName"];
+        const unitName = extractedData["UnitName"]?.toLowerCase().trim();
+
+        // console.log(itemName);
+        // console.log(unitName);
+        const compositeKey = `${itemName}|${rate}|${taxType}`;
+        // console.log(compositeKey);
+        const itemCompositeKey = `${itemName}|${rate}`;
+        // console.log(itemCompositeKey);
+        // Retrieve mappings for this GST rate
+        const categoryId = gstCategoryMap.get(compositeKey);
+        // console.log(categoryId);
+        const itemId = gstItemMap.get(itemCompositeKey);
+        // console.log(itemId);
+        const categoryAccountId = categoryAccountMap.get(compositeKey);
+        // console.log(categoryAccountId);
+        const unitEntries = unitIdMap.get(categoryId) || [];
+        const matchedUnit = unitEntries.find(u => u.name === unitName);
+        const unitId = matchedUnit?.id;
+        // console.log(unitId);
+
+        if (!categoryId || !itemId || !categoryAccountId || !unitId) {
+          console.error(`Missing mapping for GST rate ${rate}`);
+          return;
+        }
+
+        // Retrieve account_id using extractedData.Name (lowercase) or use Suspense Account
+        const accountNameKey = extractedData.Name.toLowerCase();
+        const account = type === 8 ? accountMap.get(accountNameKey) || null : accountMap.get(accountNameKey) || accountMap.get(suspenseAccountName.toLowerCase());
+        const customerName = accountMap.has(accountNameKey) ? extractedData.Name : suspenseAccountName;
+        if (!account) {
+          console.error(`Missing account ID for Name: ${accountNameKey}. Defaulting to Suspense Account.`);
+        }
+
+        // Generate dynamic fields for this entry
+        const dynamicFields = createDynamicFields(categoryId, dynamicFieldsMap, extractedData, gstValue, gst, taxType);
+
+        const quantity = parseFloat(Number(extractedData.Quantity).toFixed(4));
+
+
+        // Construct the entry
+        const entry = {
+          s_no: parseInt(extractedData.SNo, 10),
+          category_id: categoryId,
+          item_id: itemId,
+          quantity: quantity,
+          unit_id: unitId,
+          unit_price: parseFloat((type === 8 ? (gstValue + gst) / quantity : gstValue / quantity).toFixed(2)),
+          value: gstValue,
+          total_amount: parseFloat((gstValue + gst).toFixed(2)),
+          category_account_id: categoryAccountId,
+          entry_date: moment(extractedData.FeedDate, 'DD/MM/YYYY').tz('Asia/Kolkata').set({ hour: 5, minute: 30, second: 0 }).format('YYYY-MM-DD HH:mm:ss.SSS Z'),
+          user_id: userId,
+          type, // Hardcoded type
+          financial_year: financialYear,
+          invoiceNumber: extractedData.FeedNo, // Invoice number from extractedData
+          account_id: account ? account.accountId : null, // ✅ Safe fallback
+          customerName: customerName,
+          dynamicFields, // Populate dynamic fields here
+        };
+
+        entries.push(entry); // Add the entry to the entries array
+      }
+    });
+  }
   // console.log(entries);
   return entries;
 };
@@ -188,6 +280,8 @@ const createDynamicFields = (categoryId, dynamicFieldsMap, extractedData, gstVal
         let field_value = "0.00";
 
         if (taxType === 'igst') {
+          field_value = gst.toFixed(2);
+        } if (taxType === 'tcs') {
           field_value = gst.toFixed(2);
         } else {
           // Calculate expected tax value from NetAmt

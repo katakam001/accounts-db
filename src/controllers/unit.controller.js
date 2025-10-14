@@ -1,18 +1,18 @@
-const {getDb} = require("../utils/getDb");
+const { getDb } = require("../utils/getDb");
 
 exports.getAllUnits = async (req, res) => {
   try {
     const db = getDb();
     const Units = db.units;
     const { userId, financialYear } = req.query;
-    
+
     const whereClause = {
       ...(userId && { user_id: userId }),
       ...(financialYear && { financial_year: financialYear })
     };
-    
+
     const units = await Units.findAll({ where: whereClause });
-    
+
     res.json(units);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -21,17 +21,33 @@ exports.getAllUnits = async (req, res) => {
 
 
 exports.createUnit = async (req, res) => {
+  const { name } = req.body;
+
   try {
     const db = getDb();
     const Units = db.units;
     const unit = await Units.create(req.body);
     res.status(201).json(unit);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    if (error.name === "SequelizeUniqueConstraintError" && error.parent?.code === "23505") {
+      // Send error response with meaningful message
+      res.status(400).json({
+        error: 'Duplicate unit name detected',
+        message: `The unit name "${name}" already exists. Please choose a unique name.`
+      });
+    } else {
+      // Handle other errors
+      console.error('Error inserting unit:', error);
+      res.status(500).json({
+        error: 'Internal Server Error',
+        message: 'An unexpected error occurred while processing your request.'
+      });
+    }
   }
 };
 
 exports.updateUnit = async (req, res) => {
+  const { name } = req.body;
   try {
     const db = getDb();
     const Units = db.units;
@@ -44,7 +60,18 @@ exports.updateUnit = async (req, res) => {
       throw new Error('Unit not found');
     }
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    if (error.name === "SequelizeUniqueConstraintError" && error.parent?.code === "23505") {
+      res.status(400).json({
+        error: 'Duplicate unit name detected',
+        message: `The unit name "${name}" already exists. Please choose a unique name.`
+      });
+    } else {
+      console.error('Error while updating the unit:', error);
+      res.status(500).json({
+        error: 'Internal Server Error',
+        message: 'An unexpected error occurred while processing your request.'
+      });
+    }
   }
 };
 

@@ -111,29 +111,34 @@ exports.getAccountsByGroup = async ({ group_name, user_id, financial_year }) => 
 
 exports.fetchUnitIdsByCategoryIds = async ({ categoryIds }) => {
     try {
-        // console.log(categoryIds);
-        const db = getDb(); // Get the database instance
+        const db = getDb();
         const query = `
-      SELECT category_id, unit_id 
-      FROM category_units 
-      WHERE category_id IN (:categoryIds)
+      SELECT cu.category_id, cu.unit_id, u.name AS unit_name
+      FROM category_units cu
+      JOIN units u ON cu.unit_id = u.id
+      WHERE cu.category_id IN (:categoryIds)
     `;
 
         const results = await db.sequelize.query(query, {
-            replacements: { categoryIds }, // Pass the category IDs
-            type: db.sequelize.QueryTypes.SELECT, // Query type
+            replacements: { categoryIds },
+            type: db.sequelize.QueryTypes.SELECT
         });
 
-        // Transform results into a Map for easier access
-        const unitIdMap = new Map();
-        results.forEach((row) => {
-            unitIdMap.set(row.category_id, row.unit_id);
+        // ✅ Map of category_id => [{ id, name }, ...]
+        const unitMap = new Map();
+
+        results.forEach(({ category_id, unit_id, unit_name }) => {
+            const entry = { id: unit_id, name: unit_name.toLowerCase().trim() };
+            if (!unitMap.has(category_id)) {
+                unitMap.set(category_id, []);
+            }
+            unitMap.get(category_id).push(entry);
         });
 
-        return unitIdMap; // Map of category_id => unit_id
+        return unitMap;
     } catch (error) {
-        console.error('Error fetching unit IDs:', error.message);
-        throw new Error('Failed to fetch unit IDs');
+        console.error('Error fetching unit IDs and names:', error.message);
+        throw new Error('Failed to fetch unit data');
     }
 };
 
@@ -487,7 +492,7 @@ exports.processTransactions = async ({ groupedRecords, accountMap, suspenseAccou
                 }
                 // ✅ Insert the processed transaction into `uploaded_file_log` to prevent duplicates
                 await uploadedFileLog.create({
-                    hash: generateUniqueId(transactionId, userId, financialYear,0),
+                    hash: generateUniqueId(transactionId, userId, financialYear, 0),
                     transaction_id: transactionId,
                     user_id: userId,
                     financial_year: financialYear,
