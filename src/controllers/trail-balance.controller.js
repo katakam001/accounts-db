@@ -89,22 +89,8 @@ CombinedWithOpeningBalances AS (
 ),
 GroupedItems AS (
     SELECT 
-        CASE 
-            WHEN g.name IN ('Sundry Debtors', 'Sundry Creditors') THEN g.id::text 
-            ELSE g.id::text 
-        END AS group_id,
-        CASE 
-            WHEN g.name IN ('Sundry Debtors', 'Sundry Creditors') THEN g.name 
-            ELSE g.name 
-        END AS group_name,
-        CASE 
-            WHEN g.name IN ('Sundry Debtors', 'Sundry Creditors') THEN NULL 
-            ELSE al.id 
-        END AS account_id,
-        CASE 
-            WHEN g.name IN ('Sundry Debtors', 'Sundry Creditors') THEN NULL 
-            ELSE al.name 
-        END AS account_name,
+        g.id::text AS group_id,
+        g.name AS group_name,
         SUM(cob.total_credit) AS total_credit,
         SUM(cob.total_debit) AS total_debit,
         SUM(cob.total_credit - cob.total_debit) AS balance
@@ -112,43 +98,19 @@ GroupedItems AS (
         CombinedWithOpeningBalances cob
     JOIN 
         group_list g ON cob.group_id = g.id
-    LEFT JOIN 
-        account_list al ON cob.account_id = al.id
     GROUP BY 
-        CASE 
-            WHEN g.name IN ('Sundry Debtors', 'Sundry Creditors') THEN g.id::text 
-            ELSE g.id::text 
-        END,
-        CASE 
-            WHEN g.name IN ('Sundry Debtors', 'Sundry Creditors') THEN g.name 
-            ELSE g.name 
-        END,
-        CASE 
-            WHEN g.name IN ('Sundry Debtors', 'Sundry Creditors') THEN NULL 
-            ELSE al.id 
-        END,
-        CASE 
-            WHEN g.name IN ('Sundry Debtors', 'Sundry Creditors') THEN NULL 
-            ELSE al.name 
-        END
+        g.id, g.name
 )
 SELECT 
     group_id,
     group_name,
-    account_id,
-    account_name,
     COALESCE(total_debit, 0) AS total_debit,
     COALESCE(total_credit, 0) AS total_credit,
     COALESCE(balance, 0) AS balance
 FROM 
     GroupedItems
 ORDER BY 
-    CASE 
-        WHEN group_name IN ('Sundry Debtors', 'Sundry Creditors') THEN 1 
-        ELSE 0 
-    END,
-    group_name,
-    account_id;    `;
+    group_name;    `;
 
     try {
         const db = getDb();
