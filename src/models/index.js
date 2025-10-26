@@ -69,7 +69,7 @@ db.uploadedFileLog = require("../models/uploadedFileLog.model.js")(sequelize, Se
 db.invoice_tracker = require("../models/invoiceTracker.model.js")(sequelize, Sequelize);
 db.mapping_rules = require("../models/mapping_rules.js")(sequelize, Sequelize);
 db.opening_stock = require("../models/openingStock.model.js")(sequelize, Sequelize, db.items);
-db.closing_stock_valulation = require("../models/closingStockValulation.model.js")(sequelize, Sequelize, db.items);
+db.stock_valulation = require("./stockValulation.model.js")(sequelize, Sequelize, db.items);
 db.stock_register = require("../models/stockRegiser.model.js")(sequelize, Sequelize, db.items);
 db.exports = require("../models/exports.model.js")(sequelize, Sequelize);
 db.uploadHistory = require('../models/uploadHistory.model.js')(sequelize, Sequelize);
@@ -176,7 +176,7 @@ db.messageTrackingLog.belongsTo(db.uploadHistory, { foreignKey: 'batch_id', targ
 db.conversions.belongsTo(db.units, { foreignKey: 'from_unit_id', as: 'fromUnit' });
 db.conversions.belongsTo(db.units, { foreignKey: 'to_unit_id', as: 'toUnit' });
 db.opening_stock.belongsTo(db.items, { foreignKey: 'item_id', as: 'item' }); // New association
-db.closing_stock_valulation.belongsTo(db.items, { foreignKey: 'item_id', as: 'item' }); // New association
+db.stock_valulation.belongsTo(db.items, { foreignKey: 'item_id', as: 'item' }); // New association
 db.stock_register.belongsTo(db.items, { foreignKey: 'item_id', as: 'item' }); // New association
 
 

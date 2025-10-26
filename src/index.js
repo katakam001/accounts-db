@@ -130,7 +130,8 @@ require("./routes/download.routes.js")(app); // Updated from download.routes.js
 require("./routes/exports.routes.js")(app); // Updated from exports.routes.js
 require("./routes/sequenceNumber.routes.js")(app); // Updated from sequenceNumber.routes.js
 require("./routes/openingStock.routes.js")(app); // Updated from openingStock.routes.js
-require("./routes/closingStockValuation.routes.js")(app); // Updated from closingStockValuation.routes.js
+require("./routes/stockValuation.routes.js")(app); // Updated from stockValuation.routes.js
+require("./routes/tradingAccount.routes.js")(app);
 
 // Invoke the sync and inject function
 syncAndInjectData(db).then(() => {

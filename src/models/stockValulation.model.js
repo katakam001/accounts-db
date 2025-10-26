@@ -1,5 +1,5 @@
 module.exports = (sequelize, Sequelize, Items) => {
-  const ClosingStockValuation = sequelize.define("closing_stock_valuation", {
+  const StockValuation = sequelize.define("stock_valuation", {
     id: {
       type: Sequelize.UUID,
       defaultValue: Sequelize.literal('gen_random_uuid()'),
@@ -31,7 +31,11 @@ module.exports = (sequelize, Sequelize, Items) => {
       type: Sequelize.DATE,
       allowNull: false
     },
-    value: {
+    opening_stock_valuation: {
+      type: Sequelize.DECIMAL(15, 2),
+      allowNull: true
+    },
+    closing_stock_valuation: {
       type: Sequelize.DECIMAL(15, 2),
       allowNull: true
     },
@@ -41,8 +45,8 @@ module.exports = (sequelize, Sequelize, Items) => {
       defaultValue: false
     }
   }, {
-    tableName: 'closing_stock_valuation'
+    tableName: 'stock_valuation'
   });
 
-  return ClosingStockValuation;
+  return StockValuation;
 };
