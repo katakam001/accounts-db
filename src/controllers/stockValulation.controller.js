@@ -18,34 +18,6 @@ exports.generateStockValuation = async (req, res) => {
     const db = getDb();
     const StockValuation = db.stock_valulation;
 
-    const existingManual = await StockValuation.findOne({
-      where: {
-        user_id,
-        financial_year,
-        is_manual: true
-      }
-    });
-
-    if (existingManual) {
-      const valuations = await StockValuation.findAll({
-        where: { user_id, financial_year },
-        attributes: [
-          'id',
-          'item_id',
-          'start_date',
-          'end_date',
-          'opening_stock_valuation',
-          'closing_stock_valuation',
-          'is_manual',
-          [db.sequelize.col('item.name'), 'item_name']
-        ],
-        include: [{ model: db.items, as: 'item', attributes: [] }],
-        order: [['item_id', 'ASC']]
-      });
-
-      return res.status(200).json(valuations);
-    }
-
     await generateStockValuationData({ db, user_id, financial_year, start_date, end_date });
 
     const valuations = await StockValuation.findAll({

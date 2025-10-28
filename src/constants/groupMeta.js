@@ -36,17 +36,17 @@ module.exports = {
 
   PROFIT_LOSS: {
     LEFT_SIDE_GROUPS: [
+      'Gross Loss',
+      'Salaries',
       'Indirect Expenses',
-      'Administrative Expenses',
-      'Selling Expenses',
-      'Financial Charges'
+      'Depreciation'
     ],
     RIGHT_SIDE_GROUPS: [
+      'Gross Profit',
       'Indirect Income',
-      'Other Income',
-      'Interest Received'
     ],
-    STRUCTURED_GROUPS: [] // if any groups need quantity/rate, add them here
+    STRUCTURED_GROUPS: [],
+    FILTER_GROUPS: []
   },
 
   BALANCE_SHEET: {

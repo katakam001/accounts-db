@@ -132,6 +132,7 @@ require("./routes/sequenceNumber.routes.js")(app); // Updated from sequenceNumbe
 require("./routes/openingStock.routes.js")(app); // Updated from openingStock.routes.js
 require("./routes/stockValuation.routes.js")(app); // Updated from stockValuation.routes.js
 require("./routes/tradingAccount.routes.js")(app);
+require("./routes/profitAndLoss.routes.js")(app);
 
 // Invoke the sync and inject function
 syncAndInjectData(db).then(() => {

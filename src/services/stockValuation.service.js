@@ -1,8 +1,22 @@
-exports.generateStockValuationData= async ({ db, user_id, financial_year, start_date, end_date }) => { 
+exports.generateStockValuationData = async ({ db, user_id, financial_year, start_date, end_date }) => {
   const sequelize = db.sequelize;
   const StockValuation = db.stock_valulation;
+  // 🔍 Check for existing manual valuation
+  const existingManual = await StockValuation.findOne({
+    where: {
+      user_id,
+      financial_year,
+      is_manual: true
+    }
+  });
 
-  // 🧹 Delete existing valuations
+  if (existingManual) {
+    // ✅ Skip generation if manual entry exists
+    console.log('Manual stock valuation exists — skipping stored procedure.');
+    return;
+  }
+
+  // 🧹 Delete existing auto-generated valuations
   await StockValuation.destroy({
     where: { user_id, financial_year }
   });

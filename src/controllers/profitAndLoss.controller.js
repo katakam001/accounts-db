@@ -1,7 +1,7 @@
 const { getDb } = require('../utils/getDb');
-const { calculateTradingAccountReport } = require('../services/tradingAccount.service');
+const { calculateProfitAndLossReport } = require('../services/profitAndLoss.service');
 
-exports.calculateTradingAccount = async (req, res) => {
+exports.calculateprofitAndLoss = async (req, res) => {
     const userId = req.body.userId;
     const financialYear = req.body.financialYear;
     const fromDate = req.body.fromDate ? new Date(req.body.fromDate) : null;
@@ -9,7 +9,7 @@ exports.calculateTradingAccount = async (req, res) => {
 
     const db = getDb();
 
-    const result = await calculateTradingAccountReport({
+    const result = await calculateProfitAndLossReport({
         db,
         userId,
         financialYear,
