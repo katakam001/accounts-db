@@ -14,10 +14,17 @@ function sortGroups(groups, order) {
 }
 
 const sanitizeGroupItems = group => {
-    const filteredItems = group.items.filter(i => parseFloat(i.amount) !== 0);
-    const total = filteredItems.reduce((sum, i) => sum + parseFloat(i.amount || 0), 0);
-    return { ...group, items: filteredItems, total };
+  const filteredItems = group.items.filter(i => {
+    const amount = parseFloat(i.amount || '0');
+    const quantity = parseFloat(i.quantity || '0');
+    return amount !== 0 || quantity !== 0;
+  });
+
+  const total = filteredItems.reduce((sum, i) => sum + parseFloat(i.amount || '0'), 0);
+
+  return { ...group, items: filteredItems, total };
 };
+
 
 exports.calculateTradingAccountData = ({
     groupedAccounts,
