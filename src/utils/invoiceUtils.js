@@ -152,6 +152,7 @@ exports.createEntriesForInvoice = (
       const accountNameKey = extractedData.Name.toLowerCase();
       const account = accountMap.get(accountNameKey) || accountMap.get(suspenseAccountName.toLowerCase());
       const customerName = accountMap.has(accountNameKey) ? extractedData.Name : suspenseAccountName;
+      item.FeedNo=extractedData.FeedNo;
 
       const dynamicFields = createDynamicFields(categoryId, dynamicFieldsMap, item, item.amount, item.tax, taxType);
       const quantity = parseFloat(Number(item.quantity).toFixed(4));
