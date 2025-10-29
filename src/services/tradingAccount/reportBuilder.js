@@ -13,6 +13,12 @@ function sortGroups(groups, order) {
     return order.map(name => groups.find(g => g.group === name)).filter(Boolean);
 }
 
+const sanitizeGroupItems = group => {
+    const filteredItems = group.items.filter(i => parseFloat(i.amount) !== 0);
+    const total = filteredItems.reduce((sum, i) => sum + parseFloat(i.amount || 0), 0);
+    return { ...group, items: filteredItems, total };
+};
+
 exports.calculateTradingAccountData = ({
     groupedAccounts,
     allEntryQuantities,
@@ -73,8 +79,8 @@ exports.calculateTradingAccountData = ({
         total: creditNoteTotal
     };
 
-    const flatGroupsLeft = mapFlatGroupsGeneric(groupedAccounts, leftSet, structuredGroupMap,TRADING_ACCOUNT);
-    const flatGroupsRight = mapFlatGroupsGeneric(groupedAccounts, rightSet, structuredGroupMap,TRADING_ACCOUNT);
+    const flatGroupsLeft = mapFlatGroupsGeneric(groupedAccounts, leftSet, structuredGroupMap, TRADING_ACCOUNT);
+    const flatGroupsRight = mapFlatGroupsGeneric(groupedAccounts, rightSet, structuredGroupMap, TRADING_ACCOUNT);
 
     return {
         structuredGroupMap,
@@ -157,8 +163,12 @@ exports.finalizeTradingAccountGroups = ({
     const totalAmount = creditGroups.reduce((sum, g) => sum + g.total, 0);
     const debitTotal = debitGroups.reduce((sum, g) => sum + g.total, 0);
 
-    const sortedDebitGroups = sortGroups(debitGroups, TRADING_ACCOUNT.LEFT_SIDE_GROUPS);
-    const sortedCreditGroups = sortGroups(creditGroups, TRADING_ACCOUNT.RIGHT_SIDE_GROUPS);
+    // Filter zero-amount items before sorting
+    const filteredDebitGroups = debitGroups.map(sanitizeGroupItems);
+    const filteredCreditGroups = creditGroups.map(sanitizeGroupItems);
+
+    const sortedDebitGroups = sortGroups(filteredDebitGroups, TRADING_ACCOUNT.LEFT_SIDE_GROUPS);
+    const sortedCreditGroups = sortGroups(filteredCreditGroups, TRADING_ACCOUNT.RIGHT_SIDE_GROUPS);
 
     const totalQuantity = (
         sumQuantities('Opening Stock', structuredGroupMap) +

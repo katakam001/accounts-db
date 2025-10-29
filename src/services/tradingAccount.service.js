@@ -45,7 +45,7 @@ exports.calculateTradingAccountReport = async ({ db, userId, financialYear, from
     });
 };
 
-exports.getGrossResultFromTradingAccount = ({
+exports.buildTradingAccountReport  = ({
     groupedAccounts,
     allEntryQuantities,
     cashSaleQuantities,
@@ -72,10 +72,7 @@ exports.getGrossResultFromTradingAccount = ({
         rightSet
     });
 
-    const {
-        grossProfit,
-        grossLoss
-    } = finalizeTradingAccountGroups({
+    return finalizeTradingAccountGroups({
         structuredGroupMap,
         flatDebitGroups: flatGroupsLeft,
         flatCreditGroups: flatGroupsRight,
@@ -85,6 +82,5 @@ exports.getGrossResultFromTradingAccount = ({
         rightSet
     });
 
-    return { grossProfit, grossLoss };
 };
 

@@ -133,6 +133,7 @@ require("./routes/openingStock.routes.js")(app); // Updated from openingStock.ro
 require("./routes/stockValuation.routes.js")(app); // Updated from stockValuation.routes.js
 require("./routes/tradingAccount.routes.js")(app);
 require("./routes/profitAndLoss.routes.js")(app);
+require("./routes/tradingAccAndProfitAndLoss.routes.js")(app);
 
 // Invoke the sync and inject function
 syncAndInjectData(db).then(() => {
