@@ -1,5 +1,6 @@
 const { checkQueueDepth, monitorQueueAndConsume } = require("../services/sqs.service");
 const { getDb } = require("../utils/getDb");
+const { Op } = require('sequelize');
 // Configure AWS S3
 const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
 const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
@@ -171,11 +172,19 @@ exports.getUploadHistory = async (req, res) => {
     const db = getDb();
     const UploadHistory = db.uploadHistory;
 
-    const { userId, financialYear } = req.query;
+    const userId = req.query.userId;
+    const financialYear = req.query.financialYear;
+    const fromDate = req.query.fromDate ? new Date(req.query.fromDate) : null;
+    const toDate = req.query.toDate ? new Date(req.query.toDate) : null;
+    // Extend toDate to end of day
+    toDate.setHours(23, 59, 59, 999);
 
     const whereClause = {
       ...(userId && { user_id: userId }),
-      ...(financialYear && { financial_year: financialYear })
+      ...(financialYear && { financial_year: financialYear }),
+      started_at: {
+        [Op.between]: [fromDate, toDate]
+      }
     };
 
     const historyList = await UploadHistory.findAll({
