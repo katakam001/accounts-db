@@ -41,16 +41,31 @@ exports.calculateBalanceSheetReport = async ({ db, userId, financialYear, fromDa
     grossLoss
   });
 
-  // Step 4: Inject net result into Capital Account group
+  // Step 4: Adjust net result using Profit & Loss A/C group
   const capitalKey = normalize('Capital Account');
+  const profitLossKey = normalize('Profit & Loss A/C');
+
   const capitalGroup = groupedAccounts.find(g => normalize(g.groupName) === capitalKey);
+  const profitLossGroup = groupedAccounts.find(g => normalize(g.groupName) === profitLossKey);
+
+  let netAmount = netProfit || -netLoss || 0;
+
+  if (profitLossGroup) {
+    const debitResidual = profitLossGroup.accounts.reduce((sum, acc) => sum + (acc.debit || 0), 0);
+    const creditResidual = profitLossGroup.accounts.reduce((sum, acc) => sum + (acc.credit || 0), 0);
+
+    if (netProfit) {
+      netAmount -= debitResidual;
+    } else if (netLoss) {
+      netAmount += creditResidual;
+    }
+  }
 
   if (capitalGroup) {
-    const amount = netProfit || -netLoss || 0;
     capitalGroup.accounts.push({
       accountName: netProfit ? 'Net Profit' : 'Net Loss',
-      debit: amount < 0 ? Math.abs(amount) : 0,
-      credit: amount > 0 ? amount : 0
+      debit: netAmount < 0 ? Math.abs(netAmount) : 0,
+      credit: netAmount > 0 ? netAmount : 0
     });
   }
 
