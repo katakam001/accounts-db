@@ -79,7 +79,7 @@ module.exports = {
         displayMode: 'mixed', // subgroups + direct accounts
         subGroups: [
           'Advance For Expenses',
-          'Advance Tax and TDS',
+          'Advance Tax & TDS',
           'Prepaid Expenses'
         ]
       },
@@ -97,7 +97,7 @@ module.exports = {
         parent: 'Loans and Advances',
         children: [
           'Advance For Expenses',
-          'Advance Tax and TDS',
+          'Advance Tax & TDS',
           'Prepaid Expenses'
         ],
         source: 'static'
