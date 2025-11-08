@@ -48,28 +48,43 @@ function createNormalizedMaps(groupedAccounts, structuredGroups) {
 }
 
 function sumAccounts(accounts) {
-  return accounts.reduce((sum, a) => sum + (a.debit || a.credit || 0), 0);
+  const debitSum = accounts.reduce((sum, a) => sum + (a.debit || 0), 0);
+  const creditSum = accounts.reduce((sum, a) => sum + (a.credit || 0), 0);
+  return Math.abs(debitSum - creditSum);
 }
 
 function pushFlat(transformed, label, accounts) {
-  let total = 0;
+  let debitSum = 0;
+  let creditSum = 0;
+
   transformed.push({ label, groupMode: 'flat', innerAmount: 0, outerAmount: 0 });
 
   accounts.forEach((acc, index) => {
-    const amount = acc.debit > 0 ? acc.debit : acc.credit ?? 0;
-    total += amount;
+    const debit = acc.debit || 0;
+    const credit = acc.credit || 0;
+
+    debitSum += debit;
+    creditSum += credit;
+
+    const amount = debit > 0 ? debit : credit;
 
     transformed.push({
       label: acc.accountName,
       groupMode: 'flat',
       innerAmount: amount,
-      outerAmount: index === accounts.length - 1 ? total : 0
+      outerAmount: 0
     });
   });
+
+  const total = Math.abs(debitSum - creditSum);
+  if (accounts.length > 0) {
+    transformed[transformed.length - 1].outerAmount = total;
+  }
 }
 
 function pushNested(transformed, label, children, groupMap) {
-  let total = 0;
+  let debitSum = 0;
+  let creditSum = 0;
   let lastAccountIndex = -1;
 
   transformed.push({ label, groupMode: 'nested', innerAmount: 0, outerAmount: 0 });
@@ -80,8 +95,13 @@ function pushNested(transformed, label, children, groupMap) {
     transformed.push({ label: child, groupMode: 'flat', innerAmount: 0, outerAmount: 0 });
 
     childAccounts.forEach(acc => {
-      const amount = acc.debit > 0 ? acc.debit : acc.credit ?? 0;
-      total += amount;
+      const debit = acc.debit || 0;
+      const credit = acc.credit || 0;
+
+      debitSum += debit;
+      creditSum += credit;
+
+      const amount = debit > 0 ? debit : credit;
 
       transformed.push({
         label: acc.accountName,
@@ -94,13 +114,13 @@ function pushNested(transformed, label, children, groupMap) {
     });
   });
 
+  const total = Math.abs(debitSum - creditSum);
   if (lastAccountIndex >= 0) {
     transformed[lastAccountIndex].outerAmount = total;
   }
 }
 
 function pushMixed(transformed, label, accounts, subGroups, groupMap) {
-  pushFlat(transformed, label, accounts);
 
   subGroups.forEach(child => {
     const childAccounts = groupMap.get(normalize(child))?.accounts || [];
@@ -113,6 +133,7 @@ function pushMixed(transformed, label, accounts, subGroups, groupMap) {
       outerAmount: amount
     });
   });
+  pushFlat(transformed, label, accounts);
 }
 
 exports.mapStructuredGroupsBySide = (groupedAccounts, sideSet, config) => {
