@@ -13,7 +13,13 @@ exports.getAllProductionEntries = async (req, res) => {
   try {
     const db = getDb();
     const ProductionEntry = db.production_entries;
+    const { userId, financialYear } = req.query;
+
     const productionEntries = await ProductionEntry.findAll({
+      where: {
+        user_id: userId,
+        financial_year: financialYear
+      },
       include: [
         { model: db.items, as: 'rawItem' },
         { model: db.items, as: 'processedItem' },
@@ -239,6 +245,3 @@ exports.deleteProductionEntry = async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 };
-
-
-

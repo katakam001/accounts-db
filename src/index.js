@@ -134,6 +134,7 @@ require("./routes/stockValuation.routes.js")(app); // Updated from stockValuatio
 require("./routes/tradingAccount.routes.js")(app);
 require("./routes/profitAndLoss.routes.js")(app);
 require("./routes/tradingAccAndProfitAndLoss.routes.js")(app);
+require("./routes/balanceSheet.routes.js")(app);
 
 // Invoke the sync and inject function
 syncAndInjectData(db).then(() => {

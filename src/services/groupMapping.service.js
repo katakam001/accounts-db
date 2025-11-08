@@ -1,5 +1,5 @@
 const {getDb} = require("../utils/getDb");
-const { buildTree } = require('../utils/buildTree');
+const { buildTree,buildGroupHierarchyTree } = require('../utils/buildTree');
 
 exports.getGroupMappingTree = async (userId, financialYear, rootGroupName) => {
   const db = getDb();
@@ -78,5 +78,39 @@ exports.getGroupMappingTree = async (userId, financialYear, rootGroupName) => {
 
   // Build tree with injected item children
   return buildTree(filteredGroups, accounts, openingStockItems, closingStockItems);
+};
+
+
+exports.getGroupHierarchyTree = async (userId, financialYear, rootGroupName) => {
+  const db = getDb();
+  const GroupMapping = db.groupMapping;
+  const Group = db.group;
+
+  // Fetch group mappings with nested children and group name only
+  const groups = await GroupMapping.findAll({
+    where: { user_id: userId, financial_year: financialYear },
+    include: [
+      {
+        model: GroupMapping,
+        as: 'children',
+        include: {
+          model: GroupMapping,
+          as: 'children'
+        }
+      },
+      {
+        model: Group,
+        attributes: [['name', 'name']]
+      }
+    ]
+  });
+
+  // Filter root group if specified
+  const filteredGroups = rootGroupName
+    ? groups.filter(g => g.Group?.name === rootGroupName)
+    : groups;
+
+  // Build tree using only group hierarchy
+  return buildGroupHierarchyTree(filteredGroups);
 };
 

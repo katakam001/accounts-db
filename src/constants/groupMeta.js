@@ -52,16 +52,62 @@ module.exports = {
   BALANCE_SHEET: {
     LEFT_SIDE_GROUPS: [
       'Capital Account',
-      'Loans (Liability)',
-      'Current Liabilities',
-      'Reserves and Surplus'
+      'God',
+      'Unsecured Loans',
+      'Secured Loans',
+      'Sundry Creditors',
+      'Liability For Expenses',
+      'Provisions'
     ],
     RIGHT_SIDE_GROUPS: [
       'Fixed Assets',
+      'Deposits',
       'Investments',
-      'Current Assets',
-      'Miscellaneous Expenses'
+      'Sundry Debtors',
+      'Closing Stock',
+      'Loans and Advances',
+      'Bank Account',
+      'Cash On Hand'
     ],
-    STRUCTURED_GROUPS: [] // optional
+    STRUCTURED_GROUPS: [
+      {
+        group: 'Secured Loans',
+        displayMode: 'nested' // subgroups with their own accounts
+      },
+      {
+        group: 'Loans and Advances',
+        displayMode: 'mixed', // subgroups + direct accounts
+        subGroups: [
+          'Advance For Expenses',
+          'Advance Tax and TDS',
+          'Prepaid Expenses'
+        ]
+      },
+      {
+        group: 'Bank Account',
+        displayMode: 'flat' // individual accounts only
+      },
+      {
+        group: 'Capital Account',
+        displayMode: 'flat'
+      }
+    ],
+    RELATIONSHIP_GROUPS: [
+      {
+        parent: 'Loans and Advances',
+        children: [
+          'Advance For Expenses',
+          'Advance Tax and TDS',
+          'Prepaid Expenses'
+        ],
+        source: 'static'
+      },
+      {
+        parent: 'Secured Loans',
+        children: [], // dynamically injected from DB
+        source: 'dynamic'
+      }
+    ]
   }
+
 };

@@ -52,3 +52,18 @@ exports.buildTree = (
       };
     });
 };
+
+
+exports.buildGroupHierarchyTree = (
+  data,
+  parentId = null
+) => {
+  return data
+    .filter(item => item.parent_id === parentId)
+    .map(item => ({
+      id: item.id,
+      parent_id: item.parent_id,
+      name: item.Group.name,
+      children: exports.buildGroupHierarchyTree(data, item.id)
+    }));
+};
