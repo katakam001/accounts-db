@@ -71,11 +71,7 @@ module.exports = (sequelize, Sequelize,Items) => {
       type: Sequelize.NUMERIC(10, 4),
       allowNull: false,
       defaultValue: 0,
-    },
-    value: {
-      type: Sequelize.NUMERIC(15, 2),
-      allowNull: true,
-        }
+    }
     }, {
         tableName: 'stock_register'
     });
