@@ -11,6 +11,7 @@ module.exports = function (app) {
   });
 
   app.post("/api/trading-account/report", [authJwt.verifyToken], controller.calculateTradingAccount);
+  app.get("/api/trading-account/export-trading-account-to-pdf", [authJwt.verifyToken], controller.exportTradingAccountToPDF);
 
 };
 
