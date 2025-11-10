@@ -11,6 +11,7 @@ module.exports = function (app) {
   });
 
   app.post("/api/profit-and-loss/report", [authJwt.verifyToken], controller.calculateprofitAndLoss);
+  app.get("/api/profit-and-loss/export-profit-loss-to-pdf", [authJwt.verifyToken], controller.exportProfitAndLossToPDF);
 
 };
 

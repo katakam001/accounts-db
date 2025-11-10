@@ -253,7 +253,9 @@ exports.processCashEntryLedgerService = async (entries, transaction) => {
       summary = await DailySummary.create({
         entry_date: dateOnly,
         account_id,
-        total_amount: amount
+        total_amount: amount,
+        user_id: user_id,
+        financial_year: financial_year
       }, { transaction });
     }
 

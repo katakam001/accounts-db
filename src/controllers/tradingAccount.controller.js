@@ -77,6 +77,7 @@ exports.exportTradingAccountToPDF = async (req, res) => {
       financialYear,
       companyName,
       cityName: city,
+      reportTitle: "Trading Account Report",
       reportDate: getFinancialYearEndDate(financialYear),
       debitGroups,
       creditGroups,
