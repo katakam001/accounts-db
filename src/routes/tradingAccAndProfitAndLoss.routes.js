@@ -11,6 +11,7 @@ module.exports = function (app) {
   });
 
   app.post("/api/combine/trading-profit-loss/report", [authJwt.verifyToken], controller.calculateTradingAccountAndprofitAndLoss);
+  app.get("/api/combine/trading-profit-loss/export-to-pdf", [authJwt.verifyToken], controller.exportTradingAndPAndLToPDF);
 
 };
 

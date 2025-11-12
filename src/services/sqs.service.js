@@ -109,7 +109,7 @@ function groupMessages(Messages) {
 
 async function processGroupedTransactions(key, transactionRecords) {
     const suspenseAccountName = "Suspense Account";
-    const exportTypes = ["daybook", "accountCopy", "ledger", "trailBalanceExport","tradingAccount","profitAndLoss"];
+    const exportTypes = ["daybook", "accountCopy", "ledger", "trailBalanceExport","tradingAccount","profitAndLoss","tradingAccountProfitAndLoss"];
     const uploadTypes = ["bankStatement", "trailBalanceUpload", "purchaseCgst", "purchaseIgst", "purchaseTcs", "creditSaleCgst", "creditSaleIgst", "cashSaleCgst", "cashSaleIgst", "creditNoteCgst", "creditNoteIgst", "debitNoteCgst", "debitNoteIgst",];
     const [userId, financialYear, typeOrAccountId, batchId] = key.split("_").map(val => isNaN(val) ? val : parseInt(val));
 
