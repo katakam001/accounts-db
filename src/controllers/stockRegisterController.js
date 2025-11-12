@@ -53,30 +53,6 @@ exports.generateStockRegister = async (req, res) => {
       replacements: { financial_year, user_id, item_id, ...(month && { month }) }
     });
 
-    // ✅ Optional monthly transformation
-    if (month) {
-      const transformed = rows.map((row, i, arr) => {
-        const originalOpening = parseFloat(row["Opening Stock"]);
-        const originalClosing = parseFloat(row["Closing Stock"]);
-        const purchase = parseFloat(row["Purchase"]);
-        const saleReturn = parseFloat(row["Sale Return"]);
-        const receivedFromProcess = parseFloat(row["Received From Process"]);
-
-        const recalculatedOpening = i === 0 ? 0 : parseFloat(arr[i - 1]["Closing Stock"]);
-        const recalculatedClosing = originalClosing - originalOpening + recalculatedOpening;
-        const recalculatedTotal = recalculatedOpening + purchase + saleReturn + receivedFromProcess;
-
-        return {
-          ...row,
-          "Opening Stock": recalculatedOpening.toFixed(4),
-          "Closing Stock": recalculatedClosing.toFixed(4),
-          "Total": recalculatedTotal.toFixed(4)
-        };
-      });
-
-      return res.status(200).json(transformed);
-    }
-
     // ✅ Return full-year data
     res.status(200).json(rows);
   } catch (error) {
