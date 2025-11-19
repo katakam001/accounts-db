@@ -12,7 +12,7 @@ module.exports = (sequelize, Sequelize) => {
       unique: true,
     },
     transaction_id: {
-      type: Sequelize.STRING(50),
+      type: Sequelize.STRING(64),
       allowNull: false,
     },
     user_id: {
