@@ -30,14 +30,20 @@ exports.mapFlatGroupsGeneric = (
           const structuredItems = structuredGroupMap[groupKey]?.items || [];
           return !structuredItems.some(i => i.label === acc.accountName);
         })
-        .map(acc => ({
-          label: acc.accountName,
-          amount: acc.debit && acc.debit > 0 ? acc.debit : acc.credit ?? 0,
-          source: 'account'
-        }));
+        .map(acc => {
+          const amount = acc.debit && acc.debit > 0 ? acc.debit : acc.credit ?? 0;
+          const type = acc.credit > 0; // true if credit, false if debit
+          return {
+            label: acc.accountName,
+            amount,
+            source: 'account',
+            type
+          };
+        });
 
       // Dynamic children as group totals using sumAccounts
       const dynChildren = safeDynamicGroups
+        .filter(d => sideSet.has(normalize(d.parent))) // ✅ parent must be in this side
         .filter(d => d.parent === groupKey)
         .flatMap(d =>
           d.children.map(childName => {
@@ -45,13 +51,17 @@ exports.mapFlatGroupsGeneric = (
               gr => normalize(gr.groupName) === normalize(childName)
             );
             let amount = 0;
+            let type = false;
             if (childGroup) {
-              amount = sumAccounts(childGroup.accounts);
+              const { debitSum, creditSum, net } = sumAccounts(childGroup.accounts);
+              amount = net;
+              type = creditSum > debitSum; // true if credit side dominates
             }
             return {
               label: childName,
               amount,
-              source: 'dynamic-group'
+              source: 'dynamic-group',
+              type
             };
           })
         );
@@ -86,7 +96,7 @@ function createNormalizedMaps(groupedAccounts, structuredGroups) {
 function sumAccounts(accounts) {
   const debitSum = accounts.reduce((sum, a) => sum + (a.debit || 0), 0);
   const creditSum = accounts.reduce((sum, a) => sum + (a.credit || 0), 0);
-  return Math.abs(debitSum - creditSum);
+  return { debitSum, creditSum, net: Math.abs(debitSum - creditSum) };
 }
 
 function pushFlat(transformed, label, accounts) {
@@ -160,7 +170,8 @@ function pushMixed(transformed, label, accounts, subGroups, groupMap) {
 
   subGroups.forEach(child => {
     const childAccounts = groupMap.get(normalize(child))?.accounts || [];
-    const amount = sumAccounts(childAccounts);
+    const { net } = sumAccounts(childAccounts);
+    const amount = net;
 
     transformed.push({
       label: child,
@@ -190,14 +201,16 @@ exports.mapStructuredGroupsBySide = (groupedAccounts, sideSet, config) => {
     const accounts = groupMap.get(normKey)?.accounts || [];
 
     if (!structured) {
+      const { net } = sumAccounts(accounts);
       transformed.push({
         label: groupName,
         group: 'flat',
         innerAmount: 0,
-        outerAmount: sumAccounts(accounts)
+        outerAmount: net
       });
       return;
     }
+
 
     const { displayMode, subGroups = [] } = structured;
 

@@ -53,7 +53,19 @@ module.exports = {
         children: [], // dynamically injected from DB
         source: 'dynamic'
       }
-    ]
+    ],
+    CROSS_SIDE_MAPPING: {
+      LEFT_TO_RIGHT: {
+        // ✅ only left groups that can produce credit items
+        'Salaries': 'Indirect Income',
+        'Indirect Expenses': 'Indirect Income',
+        'Depreciation': 'Indirect Income'
+      },
+      RIGHT_TO_LEFT: {
+        // ✅ only right groups that can produce debit items
+        'Indirect Income': 'Indirect Expenses'
+      }
+    }
   },
 
   BALANCE_SHEET: {
