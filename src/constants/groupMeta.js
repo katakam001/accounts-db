@@ -46,7 +46,14 @@ module.exports = {
       'Indirect Income',
     ],
     STRUCTURED_GROUPS: [],
-    FILTER_GROUPS: []
+    FILTER_GROUPS: [],
+    RELATIONSHIP_GROUPS: [
+      {
+        parent: 'Indirect Expenses',
+        children: [], // dynamically injected from DB
+        source: 'dynamic'
+      }
+    ]
   },
 
   BALANCE_SHEET: {

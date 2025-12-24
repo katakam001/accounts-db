@@ -2,12 +2,13 @@ const { PROFIT_LOSS } = require('../../constants/groupMeta');
 const { normalize } = require('../tradingAccount/groupUtils');
 const { mapFlatGroupsGeneric } = require('../tradingAccount/flatGroups');
 
-exports.buildProfitAndLossReport = ({ groupedAccounts, grossProfit, grossLoss }) => {
+exports.buildProfitAndLossReport = ({ groupedAccounts, grossProfit, grossLoss,dynamicGroups }) => {
+
   const profitLossLeftSet = new Set(PROFIT_LOSS.LEFT_SIDE_GROUPS.map(normalize));
   const profitLossRightSet = new Set(PROFIT_LOSS.RIGHT_SIDE_GROUPS.map(normalize));
 
-  const debitGroups = mapFlatGroupsGeneric(groupedAccounts, profitLossLeftSet, {}, PROFIT_LOSS);
-  const creditGroups = mapFlatGroupsGeneric(groupedAccounts, profitLossRightSet, {}, PROFIT_LOSS);
+  const debitGroups = mapFlatGroupsGeneric(groupedAccounts, profitLossLeftSet, {}, PROFIT_LOSS,dynamicGroups);
+  const creditGroups = mapFlatGroupsGeneric(groupedAccounts, profitLossRightSet, {}, PROFIT_LOSS,dynamicGroups);
 
   if (grossProfit) {
     creditGroups.unshift({

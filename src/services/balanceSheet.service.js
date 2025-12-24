@@ -1,9 +1,10 @@
-const { TRADING_ACCOUNT, BALANCE_SHEET } = require('../constants/groupMeta');
+const { TRADING_ACCOUNT,PROFIT_LOSS, BALANCE_SHEET } = require('../constants/groupMeta');
 const { normalize } = require('./tradingAccount/groupUtils');
 const { getTradingAccountData } = require('./tradingAccount/dataFetcher');
 const { buildTradingAccountReport } = require('./tradingAccount.service');
 const { buildProfitAndLossReport } = require('./profitAndLoss/profitLossBuilder');
 const { mapBalanceSheetGroups } = require('./balanceSheet/balanceSheetBuilder');
+const { injectDynamicChildren } = require('./dynamicGroups.service');
 
 /**
  * Builds the full Balance Sheet report with net result injected into Capital Account.
@@ -34,11 +35,14 @@ exports.calculateBalanceSheetReport = async ({ db, userId, financialYear, fromDa
     rightSet: tradingRightSet
   });
 
+    const dynamicGroups = await injectDynamicChildren(userId, financialYear, PROFIT_LOSS.RELATIONSHIP_GROUPS);
+
   // Step 3: Compute net result from Profit & Loss
   const { netProfit, netLoss } = buildProfitAndLossReport({
     groupedAccounts,
     grossProfit,
-    grossLoss
+    grossLoss,
+    dynamicGroups
   });
 
   // Step 4: Adjust net result using Profit & Loss A/C group

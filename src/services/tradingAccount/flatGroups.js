@@ -1,40 +1,76 @@
 const { normalize } = require('./groupUtils');
 
-exports.mapFlatGroupsGeneric = (groups, sideSet, structuredGroupMap, config) => {
+exports.mapFlatGroupsGeneric = (
+  groups,
+  sideSet,
+  structuredGroupMap,
+  config,
+  dynamicGroups = null
+) => {
+  const safeDynamicGroups = Array.isArray(dynamicGroups) ? dynamicGroups : [];
+
   const filterGroupSet = new Set((config.FILTER_GROUPS || []).map(normalize));
   const structuredGroupList = config.STRUCTURED_GROUPS || [];
 
-  return groups.map(g => {
-    const groupKey = g.groupName;
-    const normalizedKey = normalize(groupKey);
+  return groups
+    .map(g => {
+      const groupKey = g.groupName;
+      const normalizedKey = normalize(groupKey);
 
-    if (filterGroupSet.has(normalizedKey)) return null;
+      if (filterGroupSet.has(normalizedKey)) return null;
 
-    const isStructured = structuredGroupList.includes(groupKey);
+      const isStructured = structuredGroupList.includes(groupKey);
 
-    const items = g.accounts
-      .filter(acc => {
-        if (!sideSet.has(normalizedKey)) return false;
-        if (!isStructured) return true;
+      // Normal account items
+      const items = g.accounts
+        .filter(acc => {
+          if (!sideSet.has(normalizedKey)) return false;
+          if (!isStructured) return true;
 
-        const structuredItems = structuredGroupMap[groupKey]?.items || [];
-        return !structuredItems.some(i => i.label === acc.accountName);
-      })
-      .map(acc => ({
-        label: acc.accountName,
-        amount: acc.debit && acc.debit > 0 ? acc.debit : acc.credit ?? 0,
-        source: 'account'
-      }));
+          const structuredItems = structuredGroupMap[groupKey]?.items || [];
+          return !structuredItems.some(i => i.label === acc.accountName);
+        })
+        .map(acc => ({
+          label: acc.accountName,
+          amount: acc.debit && acc.debit > 0 ? acc.debit : acc.credit ?? 0,
+          source: 'account'
+        }));
 
-    if (items.length === 0) return null;
+      // Dynamic children as group totals using sumAccounts
+      const dynChildren = safeDynamicGroups
+        .filter(d => d.parent === groupKey)
+        .flatMap(d =>
+          d.children.map(childName => {
+            const childGroup = groups.find(
+              gr => normalize(gr.groupName) === normalize(childName)
+            );
+            let amount = 0;
+            if (childGroup) {
+              amount = sumAccounts(childGroup.accounts);
+            }
+            return {
+              label: childName,
+              amount,
+              source: 'dynamic-group'
+            };
+          })
+        );
 
-    return {
-      group: groupKey,
-      groupMode: isStructured ? 'structured' : 'flat',
-      items,
-      total: items.reduce((sum, i) => sum + parseFloat(i.amount || 0), 0)
-    };
-  }).filter(Boolean);
+      const allItems = [...items, ...dynChildren];
+
+      if (allItems.length === 0) return null;
+
+      return {
+        group: groupKey,
+        groupMode: isStructured ? 'structured' : 'flat',
+        items: allItems,
+        total: allItems.reduce(
+          (sum, i) => sum + parseFloat(i.amount || 0),
+          0
+        )
+      };
+    })
+    .filter(Boolean);
 };
 
 function createNormalizedMaps(groupedAccounts, structuredGroups) {

@@ -3,6 +3,7 @@ const { normalize } = require('./tradingAccount/groupUtils');
 const { getTradingAccountData } = require('./tradingAccount/dataFetcher');
 const { buildTradingAccountReport } = require('./tradingAccount.service');
 const { buildProfitAndLossReport } = require('./profitAndLoss/profitLossBuilder');
+const { injectDynamicChildren } = require('./dynamicGroups.service');
 
 
 /**
@@ -34,6 +35,8 @@ exports.calculateProfitAndLossReport = async ({ db, userId, financialYear, fromD
     closingQuantities
   } = await getTradingAccountData({ db, userId, financialYear, fromDate, toDate });
 
+  const dynamicGroups = await injectDynamicChildren(userId, financialYear, PROFIT_LOSS.RELATIONSHIP_GROUPS);
+
   // Step 2: Compute gross result from Trading Account logic
   const tradingLeftSet = new Set(TRADING_ACCOUNT.LEFT_SIDE_GROUPS.map(normalize));
   const tradingRightSet = new Set(TRADING_ACCOUNT.RIGHT_SIDE_GROUPS.map(normalize));
@@ -49,5 +52,5 @@ exports.calculateProfitAndLossReport = async ({ db, userId, financialYear, fromD
     rightSet: tradingRightSet
   });
 
-    return buildProfitAndLossReport({ groupedAccounts, grossProfit, grossLoss });
+    return buildProfitAndLossReport({ groupedAccounts, grossProfit, grossLoss,dynamicGroups });
 };
