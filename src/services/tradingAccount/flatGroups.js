@@ -166,12 +166,11 @@ function pushNested(transformed, label, children, groupMap) {
   }
 }
 
-function pushMixed(transformed, label, accounts, subGroups, groupMap) {
-
+function pushMixed(transformed, label, accounts, subGroups, groupMap, hierarchyTree) {
+  // Roll up all subgroup accounts recursively
   subGroups.forEach(child => {
-    const childAccounts = groupMap.get(normalize(child))?.accounts || [];
-    const { net } = sumAccounts(childAccounts);
-    const amount = net;
+    const { debitSum: d, creditSum: c } = rollUpAccounts(child, groupMap, hierarchyTree);
+    const amount = Math.abs(d - c);
 
     transformed.push({
       label: child,
@@ -183,7 +182,7 @@ function pushMixed(transformed, label, accounts, subGroups, groupMap) {
   pushFlat(transformed, label, accounts);
 }
 
-exports.mapStructuredGroupsBySide = (groupedAccounts, sideSet, config) => {
+exports.mapStructuredGroupsBySide = (groupedAccounts, sideSet, config, hierarchyTree) => {
   const {
     STRUCTURED_GROUPS = [],
     RELATIONSHIP_GROUPS = []
@@ -221,9 +220,46 @@ exports.mapStructuredGroupsBySide = (groupedAccounts, sideSet, config) => {
       const children = rel?.children || [];
       pushNested(transformed, groupName, children, groupMap);
     } else if (displayMode === 'mixed') {
-      pushMixed(transformed, groupName, accounts, subGroups, groupMap);
+      pushMixed(transformed, groupName, accounts, subGroups, groupMap, hierarchyTree);
     }
   });
 
   return transformed;
 };
+
+function rollUpAccounts(label, groupMap, hierarchyTree) {
+  let debitSum = 0;
+  let creditSum = 0;
+
+  // Recursive walker
+  function walk(node) {
+    if (!node) return;
+
+    // Add this group's accounts
+    const group = groupMap.get(normalize(node.name));
+    if (group?.accounts) {
+      group.accounts.forEach(acc => {
+        debitSum += acc.debit || 0;
+        creditSum += acc.credit || 0;
+      });
+    }
+
+    // Recurse into children
+    (node.children || []).forEach(child => walk(child));
+  }
+
+  // Find the node in the hierarchy tree
+  function findNode(name, nodes) {
+    for (const node of nodes) {
+      if (node.name === name) return node;
+      const result = findNode(name, node.children || []);
+      if (result) return result;
+    }
+    return null;
+  }
+
+  const rootNode = findNode(label, hierarchyTree);
+  if (rootNode) walk(rootNode);
+
+  return { debitSum, creditSum };
+}
