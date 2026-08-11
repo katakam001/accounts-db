@@ -22,7 +22,8 @@ exports.uploadStageBundle = async function (job, jobId, stageId, bundle, transac
     try {
         const s3Key = await uploadToS3({
             keyPrefix: `jobs/${sizeCategory}/${jobId}/stage${stageId}/`,
-            fileName: "config_bundle.json",
+            // ✅ include chunkIndex in the file name
+            fileName: `config_bundle_${chunkIndex}.json`,
             dataBuffer: Buffer.from(JSON.stringify(bundle)),
             contentType: "application/json",
             metadata: {
