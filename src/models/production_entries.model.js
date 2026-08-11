@@ -1,4 +1,4 @@
-module.exports = (sequelize, Sequelize, Items, Units, Conversions,ProductionEntries) => {
+module.exports = (sequelize, Sequelize, Items, Units, Conversions, ProductionEntries) => {
   const ProductionEntry = sequelize.define("ProductionEntry", {
     id: {
       type: Sequelize.INTEGER,
@@ -68,6 +68,10 @@ module.exports = (sequelize, Sequelize, Items, Units, Conversions,ProductionEntr
       onDelete: 'RESTRICT', // Change to ON DELETE RESTRICT
       onUpdate: 'CASCADE',  // Keep ON UPDATE CASCADE
       allowNull: true,
+    },
+    production_seq_id: {
+      type: Sequelize.BIGINT, // Adding the production_seq_id field
+      allowNull: true
     },
   }, {
     tableName: 'production_entries',

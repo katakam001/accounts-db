@@ -1,11 +1,10 @@
-const { checkQueueDepth, monitorQueueAndConsume } = require("../services/sqs.service");
+const monitorService = require("../services/monitor.service");
 const { getDb } = require("../utils/getDb");
 const { Op } = require('sequelize');
 // Configure AWS S3
 const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
 const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
 const s3 = new S3Client({ region: process.env.AWS_REGION });
-let isMonitoringActive = false; // 🔹 Prevent duplicate monitoring sessions
 const cache = require("../services/cache.service"); // ✅ Import shared cache service
 
 // Function to Generate Presigned URL
@@ -131,37 +130,8 @@ exports.getPresignedUrl = async (req, res) => {
 
 exports.startMonitoring = async (req, res) => {
   try {
-    if (isMonitoringActive) {
-      return res.status(200).json({ message: "Monitoring is already running!" });
-    }
-
-    console.log("Received request to start queue monitoring...");
-    isMonitoringActive = true;
-    const resetMonitoringFlag = () => { // ✅ This function resets monitoring state
-      isMonitoringActive = false;
-    };
-    // 🔹 Wait until SQS contains messages before starting monitoring
-    const waitForMessages = async () => {
-      let retries = 0;
-      while (retries < 6) { // 🔹 Retry for up to 3 minutes
-        const messageCount = await checkQueueDepth();
-        if (messageCount > 0) {
-          console.log("Messages detected in SQS. Starting consumer...");
-          monitorQueueAndConsume(messageCount, resetMonitoringFlag); // Start consumer only when messages exist
-          return;
-        }
-        console.log("Waiting for Lambda to complete processing...");
-        await new Promise(resolve => setTimeout(resolve, 30000)); // Wait 30s before retrying
-        retries++;
-      }
-      console.log("Lambda processing might have failed. Monitoring skipped.");
-      isMonitoringActive = false; // Reset flag if no messages found after retries
-    };
-
-    setTimeout(waitForMessages, 0); // Run async check in the background
-
-    res.json({ message: "Monitoring will start when messages are available in SQS!" });
-
+    const result = monitorService.startMonitoring();
+    res.json(result);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

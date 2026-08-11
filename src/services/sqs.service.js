@@ -5,6 +5,14 @@ const invoiceUtils = require('../utils/invoiceUtils');
 const { fetchCategories } = require('../services/category.service');
 const { getAllItems } = require('../services/items.service');
 const cache = require("../services/cache.service"); // ✅ Import shared cache service
+const stageHelperService = require("./copyJob/stages/common/stageHelpers.service");
+const processStage1aService = require("./copyJob/stages/stage1a/processStage.service");
+const processStage1bService = require("./copyJob/stages/stage1b/processStage.service");
+const processStage1cService = require("./copyJob/stages/stage1c/processStage.service");
+const processStage2aService = require("./copyJob/stages/stage2a/processStage.service");
+const processStage2bService = require("./copyJob/stages/stage2b/processStage.service");
+const processStage2cService = require("./copyJob/stages/stage2c/processStage.service");
+const processStage2dService = require("./copyJob/stages/stage2d/processStage.service");
 
 async function monitorQueueAndConsume(messageCount, resetMonitoringFlag) {
     console.log(`Monitoring queue with ${messageCount} messages available...`);
@@ -65,6 +73,7 @@ function groupMessages(Messages) {
         const financialYear = attributes.financialYear.StringValue;
         const fileType = attributes.fileType?.StringValue;
         const exportId = attributes.exportId?.StringValue;
+        const stage = attributes.stage?.StringValue;
         const batchId = attributes.batchId?.StringValue;
         const messageType = attributes.messageType?.StringValue;
         const isInvoiceProcessing = attributes.type?.StringValue && attributes.taxType?.StringValue;
@@ -79,6 +88,12 @@ function groupMessages(Messages) {
         }
         if (messageType) {
             type = parseInt(batchId);
+        }
+        if (stage) {
+            type = `${attributes.stage.StringValue}-${attributes.fileType.StringValue}`
+        }
+        if (stage && messageType) {
+            type = `${attributes.stage.StringValue}-${attributes.fileType.batchId}`
         }
 
         const transactionData = JSON.parse(message.Body);
@@ -109,16 +124,20 @@ function groupMessages(Messages) {
 
 async function processGroupedTransactions(key, transactionRecords) {
     const suspenseAccountName = "Suspense Account";
-    const exportTypes = ["daybook", "accountCopy", "ledger", "trailBalanceExport","tradingAccount","profitAndLoss","tradingAccountProfitAndLoss"];
+    const exportTypes = ["daybook", "accountCopy", "ledger", "trailBalanceExport", "tradingAccount", "profitAndLoss", "tradingAccountProfitAndLoss"];
     const uploadTypes = ["bankStatement", "trailBalanceUpload", "purchaseCgst", "purchaseIgst", "purchaseTcs", "creditSaleCgst", "creditSaleIgst", "cashSaleCgst", "cashSaleIgst", "creditNoteCgst", "creditNoteIgst", "debitNoteCgst", "debitNoteIgst",];
     const [userId, financialYear, typeOrAccountId, batchId] = key.split("_").map(val => isNaN(val) ? val : parseInt(val));
 
     const validCSVIdentifiers = ['1-cgst', '1-igst', '1-tcs', '2-cgst', '2-igst', '5-cgst', '5-igst', '6-cgst', '6-igst', '8-cgst', '8-igst'];
+    const validCopyJobStages = ['1-copyJob', '2-copyJob', '3-copyJob', '4-copyJob', '5-copyJob', '6-copyJob', '7-copyJob', '8-copyJob'];
+
     const isCSVInvoice = validCSVIdentifiers.includes(typeOrAccountId);
     const isTrailBalance = typeOrAccountId === "trailBalance";
+    const isCopyJob = validCopyJobStages.includes(typeOrAccountId);
     const isExport = exportTypes.includes(typeOrAccountId);
     const isSummary = uploadTypes.includes(typeOrAccountId);
-    const accountId = isCSVInvoice || isTrailBalance || isExport || isSummary ? null : typeOrAccountId;
+    const isCopySummary = typeOrAccountId === "copyJob";
+    const accountId = isCSVInvoice || isTrailBalance || isExport || isSummary || isCopyJob || isCopySummary ? null : typeOrAccountId;
 
 
     const validTypes = ['1', '2', '5', '6', '8'];
@@ -135,6 +154,15 @@ async function processGroupedTransactions(key, transactionRecords) {
             taxType = taxPart;             // 'cgst','igst','tcs'
         }
     }
+    let stageNum = null;
+
+    if (isCopyJob && typeof typeOrAccountId === 'string') {
+
+        const parts = typeOrAccountId.split("-");
+        const stageStr = parts[0];
+        stageNum = parseInt(stageStr, 10);
+    }
+
 
     console.log(`Processing ${isCSVInvoice ? "CSV Invoices" : "PDF"} for User: ${userId}, Financial Year: ${financialYear},batch Id :${batchId} || "N/A", Account ID: ${accountId || "N/A"}`);
 
@@ -187,6 +215,56 @@ async function processGroupedTransactions(key, transactionRecords) {
             groupedRecords: transactionRecords
         });
 
+    } else if (isCopyJob) {
+        const records = transactionRecords[typeOrAccountId];
+
+        if (stageNum === 1) {
+            // Stage1a
+            await processStage1aService.processStage1a({
+                jobId: batchId,
+                records
+            });
+        } else if (stageNum === 2) {
+            // Stage1b
+            await processStage1bService.processStage1b({
+                jobId: batchId,
+                records
+            });
+        } else if (stageNum === 3) {
+            // Stage1c
+            await processStage1cService.processStage1c({
+                jobId: batchId,
+                records
+            });
+        } else if (stageNum === 4) {
+            // Stage2a
+            await processStage2aService.processStage2a({
+                jobId: batchId,
+                records
+            });
+        } else if (stageNum === 5) {
+            // Stage2b
+            await processStage2bService.processStage2b({
+                jobId: batchId,
+                records
+            });
+        } else if (stageNum === 6) {
+            // Stage2c
+            await processStage2cService.processStage2c({
+                jobId: batchId,
+                records
+            });
+        } else if (stageNum === 7) {
+            // Stage2c
+            await processStage2dService.processStage2d({
+                jobId: batchId,
+                records
+            });
+        }
+    } else if (isCopySummary) {
+        await stageHelperService.processStageSummary({
+            groupedRecords: transactionRecords
+        });
     } else {
         // ✅ Process CSV invoices
         await loadAndCacheInvoiceData(userId, financialYear, type, cachedData);
@@ -214,7 +292,6 @@ async function processGroupedTransactions(key, transactionRecords) {
         });
     }
 }
-
 
 // 🔹 Function to load and cache invoice data
 async function loadAndCacheInvoiceData(userId, financialYear, type, cachedData) {
@@ -331,7 +408,6 @@ async function loadAndCacheMappingRuleMaps(userId, financialYear, cachedData) {
     }
 }
 
-
 function findBankAccountById(accountMap, targetAccountId) {
     for (const [accountName, data] of accountMap) {
         if (data.accountId === targetAccountId) {
@@ -344,8 +420,6 @@ function findBankAccountById(accountMap, targetAccountId) {
     }
     return null; // Not found
 }
-
-
 
 async function checkQueueDepth() {
     try {
@@ -360,7 +434,6 @@ async function checkQueueDepth() {
         return 0; // Return 0 if error occurs
     }
 }
-
 
 const deleteBatchMessages = async (Messages) => {
     const deleteParams = {

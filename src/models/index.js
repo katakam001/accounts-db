@@ -74,6 +74,11 @@ db.stock_register = require("../models/stockRegiser.model.js")(sequelize, Sequel
 db.exports = require("../models/exports.model.js")(sequelize, Sequelize);
 db.uploadHistory = require('../models/uploadHistory.model.js')(sequelize, Sequelize);
 db.messageTrackingLog = require('../models/messageTrackingLog.model.js')(sequelize, Sequelize, db.uploadHistory);
+db.copyJob = require("../models/copyJobs.model.js")(sequelize, Sequelize, db.user);
+db.copyJobTable = require('../models/copyJobTable.model.js')(sequelize, Sequelize, db.copyJob);
+db.copyJobAudit = require('../models/copyJobAudit.model.js')(sequelize, Sequelize, db.copyJob);
+db.copyJobChunkTableMap = require('./copyJobChunkTableMap.model.js')(sequelize, Sequelize, db.copyJobTable);
+
 
 db.fieldsMapping.belongsTo(db.categories, { foreignKey: 'category_id', as: 'category' });
 db.fieldsMapping.belongsTo(db.fields, { foreignKey: 'field_id', as: 'field' });
@@ -179,6 +184,16 @@ db.opening_stock.belongsTo(db.items, { foreignKey: 'item_id', as: 'item' }); // 
 db.stock_valulation.belongsTo(db.items, { foreignKey: 'item_id', as: 'item' }); // New association
 db.stock_register.belongsTo(db.items, { foreignKey: 'item_id', as: 'item' }); // New association
 
+// Associations between CopyJob, CopyJobTable, and CopyJobAudit
+db.copyJob.hasMany(db.copyJobTable, { foreignKey: 'job_id', as: 'jobTables' });
+db.copyJob.hasMany(db.copyJobAudit, { foreignKey: 'job_id', as: 'jobAudits' });
+db.copyJob.belongsTo(db.user, { as: 'sourceUser', foreignKey: 'source_user_id' });
+db.copyJob.belongsTo(db.user, { as: 'targetUser', foreignKey: 'target_user_id' });
+
+db.copyJobTable.belongsTo(db.copyJob, { foreignKey: 'job_id', as: 'job' });
+db.copyJobAudit.belongsTo(db.copyJob, { foreignKey: 'job_id', as: 'job' });
+db.copyJobTable.hasMany(db.copyJobChunkTableMap, { foreignKey: 'copy_job_table_id', as: 'chunks' });
+db.copyJobChunkTableMap.belongsTo(db.copyJobTable, { foreignKey: 'copy_job_table_id', as: 'jobTables' });
 
 
 module.exports = db;

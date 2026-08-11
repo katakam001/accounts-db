@@ -68,8 +68,17 @@ exports.createProductionEntry = async (req, res) => {
     const t = await db.sequelize.transaction();
     const ProductionEntry = db.production_entries;
     const { processedItems, ...productionEntryData } = req.body;
+    const [[{ next_sequence_id }]] = await db.sequelize.query(
+      `SELECT nextval('group_entries_seq') AS next_sequence_id`
+    );
 
-    const productionEntry = await ProductionEntry.create(productionEntryData, { transaction: t });
+    const productionEntry = await ProductionEntry.create(
+      {
+        ...productionEntryData,
+        production_seq_id: next_sequence_id   // ✅ assign sequence ID
+      },
+      { transaction: t }
+    );
 
     // Insert each processed item as a separate entry in the production_entries table
     for (const item of processedItems) {
@@ -105,6 +114,7 @@ exports.createProductionEntry = async (req, res) => {
       financial_year: productionEntry.financial_year,
       conversion_id: productionEntry.conversion_id,
       conversion_rate: conversion ? conversion.rate : null,
+      production_seq_id: productionEntry.production_seq_id,
       processedItems: processedItems.map(item => ({
         item_id: item.item_id,
         quantity: item.quantity,
@@ -179,6 +189,7 @@ exports.updateProductionEntry = async (req, res) => {
         financial_year: updatedProductionEntry.financial_year,
         conversion_id: updatedProductionEntry.conversion_id,
         conversion_rate: updatedProductionEntry.conversion ? updatedProductionEntry.conversion.rate : null,
+        production_seq_id:updatedProductionEntry.updatedProductionEntry,
         processedItems: processedItems.map(item => ({
           item_id: item.item_id,
           item_name: item.item_name,

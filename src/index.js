@@ -101,6 +101,7 @@ app.get("/", (req, res) => {
 // routes
 require("./routes/auth.routes")(app);
 require("./routes/admin.routes.js")(app);
+require("./routes/copyJob.routes.js")(app);
 require("./routes/financialYearTracking.routes.js")(app);
 require("./routes/account.routes")(app);
 require("./routes/group.routes")(app);

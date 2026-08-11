@@ -1088,6 +1088,7 @@ exports.createJournalEntryWithItems = async (req, res) => {
 
   // Convert journal_date string to Date object
   const journalDate = new Date(newEntry.journal_date);
+  const transactionId = `TXN-${Date.now()}`; // ✅ Safe within 30 characters
 
   try {
     const JournalEntry = db.journalEntry;
@@ -1096,6 +1097,7 @@ exports.createJournalEntryWithItems = async (req, res) => {
     // Create new journal entry
     const createdJournalEntry = await JournalEntry.create({
       journal_date: journalDate,
+      transaction_id: transactionId,
       user_id: newEntry.user_id,
       createdAt: new Date(),
       updatedAt: new Date(),
