@@ -604,6 +604,7 @@ exports.updateEntries = async (req, res) => {
     const userId = entries[0].user_id;
     const financialYear = entries[0].financial_year;
     const type = entries[0].type;
+    const existing_seq_no = entries[0].s_no;
 
     // Step 1: Update or create a new journal entry
     let journalEntry = await JournalEntry.findOne({
@@ -656,6 +657,7 @@ exports.updateEntries = async (req, res) => {
         entryWithoutDynamicFields.journal_id = journalEntry.id;
         entryWithoutDynamicFields.invoiceNumber = newInvoiceNumber; // Update to new invoice number
         entryWithoutDynamicFields.invoice_seq_id = invoiceSeqId; // Assign the existing `invoice_seq_id`
+        entryWithoutDynamicFields.sNo = existing_seq_no;
         updatedEntry = await Entry.create(entryWithoutDynamicFields, { transaction: t });
       }
 
@@ -745,6 +747,7 @@ exports.updateCashEntries = async (req, res) => {
     const userId = entries[0].user_id;
     const financialYear = entries[0].financial_year;
     const type = entries[0].type;
+    const existing_seq_no = entries[0].s_no;
 
 
     const existingEntries = await CashSaleEntry.findAll({
@@ -863,6 +866,7 @@ exports.updateCashEntries = async (req, res) => {
       } else {
         entryData.invoice_seq_id = invoiceSeqId;
         entryData.invoiceNumber = newInvoiceNumber;
+        entryData.sNo = existing_seq_no;
         updatedEntry = await CashSaleEntry.create(entryData, { transaction: t });
 
         addTo(newDate, entry.category_account_id, entry.value);
@@ -1129,9 +1133,10 @@ exports.deleteCashEntries = async (req, res) => {
     return res.status(400).json({ error: 'invoice_seq_id and type are required' });
   }
 
+  let t;
   try {
     const db = getDb();
-    const t = await db.sequelize.transaction();
+    t = await db.sequelize.transaction();
 
     const {
       cashSaleEntries: CashSaleEntry,
@@ -1215,6 +1220,7 @@ exports.deleteCashEntries = async (req, res) => {
         include: [{ model: Group, as: 'group', through: { attributes: [] } }],
         transaction: t
       });
+      console.log(account);
       const group_id = account.group[0].id;
       const account_name = account.name;
 
