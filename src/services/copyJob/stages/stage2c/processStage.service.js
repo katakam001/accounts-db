@@ -199,5 +199,5 @@ exports.processStage2c = async ({ jobId, records, metadata }) => {
 
     }
   }
-  console.log(`🚀 Stage1c processed ${records.length} rows for Job ${jobId}`);
+  console.log(`🚀 Stage2c processed ${records.length} rows for Job ${jobId}`);
 };
