@@ -13,6 +13,12 @@ module.exports = {
       type: Sequelize.STRING(68),
       allowNull: true,
     });
+
+    // cash_entries table
+    await queryInterface.changeColumn('cash_entries', 'transaction_id', {
+      type: Sequelize.STRING(68),
+      allowNull: true,
+    });
   },
 
   async down(queryInterface, Sequelize) {
@@ -23,6 +29,11 @@ module.exports = {
     });
 
     await queryInterface.changeColumn('journal_entries', 'transaction_id', {
+      type: Sequelize.STRING(64),
+      allowNull: true,
+    });
+
+    await queryInterface.changeColumn('cash_entries', 'transaction_id', {
       type: Sequelize.STRING(64),
       allowNull: true,
     });
