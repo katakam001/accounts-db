@@ -48,7 +48,7 @@ module.exports = (sequelize, Sequelize, Account, Group) => {
       allowNull: false,
     },
     transaction_id: {
-      type: Sequelize.STRING(64),
+      type: Sequelize.STRING(68),
       allowNull: true,
     },
     is_cash_adjustment: {
