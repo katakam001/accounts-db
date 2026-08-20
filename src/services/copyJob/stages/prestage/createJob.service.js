@@ -24,7 +24,8 @@ module.exports = async function createJobService(adminId, payload, db, transacti
     to_date: payload.to_date,
     financial_year: financialYear,   // ✅ new field
     status: Constants.JOB_STATUS.PENDING,
-    current_stage: Constants.STAGE_IDS.PRESTAGE
+    current_stage: Constants.STAGE_IDS.PRESTAGE,
+    is_backup: payload.is_backup === true
   }, { transaction });
 
   // Step 2: Collect stage configs

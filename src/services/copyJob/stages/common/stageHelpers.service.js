@@ -33,6 +33,7 @@ exports.uploadStageBundle = async function (job, jobId, stageId, bundle, transac
                 from_date: job.from_date?.toString() || "",
                 to_date: job.to_date?.toString() || "",
                 financial_year: job.financial_year || "",
+                is_backup: job.is_backup ? "true" : "false",
                 stage: stageId.toString(),
                 chunk_index: chunkIndex.toString(),
                 fileType: "copyJob"
@@ -155,11 +156,12 @@ exports.finalizeStage = async ({ db, jobId, stageNumber }) => {
 };
 // Generic helper to handle upsert vs  special case
 
-exports.safeUpsert = async ({ model, tableName, row_data, stageCfg, db, transaction }) => {
+exports.safeUpsert = async ({ model, tableName, row_data, stageCfg, db, transaction, is_backup }) => {
     const conflictFields = stageCfg.conflictFields?.[tableName];
     const specialHandling = stageCfg.specialHandling?.[tableName];
     const functionalFields = stageCfg.functionalUnique?.[tableName];
     const mergeFields = stageCfg.mergeFields?.[tableName];
+    const overrideFlag = is_backup === true; // job-level flag
 
     if (specialHandling === "whereClause") {
         const whereKeys = stageCfg.whereClauseFields?.[tableName] || Object.keys(row_data);
@@ -183,11 +185,18 @@ exports.safeUpsert = async ({ model, tableName, row_data, stageCfg, db, transact
                 );
             }
 
+            // ✅ Generic override/merge handling
             if (mergeFields?.length) {
                 const existing = await model.findOne({ where, transaction });
                 if (existing) {
-                    for (const field of mergeFields) {
-                        existing[field] = Number(existing[field] || 0) + Number(row_data[field] || 0);
+                    if (overrideFlag) {
+                        // Override: replace all fields with incoming row_data
+                        Object.assign(existing, row_data);
+                    } else {
+                        // Merge: add numeric fields
+                        for (const field of mergeFields) {
+                            existing[field] = Number(existing[field] || 0) + Number(row_data[field] || 0);
+                        }
                     }
                     existing.updatedAt = new Date();
                     await existing.save({ transaction });

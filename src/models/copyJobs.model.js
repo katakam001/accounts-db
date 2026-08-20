@@ -40,6 +40,10 @@ module.exports = (sequelize, Sequelize, Users) => {
         current_stage: {
             type: Sequelize.SMALLINT,   // 0=stage1a, 1=stage1b, 2=stage2, 3=finalize
             allowNull: true,
+        },
+        is_backup: {
+            type: Sequelize.BOOLEAN,
+            defaultValue: false,
         }
     }, {
         tableName: 'copy_jobs'

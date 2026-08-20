@@ -28,7 +28,7 @@ exports.processStage1b = async ({ jobId, records, metadata }) => {
     // 🔹 Process account group
     if (groupedRecords.groups.account) {
         for (const record of groupedRecords.groups.account) {
-            const { row_data, source_id, s3_key, chunk_index } = record;
+            const { row_data, source_id, s3_key, chunk_index, is_backup } = record;
             await db.sequelize.transaction(async (t) => {
                 try {
                     // account_list
@@ -40,10 +40,11 @@ exports.processStage1b = async ({ jobId, records, metadata }) => {
                         row_data: accountRow,
                         stageCfg: copyJobConfig.stages.configuration.stage1b,
                         db,
-                        transaction: t // ✅ transaction
+                        transaction: t, // ✅ transaction
+                        is_backup
                     });
 
-                    const chunkMetaAcc = CacheTracker.getChunkSummary(jobId, "account_list",Constants.STAGE_IDS.STAGE1B, chunk_index);
+                    const chunkMetaAcc = CacheTracker.getChunkSummary(jobId, "account_list", Constants.STAGE_IDS.STAGE1B, chunk_index);
                     CacheTracker.increment(jobId, "account_list", "processed");
                     if (createdAcc) CacheTracker.increment(jobId, "account_list", "inserted");
                     else CacheTracker.increment(jobId, "account_list", "skipped");
@@ -55,7 +56,7 @@ exports.processStage1b = async ({ jobId, records, metadata }) => {
                         const { id: sourceAddrId, ...addrRow } = addr;
                         addrRow.account_id = account.id;
                         const existingAddr = await db.address.findOne({ where: { account_id: account.id, ...addrRow }, transaction: t });
-                        const chunkMetaAddr = CacheTracker.getChunkSummary(jobId, "addresses",Constants.STAGE_IDS.STAGE1B, chunk_index);
+                        const chunkMetaAddr = CacheTracker.getChunkSummary(jobId, "addresses", Constants.STAGE_IDS.STAGE1B, chunk_index);
                         CacheTracker.increment(jobId, "addresses", "processed");
                         if (!existingAddr) {
                             const newAddr = await db.address.create(addrRow, { transaction: t });
@@ -74,7 +75,7 @@ exports.processStage1b = async ({ jobId, records, metadata }) => {
                         agRow.account_id = account.id;
                         agRow.group_id = CacheTracker.getMapping(jobId, "group_list", agRow.group_id);
                         const existingAg = await db.accountGroup.findOne({ where: { account_id: account.id, group_id: agRow.group_id }, transaction: t });
-                        const chunkMetaAg = CacheTracker.getChunkSummary(jobId, "account_group",Constants.STAGE_IDS.STAGE1B, chunk_index);
+                        const chunkMetaAg = CacheTracker.getChunkSummary(jobId, "account_group", Constants.STAGE_IDS.STAGE1B, chunk_index);
                         CacheTracker.increment(jobId, "account_group", "processed");
 
                         if (!existingAg) {
@@ -178,7 +179,7 @@ exports.processStage1b = async ({ jobId, records, metadata }) => {
 
                 const { row_data, source_id, s3_key, chunk_index } = record;
                 try {
-                    const chunkMeta = CacheTracker.getChunkSummary(jobId, table_name,Constants.STAGE_IDS.STAGE1B, chunk_index);
+                    const chunkMeta = CacheTracker.getChunkSummary(jobId, table_name, Constants.STAGE_IDS.STAGE1B, chunk_index);
                     if (!chunkMeta) throw new Error(`Chunk not found for ${table_name} and s3_key ${s3_key}`);
 
                     const { id: sourceId, ...cleanRow } = row_data;

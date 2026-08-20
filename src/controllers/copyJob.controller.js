@@ -46,6 +46,7 @@ exports.getAllJobs = async (req, res) => {
         financial_year: plain.financial_year,
         status: plain.status,
         current_stage: plain.current_stage,
+        is_backup: plain.is_backup, // ✅ include backup flag
         source_user_name: plain.sourceUser?.source_user_name,
         target_user_name: plain.targetUser?.target_user_name
       };

@@ -30,10 +30,10 @@ exports.processStage2b = async ({ jobId, records, metadata }) => {
           const type = entries[0].type;
           let next_seq_no = entries[0].sNo;
 
-          const [[{ next_sequence_id }]] = await db.sequelize.query(
-            `SELECT nextval('group_entries_seq') AS next_sequence_id`,
-            { transaction: t }
-          );
+          // const [[{ next_sequence_id }]] = await db.sequelize.query(
+          //   `SELECT nextval('group_entries_seq') AS next_sequence_id`,
+          //   { transaction: t }
+          // );
 
           const existingTracker = await db.invoice_tracker.findOne({
             where: { user_id: userId, financial_year: financialYear, type },
@@ -57,7 +57,7 @@ exports.processStage2b = async ({ jobId, records, metadata }) => {
           if (!next_seq_no) {
             next_seq_no = updatedTracker?.last_sno ?? 1;
           }
-          journalRow.invoice_seq_id=next_sequence_id;
+          // journalRow.invoice_seq_id=next_sequence_id;
 
           const [journalEntry, createdJournal] = await stageHelperService.safeUpsert({
             model: db.journalEntry,
@@ -121,7 +121,7 @@ exports.processStage2b = async ({ jobId, records, metadata }) => {
             entryRow.category_id = CacheTracker.getMapping(jobId, "categories", entryRow.category_id);
             entryRow.item_id = CacheTracker.getMapping(jobId, "items", entryRow.item_id);
             entryRow.unit_id = CacheTracker.getMapping(jobId, "units", entryRow.unit_id);
-            entryRow.invoice_seq_id = next_sequence_id;
+            // entryRow.invoice_seq_id = next_sequence_id;
             entryRow.sNo = next_seq_no;
 
             const [entryObj, createdEntry] = await stageHelperService.safeUpsert({
