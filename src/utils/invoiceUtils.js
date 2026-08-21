@@ -282,7 +282,7 @@ const createDynamicFields = (categoryId, dynamicFieldsMap, extractedData, gstVal
 
         if (taxType === 'igst') {
           field_value = gst.toFixed(2);
-        } if (taxType === 'tcs') {
+        }else if (taxType === 'tcs') {
           field_value = gst.toFixed(2);
         } else {
           // Calculate expected tax value from NetAmt
