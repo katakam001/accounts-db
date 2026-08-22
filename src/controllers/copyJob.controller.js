@@ -59,6 +59,45 @@ exports.getAllJobs = async (req, res) => {
   }
 };
 
+exports.getJobTables = async (req, res) => {
+  try {
+    const db = getDb();
+    const CopyJobTable = db.copyJobTable;
+    const jobId = req.params.jobId;
+
+    const tables = await CopyJobTable.findAll({
+      where: {
+        job_id: jobId,
+        total_count: { [db.Sequelize.Op.gt]: 0 }   // ✅ only rows with total_count > 0
+      },
+      order: [
+        ['stage', 'ASC'],
+        ['order_index', 'ASC'],
+        ['sub_order_index', 'ASC']
+      ]
+    });
+
+    res.json(tables);
+  } catch (err) {
+    console.error('Error fetching job tables:', err);
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// GET /copyJobs/tables/:tableId/chunks
+exports.getJobChunks = async (req, res) => {
+  const db = getDb();
+  const CopyJobChunkTableMap = db.copyJobChunkTableMap;
+  const tableId = req.params.tableId;
+
+  const chunks = await CopyJobChunkTableMap.findAll({
+    where: { copy_job_table_id: tableId },
+    order: [['chunk_index', 'ASC']]
+  });
+
+  res.json(chunks);
+};
+
 // Create a new copy job (PreStage initialization)
 exports.createJob = async (req, res) => {
   const db = getDb();

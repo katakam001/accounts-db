@@ -102,7 +102,7 @@ exports.processStage2a = async ({ jobId, records, metadata }) => {
         const groupTables = ["journal_entries", "journal_items"];
         const results = groupTables.map(tbl => {
           const summary = CacheTracker.getSummary(jobId, tbl);
-          console.log(summary);
+          // console.log(summary);
           if (!summary || !summary.total || summary.total === 0) return true;
           const totalChunks = CacheTracker.getTotalChunks(jobId, tbl, Constants.STAGE_IDS.STAGE2A);
           return CacheTracker.isComplete(jobId, tbl, totalChunks);

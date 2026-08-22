@@ -39,7 +39,7 @@ exports.processStage2c = async ({ jobId, records, metadata }) => {
           rootClean.item_id = CacheTracker.getMapping(jobId, "items", rootClean.item_id);
           rootClean.unit_id = CacheTracker.getMapping(jobId, "units", rootClean.unit_id);
           rootClean.conversion_id = CacheTracker.getMapping(jobId, "conversions", rootClean.conversion_id);
-          console.log(rootClean);
+          // console.log(rootClean);
 
           const [rootEntry, createdRoot] = await stageHelperService.safeUpsert({
             model: db.production_entries,
@@ -68,7 +68,7 @@ exports.processStage2c = async ({ jobId, records, metadata }) => {
             childClean.unit_id = CacheTracker.getMapping(jobId, "units", childClean.unit_id);
             childClean.conversion_id = CacheTracker.getMapping(jobId, "conversions", childClean.conversion_id);
             childClean.production_entry_id = rootEntry.id;
-            console.log(childClean);
+            // console.log(childClean);
 
             const [childEntry, createdChild] = await stageHelperService.safeUpsert({
               model: db.production_entries,
@@ -139,7 +139,7 @@ exports.processStage2c = async ({ jobId, records, metadata }) => {
             const { id: sourceId, ...cleanRow } = row_data;
             cleanRow.account_id = CacheTracker.getMapping(jobId, "account_list", cleanRow.account_id);
             cleanRow.group_id = CacheTracker.getMapping(jobId, "group_list", cleanRow.group_id);
-            console.log(cleanRow);
+            // console.log(cleanRow);
 
             const [instance, created] = await stageHelperService.safeUpsert({
               model,
