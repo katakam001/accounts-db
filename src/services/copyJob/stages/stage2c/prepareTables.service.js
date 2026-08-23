@@ -12,16 +12,28 @@ module.exports = async function prepareStage2c(jobId) {
     const CopyJobTable = db.copyJobTable;
     const CopyJobChunkTableMap = db.copyJobChunkTableMap;
 
-    // Step 1: Fetch job metadata
     const job = await CopyJob.findByPk(jobId);
     if (!job) throw new Error(`CopyJob ${jobId} not found`);
 
     const stageConfig = copyJobConfig.stages.data.stage2c;
     const PAGE_SIZE = 1000;
-    let offset = 0;
     let chunkIndex = 0;
 
-    // 🔹 Initialize cache tables once at start
+    // Independent offsets per table
+    const offsets = {
+      cash_entries: 0,
+      cash_entries_batch: 0,
+      production_entries: 0
+    };
+
+    // Exhaustion flags
+    const exhausted = {
+      cash_entries: false,
+      cash_entries_batch: false,
+      production_entries: false
+    };
+
+    // Initialize cache tables
     const tables = await CopyJobTable.findAll({
       where: { job_id: jobId, stage: Constants.STAGE_IDS.STAGE2C },
     });
@@ -29,64 +41,86 @@ module.exports = async function prepareStage2c(jobId) {
       CacheTracker.initTable(jobId, table.table_name, 0);
     }
 
-    // Step 2: Paginate in chunks
     while (true) {
       const transaction = await db.sequelize.transaction();
       try {
-        // Cash Entries
-        const cashEntries = await db.sequelize.query(
-          `SELECT * FROM cash_entries
-           WHERE user_id = :uid AND financial_year = :fy
-             AND narration NOT LIKE 'Aggregated %'
-             AND narration NOT LIKE 'CASH entry for %'
-           ORDER BY id
-           LIMIT :limit OFFSET :offset`,
-          { replacements: { uid: job.source_user_id, fy: job.financial_year, limit: PAGE_SIZE, offset }, type: db.Sequelize.QueryTypes.SELECT, transaction }
-        );
-
-        // Cash Batch Entries
-        const cashBatch = await db.sequelize.query(
-          `SELECT * FROM cash_entries_batch
-           WHERE user_id = :uid AND financial_year = :fy
-           ORDER BY id
-           LIMIT :limit OFFSET :offset`,
-          { replacements: { uid: job.source_user_id, fy: job.financial_year, limit: PAGE_SIZE, offset }, type: db.Sequelize.QueryTypes.SELECT, transaction }
-        );
-
-        // Production Entries (roots + children via temp table)
-        await db.sequelize.query(`CREATE TEMP TABLE parent_ids (id BIGINT)`, { transaction });
-
-        const [_, insertedCount] = await db.sequelize.query(
-          `INSERT INTO parent_ids (id)
-           SELECT id
-           FROM production_entries
-           WHERE user_id = :uid AND financial_year = :fy
-             AND production_entry_id IS NULL
-           ORDER BY id
-           LIMIT :limit OFFSET :offset`,
-          { replacements: { uid: job.source_user_id, fy: job.financial_year, limit: PAGE_SIZE, offset }, type: db.Sequelize.QueryTypes.INSERT, transaction }
-        );
-
+        let cashEntries = [];
+        let cashBatch = [];
         let productionEntries = [];
-        if (insertedCount > 0) {
-          productionEntries = await db.sequelize.query(
-            `SELECT pe.* 
-             FROM production_entries pe
-             JOIN parent_ids p ON pe.id = p.id OR pe.production_entry_id = p.id
-             WHERE pe.user_id = :uid AND pe.financial_year = :fy`,
-            { replacements: { uid: job.source_user_id, fy: job.financial_year }, type: db.Sequelize.QueryTypes.SELECT, transaction }
+
+        // Cash Entries
+        if (!exhausted.cash_entries) {
+          cashEntries = await db.sequelize.query(
+            `SELECT * FROM cash_entries
+             WHERE user_id = :uid AND financial_year = :fy
+               AND narration NOT LIKE 'Aggregated %'
+               AND narration NOT LIKE 'CASH entry for %'
+             ORDER BY id
+             LIMIT :limit OFFSET :offset`,
+            { replacements: { uid: job.source_user_id, fy: job.financial_year, limit: PAGE_SIZE, offset: offsets.cash_entries }, type: db.Sequelize.QueryTypes.SELECT, transaction }
           );
+          if (cashEntries.length < PAGE_SIZE) exhausted.cash_entries = true;
+          if (cashEntries.length > 0) offsets.cash_entries += PAGE_SIZE;
         }
 
-        await db.sequelize.query(`DROP TABLE parent_ids`, { transaction });
+        // Cash Batch Entries
+        if (!exhausted.cash_entries_batch) {
+          cashBatch = await db.sequelize.query(
+            `SELECT * FROM cash_entries_batch
+             WHERE user_id = :uid AND financial_year = :fy
+             ORDER BY id
+             LIMIT :limit OFFSET :offset`,
+            { replacements: { uid: job.source_user_id, fy: job.financial_year, limit: PAGE_SIZE, offset: offsets.cash_entries_batch }, type: db.Sequelize.QueryTypes.SELECT, transaction }
+          );
+          if (cashBatch.length < PAGE_SIZE) exhausted.cash_entries_batch = true;
+          if (cashBatch.length > 0) offsets.cash_entries_batch += PAGE_SIZE;
+        }
 
-        // Stop if all three are empty
+        // Production Entries
+        if (!exhausted.production_entries) {
+          await db.sequelize.query(`CREATE TEMP TABLE parent_ids (id BIGINT)`, { transaction });
+
+          const [_, insertedCount] = await db.sequelize.query(
+            `INSERT INTO parent_ids (id)
+             SELECT id
+             FROM production_entries
+             WHERE user_id = :uid AND financial_year = :fy
+               AND production_entry_id IS NULL
+             ORDER BY id
+             LIMIT :limit OFFSET :offset`,
+            { replacements: { uid: job.source_user_id, fy: job.financial_year, limit: PAGE_SIZE, offset: offsets.production_entries }, type: db.Sequelize.QueryTypes.INSERT, transaction }
+          );
+
+          if (insertedCount > 0) {
+            productionEntries = await db.sequelize.query(
+              `SELECT pe.* 
+               FROM production_entries pe
+               JOIN parent_ids p ON pe.id = p.id OR pe.production_entry_id = p.id
+               WHERE pe.user_id = :uid AND pe.financial_year = :fy`,
+              { replacements: { uid: job.source_user_id, fy: job.financial_year }, type: db.Sequelize.QueryTypes.SELECT, transaction }
+            );
+            if (productionEntries.length < PAGE_SIZE) exhausted.production_entries = true;
+            offsets.production_entries += PAGE_SIZE;
+          } else {
+            exhausted.production_entries = true;
+          }
+
+          await db.sequelize.query(`DROP TABLE IF EXISTS parent_ids`, { transaction });
+        }
+
+        // Stop if all exhausted
+        if (exhausted.cash_entries && exhausted.cash_entries_batch && exhausted.production_entries) {
+          await transaction.rollback();
+          break;
+        }
+
+        // Stop if this chunk has no rows
         if (cashEntries.length === 0 && cashBatch.length === 0 && productionEntries.length === 0) {
           await transaction.rollback();
           break;
         }
 
-        // Step 3: Build bundle
+        // Build bundle
         const bundle = {
           metadata: {
             independent: stageConfig.tables || [],
@@ -101,14 +135,12 @@ module.exports = async function prepareStage2c(jobId) {
           }
         };
 
-        // Step 4: Upload bundle to S3
+        // Upload bundle + update metadata
         const s3Key = await stageHelperService.uploadStageBundle(
           job, jobId, Constants.STAGE_IDS.STAGE2C, bundle, transaction, db, chunkIndex
         );
 
-        // Step 5: Insert chunk metadata + update table totals
         for (const [tableName, rows] of Object.entries(bundle.tables)) {
-
           const tableMeta = await CopyJobTable.findOne({
             where: { job_id: job.id, table_name: tableName, stage: Constants.STAGE_IDS.STAGE2C },
             transaction
@@ -134,18 +166,16 @@ module.exports = async function prepareStage2c(jobId) {
 
           CacheTracker.setChunkMeta(jobId, tableName, Constants.STAGE_IDS.STAGE2C, chunkRow.s3_key, chunkRow.chunk_index, chunkRow.row_count);
           CacheTracker.incrementChunkTotal(jobId, tableName, Constants.STAGE_IDS.STAGE2C);
-          // ✅ bulk increment totals in cache
           if (rows.length > 0) {
             CacheTracker.incrementBy(jobId, tableName, "total", rows.length);
           }
         }
 
         await transaction.commit();
-        offset += PAGE_SIZE;
         chunkIndex++;
       } catch (err) {
         await transaction.rollback();
-        console.error(`❌ Stage2c chunk ${chunkIndex} failed for Job ${jobId}:`, err.message);
+        console.error(`❌ Stage2c chunk ${chunkIndex} failed for Job ${jobId}:`, err.stack);
         throw err;
       }
     }
