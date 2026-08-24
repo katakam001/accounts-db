@@ -1,5 +1,6 @@
 const { getDb } = require('../utils/getDb');
 const { calculateBalanceSheetReport } = require('../services/balanceSheet.service');
+const { uploadToS3 } = require("../services/s3Upload.service");
 
 exports.calculateBalanceSheet = async (req, res) => {
     const userId = req.body.userId;
@@ -129,3 +130,7 @@ exports.exportBalanceSheetHorizontalToPDF = async (req, res) => {
     }
 };
 
+function getFinancialYearEndDate(financialYear) {
+  const [, endYear] = financialYear.split("-");
+  return `${endYear}-03-31`;
+}
