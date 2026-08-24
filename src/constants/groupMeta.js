@@ -85,6 +85,7 @@ module.exports = {
       'Sundry Debtors',
       'Closing Stock',
       'Loans and Advances',
+      'Interest Receivable',
       'Bank Account',
       'Cash On Hand'
     ],

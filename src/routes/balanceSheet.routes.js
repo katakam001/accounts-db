@@ -11,6 +11,7 @@ module.exports = function (app) {
   });
 
   app.post("/api/balance-sheet/horizontal", [authJwt.verifyToken], controller.calculateBalanceSheet);
+  app.get("/api/balance-sheet/export-horizontal-to-pdf", [authJwt.verifyToken], controller.exportBalanceSheetHorizontalToPDF);
 
 };
 

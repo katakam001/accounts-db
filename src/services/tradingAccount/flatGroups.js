@@ -116,6 +116,7 @@ function pushFlat(transformed, label, accounts) {
 
     transformed.push({
       label: acc.accountName,
+      parentLabel: label,   // 🔹 track parent
       groupMode: 'flat',
       innerAmount: amount,
       outerAmount: 0
@@ -151,6 +152,7 @@ function pushNested(transformed, label, children, groupMap) {
 
       transformed.push({
         label: acc.accountName,
+        parentLabel: label,
         groupMode: 'flat',
         innerAmount: amount,
         outerAmount: 0
@@ -224,7 +226,7 @@ exports.mapStructuredGroupsBySide = (groupedAccounts, sideSet, config, hierarchy
     }
   });
 
-  return transformed;
+  return filterEmptyGroupsFlat(transformed);
 };
 
 function rollUpAccounts(label, groupMap, hierarchyTree) {
@@ -263,3 +265,34 @@ function rollUpAccounts(label, groupMap, hierarchyTree) {
 
   return { debitSum, creditSum };
 }
+
+function filterEmptyGroupsFlat(transformed) {
+  // Build a map of parent -> child accounts
+  const accountsByParent = new Map();
+  transformed.forEach(item => {
+    if (item.parentLabel) {
+      if (!accountsByParent.has(item.parentLabel)) {
+        accountsByParent.set(item.parentLabel, []);
+      }
+      accountsByParent.get(item.parentLabel).push(item);
+    }
+  });
+
+  return transformed.filter(item => {
+    const hasAmount = (item.innerAmount && item.innerAmount !== 0) ||
+      (item.outerAmount && item.outerAmount !== 0);
+
+    if (item.parentLabel) {
+      // Account row: keep only if it has non-zero amounts
+      return hasAmount;
+    } else {
+      // Group row: keep if it has non-zero amounts OR if any child has non-zero amounts
+      const children = accountsByParent.get(item.label) || [];
+      const childHasAmount = children.some(c =>
+        (c.innerAmount && c.innerAmount !== 0) || (c.outerAmount && c.outerAmount !== 0)
+      );
+      return hasAmount || childHasAmount;
+    }
+  });
+}
+
