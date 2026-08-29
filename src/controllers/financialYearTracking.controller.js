@@ -74,12 +74,12 @@ exports.insertFinancialYear = async (req, res) => {
         }
 
         // Step 3: Generate carry-forward accounts
-        const { fromDate, toDate } = getFinancialYearDates(financial_year);
+        const { fromDate, toDate } = getFinancialYearDates(prevFinancialYear);
 
         const groupAccountMap = await getCarryForwardAccounts({
             db,
             userId: user_id,
-            financialYear: financial_year,
+            financialYear: prevFinancialYear,
             fromDate,
             toDate
         });

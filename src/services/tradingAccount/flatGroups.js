@@ -297,27 +297,47 @@ function filterEmptyGroupsFlat(transformed) {
 }
 
 exports.buildGroupAccountMap = (groupedAccounts, config) => {
-  const { STRUCTURED_GROUPS = [], RELATIONSHIP_GROUPS = [] } = config;
+  const {
+    STRUCTURED_GROUPS = [],
+    RELATIONSHIP_GROUPS = [],
+    LEFT_SIDE_GROUPS = [],
+    RIGHT_SIDE_GROUPS = []
+  } = config;
+
   const groupMap = new Map(groupedAccounts.map(g => [normalize(g.groupName), g.accounts]));
   const result = new Map();
 
-  STRUCTURED_GROUPS.forEach(struct => {
-    const groupName = struct.group;
+  // authoritative list of groups = left + right
+  const allGroups = [...LEFT_SIDE_GROUPS, ...RIGHT_SIDE_GROUPS];
 
-    if (struct.displayMode === 'flat') {
-      result.set(groupName, groupMap.get(normalize(groupName)) || []);
-    } else if (struct.displayMode === 'nested') {
-      const rel = RELATIONSHIP_GROUPS.find(r => normalize(r.parent) === normalize(groupName));
-      const children = rel?.children || [];
-      const accounts = children.flatMap(child => groupMap.get(normalize(child)) || []);
-      result.set(groupName, accounts);
-    } else if (struct.displayMode === 'mixed') {
-      const rel = RELATIONSHIP_GROUPS.find(r => normalize(r.parent) === normalize(groupName));
-      const children = rel?.children || [];
-      const accounts = [
-        ...(groupMap.get(normalize(groupName)) || []),
-        ...children.flatMap(child => groupMap.get(normalize(child)) || [])
-      ];
+  allGroups.forEach(groupName => {
+    const struct = STRUCTURED_GROUPS.find(s => normalize(s.group) === normalize(groupName));
+    let accounts = [];
+
+    if (struct) {
+      if (struct.displayMode === 'flat') {
+        accounts = groupMap.get(normalize(groupName)) || [];
+      } else if (struct.displayMode === 'nested') {
+        const rel = RELATIONSHIP_GROUPS.find(r => normalize(r.parent) === normalize(groupName));
+        const children = rel?.children || [];
+        accounts = children.flatMap(child => groupMap.get(normalize(child)) || []);
+      } else if (struct.displayMode === 'mixed') {
+        const rel = RELATIONSHIP_GROUPS.find(r => normalize(r.parent) === normalize(groupName));
+        const children = rel?.children || [];
+        accounts = [
+          ...(groupMap.get(normalize(groupName)) || []),
+          ...children.flatMap(child => groupMap.get(normalize(child)) || [])
+        ];
+      }
+    } else {
+      // not structured → just map direct accounts
+      accounts = groupMap.get(normalize(groupName)) || [];
+    }
+
+    // ✅ Only keep accounts with valid account_id
+    accounts = accounts.filter(acc => acc.account_id);
+
+    if (accounts.length > 0) {
       result.set(groupName, accounts);
     }
   });
