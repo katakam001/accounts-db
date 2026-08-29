@@ -1,4 +1,4 @@
-const { TRADING_ACCOUNT,PROFIT_LOSS, BALANCE_SHEET } = require('../constants/groupMeta');
+const { TRADING_ACCOUNT, PROFIT_LOSS, BALANCE_SHEET } = require('../constants/groupMeta');
 const { normalize } = require('./tradingAccount/groupUtils');
 const { getTradingAccountData } = require('./tradingAccount/dataFetcher');
 const { buildTradingAccountReport } = require('./tradingAccount.service');
@@ -9,8 +9,7 @@ const { injectDynamicChildren } = require('./dynamicGroups.service');
 /**
  * Builds the full Balance Sheet report with net result injected into Capital Account.
  */
-exports.calculateBalanceSheetReport = async ({ db, userId, financialYear, fromDate, toDate }) => {
-  // Step 1: Fetch all trial balance and quantity data
+async function buildBalanceSheet({ db, userId, financialYear, fromDate, toDate }) {
   const {
     groupedAccounts,
     allEntryQuantities,
@@ -35,7 +34,7 @@ exports.calculateBalanceSheetReport = async ({ db, userId, financialYear, fromDa
     rightSet: tradingRightSet
   });
 
-    const dynamicGroups = await injectDynamicChildren(userId, financialYear, PROFIT_LOSS.RELATIONSHIP_GROUPS);
+  const dynamicGroups = await injectDynamicChildren(userId, financialYear, PROFIT_LOSS.RELATIONSHIP_GROUPS);
 
   // Step 3: Compute net result from Profit & Loss
   const { netProfit, netLoss } = buildProfitAndLossReport({
@@ -75,10 +74,23 @@ exports.calculateBalanceSheetReport = async ({ db, userId, financialYear, fromDa
 
   // Step 5: Build balance sheet using enriched groupedAccounts
   const config = BALANCE_SHEET;
-  const { leftGroups, rightGroups } = await mapBalanceSheetGroups(groupedAccounts, config, userId, financialYear);
+  const { leftGroups, rightGroups, groupAccountMap } = await mapBalanceSheetGroups(groupedAccounts, config, userId, financialYear);
 
-  return {
-    left: leftGroups,
-    right: rightGroups
-  };
+  return { leftGroups, rightGroups, groupAccountMap };
+}
+
+/**
+ * For UI — returns only left/right groups.
+ */
+exports.calculateBalanceSheetReport = async (params) => {
+  const { leftGroups, rightGroups } = await buildBalanceSheet(params);
+  return { left: leftGroups, right: rightGroups };
+};
+
+/**
+ * For carry-forward — returns only groupAccountMap.
+ */
+exports.getCarryForwardAccounts = async (params) => {
+  const { groupAccountMap } = await buildBalanceSheet(params);
+  return groupAccountMap;
 };

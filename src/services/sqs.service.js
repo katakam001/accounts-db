@@ -93,7 +93,7 @@ function groupMessages(Messages) {
             type = `${attributes.stage.StringValue}-${attributes.fileType.StringValue}`
         }
         if (stage && messageType) {
-            type = `${attributes.stage.StringValue}-${attributes.fileType.batchId}`
+            type = `${attributes.stage.StringValue}-${attributes.batchId.StringValue}`
         }
 
         const transactionData = JSON.parse(message.Body);
@@ -124,8 +124,9 @@ function groupMessages(Messages) {
 
 async function processGroupedTransactions(key, transactionRecords) {
     const suspenseAccountName = "Suspense Account";
-    const exportTypes = ["daybook", "accountCopy", "ledger", "trailBalanceExport", "tradingAccount", "profitAndLoss", "tradingAccountProfitAndLoss","horizontalBalanceSheet"];
-    const uploadTypes = ["bankStatement", "trailBalanceUpload", "purchaseCgst", "purchaseIgst", "purchaseTcs", "creditSaleCgst", "creditSaleIgst", "cashSaleCgst", "cashSaleIgst", "creditNoteCgst", "creditNoteIgst", "debitNoteCgst", "debitNoteIgst",];
+    const exportTypes = ["daybook", "accountCopy", "ledger", "trailBalanceExport", "tradingAccount", "profitAndLoss", "tradingAccountProfitAndLoss", "horizontalBalanceSheet"];
+    const uploadTypes = ["bankStatement", "trailBalanceUpload", "purchaseCgst", "purchaseIgst", "purchaseTcs", "creditSaleCgst", "creditSaleIgst", "cashSaleCgst", "cashSaleIgst", "creditNoteCgst", "creditNoteIgst", "debitNoteCgst", "debitNoteIgst", "carryForwardAccounts"];
+    const excludeUploadTypesForSummary = ["carryForwardAccounts"];
     const [userId, financialYear, typeOrAccountId, batchId] = key.split("_").map(val => isNaN(val) ? val : parseInt(val));
 
     const validCSVIdentifiers = ['1-cgst', '1-igst', '1-tcs', '2-cgst', '2-igst', '5-cgst', '5-igst', '6-cgst', '6-igst', '8-cgst', '8-igst'];
@@ -133,11 +134,14 @@ async function processGroupedTransactions(key, transactionRecords) {
 
     const isCSVInvoice = validCSVIdentifiers.includes(typeOrAccountId);
     const isTrailBalance = typeOrAccountId === "trailBalance";
+    const iscarryForwardAccounts = typeOrAccountId === "carryForwardAccounts" && batchId;
     const isCopyJob = validCopyJobStages.includes(typeOrAccountId);
     const isExport = exportTypes.includes(typeOrAccountId);
-    const isSummary = uploadTypes.includes(typeOrAccountId);
+    // 🔹 New exclusion list
+    const isSummary = uploadTypes.includes(typeOrAccountId) && !excludeUploadTypesForSummary.includes(typeOrAccountId);
     const isCopySummary = typeOrAccountId === "copyJob";
-    const accountId = isCSVInvoice || isTrailBalance || isExport || isSummary || isCopyJob || isCopySummary ? null : typeOrAccountId;
+    const isCarryForwardSummary = typeOrAccountId === "carryForwardAccounts" && !batchId;
+    const accountId = isCSVInvoice || isTrailBalance || isExport || isSummary || isCopyJob || isCopySummary || iscarryForwardAccounts || isCarryForwardSummary ? null : typeOrAccountId;
 
 
     const validTypes = ['1', '2', '5', '6', '8'];
@@ -200,8 +204,25 @@ async function processGroupedTransactions(key, transactionRecords) {
         });
         cachedData.accountMap = await uploadService.loadAccountsWithGroupIds({ userId, financialYear });
         cache.setCache(`${userId}_${financialYear}`, cachedData, 3600);
-    }
-    else if (isExport) {
+    } else if (iscarryForwardAccounts) {
+
+        await uploadService.processCarryForwardAccounts({
+            carryForwardRecords: transactionRecords[typeOrAccountId],
+            userId,
+            financialYear,
+            accountMap: cachedData.accountMap,
+            groupMap: cachedData.groupMap,
+            batchId
+        });
+        cachedData.accountMap = await uploadService.loadAccountsWithGroupIds({ userId, financialYear });
+        cache.setCache(`${userId}_${financialYear}`, cachedData, 3600);
+    } else if (isCarryForwardSummary) {
+
+        await uploadService.processCarryForwardSummaryStatus({
+            groupedRecords: transactionRecords
+        });
+
+    }else if (isExport) {
 
         await uploadService.processExportStatus({
             groupedRecords: transactionRecords,

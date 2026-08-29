@@ -312,6 +312,122 @@ exports.processOpeningBalance = async ({
     }
 };
 
+exports.processCarryForwardAccounts = async ({
+    carryForwardRecords,
+    userId,
+    financialYear,
+    accountMap,
+    groupMap,
+    batchId
+}) => {
+    const db = getDb();
+    const Account = db.account;
+    const AccountGroup = db.accountGroup;
+    const uploadedFileLog = db.uploadedFileLog;
+    const t = await db.sequelize.transaction();
+
+    try {
+        for (const record of carryForwardRecords) {
+            console.log(record);
+            const { groupName, accountName, debit, credit } = record;
+
+            const normalizedGroup = groupName.toLowerCase().trim();
+            const normalizedAccount = accountName.toLowerCase().trim();
+
+            // 🔍 Resolve groupId
+            const groupId = groupMap.get(normalizedGroup);
+            if (!groupId) {
+                console.warn(`⏭️ Skipping: groupId not found for "${normalizedGroup}"`);
+                continue;
+            }
+
+            // 🔍 Duplicate check (accountName instead of transactionId, type = 9)
+            const isDuplicate = await isDuplicateEntry(accountName, userId, financialYear, 9);
+            if (isDuplicate) {
+                await messageTrackingService.insertTrackingRecord(
+                    { batchId, transactionId: accountName, userId, financialYear, type: 9, status: 1 },
+                    t
+                );
+                await trackMessageAndCheck(batchId, 1, t);
+                await checkAndMarkFinancialYearReady(batchId, t);
+                console.log(`Duplicate detected for Account: ${accountName}, skipping...`);
+                continue;
+            }
+
+            // 🔍 Resolve account
+            const accountInfo = accountMap.get(normalizedAccount);
+            let accountId;
+
+            if (accountInfo && accountInfo.groupId === groupId) {
+                // ✅ Update existing account balances
+                accountId = accountInfo.accountId;
+                await Account.update(
+                    { credit_balance: parseFloat(credit || 0), debit_balance: parseFloat(debit || 0) },
+                    { where: { id: accountId }, transaction: t }
+                );
+                console.log(`🔄 Updated existing account: ${accountName}`);
+            } else {
+                // ✅ Create new account
+                const newAccount = await Account.create({
+                    name: accountName,
+                    user_id: userId,
+                    financial_year: financialYear,
+                    credit_balance: parseFloat(credit || 0),
+                    debit_balance: parseFloat(debit || 0)
+                }, { transaction: t });
+
+                accountId = newAccount.id;
+                syncAccountIntoCache({
+                    userId,
+                    financialYear,
+                    accountName,
+                    accountId,
+                    groupId
+                });
+
+                // Update cache
+                accountMap.set(normalizedAccount, { accountId, groupId });
+                console.log(`🆕 Created new account: ${accountName}`);
+            }
+
+            // 🔐 Ensure AccountGroup mapping exists
+            const existingMapping = await AccountGroup.findOne({
+                where: { account_id: accountId, group_id: groupId }
+            });
+
+            if (!existingMapping && accountId) {
+                await AccountGroup.create({ account_id: accountId, group_id: groupId }, { transaction: t });
+                console.log(`✅ Linked account ${accountId} to group ${groupId}`);
+            } else {
+                console.log(`ℹ️ AccountGroup mapping already exists for account ${accountId} & group ${groupId}`);
+            }
+
+            // ✅ Insert into uploaded_file_log to prevent duplicates
+            await uploadedFileLog.create({
+                hash: generateUniqueId(accountName, userId, financialYear, 9),
+                transaction_id: accountName,
+                user_id: userId,
+                financial_year: financialYear,
+                type: 9
+            }, { transaction: t });
+
+            // ✅ Track message
+            await messageTrackingService.insertTrackingRecord(
+                { batchId, transactionId: accountName, userId, financialYear, type: 9, status: 0 },
+                t
+            );
+            await trackMessageAndCheck(batchId, 0, t);
+            await checkAndMarkFinancialYearReady(batchId, t);
+        }
+
+        await t.commit();
+        console.log(`✅ Carry-forward accounts processed.`);
+    } catch (error) {
+        await t.rollback();
+        console.error(`❌ Error processing carry-forward accounts:`, error);
+    }
+};
+
 
 function syncAccountIntoCache({ userId, financialYear, accountName, accountId, groupId }) {
     const cacheKey = `${userId}_${financialYear}`;
@@ -562,7 +678,6 @@ exports.processSummaryStatus = async ({ groupedRecords }) => {
     const t = await db.sequelize.transaction();
 
     try {
-        const Exports = db.exports;
 
         for (const [batchId, records] of Object.entries(groupedRecords)) {
             for (const record of records) {
@@ -570,10 +685,30 @@ exports.processSummaryStatus = async ({ groupedRecords }) => {
             }
         }
         await t.commit();
-        console.log("✅ All Export status processed successfully.");
+        console.log("✅ All Summary status processed successfully.");
     } catch (error) {
         await t.rollback();
-        console.error("❌ Error processing export status update:", error);
+        console.error("❌ Error processing all summary status update:", error);
+    }
+};
+
+exports.processCarryForwardSummaryStatus = async ({ groupedRecords }) => {
+    const db = getDb();
+    const t = await db.sequelize.transaction();
+
+    try {
+
+        for (const [batchId, records] of Object.entries(groupedRecords)) {
+            for (const record of records) {
+                await handleSummaryMessage(record, t);
+                await finalizeCarryForwardSummary(batchId, t);
+            }
+        }
+        await t.commit();
+        console.log("✅ All Carry Forward summary status processed successfully.");
+    } catch (error) {
+        await t.rollback();
+        console.error("❌ Error processing all carry forward summary status update:", error);
     }
 };
 
@@ -728,6 +863,33 @@ async function handleSummaryMessage(summary, transaction = null) {
     }
 }
 
+async function finalizeCarryForwardSummary(batchId, transaction = null) {
+    const db = getDb();
+    const UploadHistory = db.uploadHistory;
+    const FinancialYearTracking = db.financial_year_tracking;
+
+    const upload = await UploadHistory.findByPk(batchId, { transaction });
+    if (!upload) return;
+
+    if (upload.status === 7) {
+        // ✅ Positive case → mark as READY
+        await FinancialYearTracking.update(
+            { status: 3, error_message: null },
+            { where: { user_id: upload.user_id, financial_year: upload.financial_year }, transaction }
+        );
+        console.log(`📊 CarryForward → FY ${upload.financial_year} marked as READY for user ${upload.user_id}`);
+    } else if (upload.status === 6) {
+        // ❌ Negative case → mark as FAILED
+        await FinancialYearTracking.update(
+            { status: 4, error_message: upload.error_message || "Summary failed" },
+            { where: { user_id: upload.user_id, financial_year: upload.financial_year }, transaction }
+        );
+        console.log(`❌ CarryForward → FY ${upload.financial_year} marked as FAILED for user ${upload.user_id}, reason: ${upload.error_message}`);
+    } else {
+        console.log(`ℹ️ CarryForward → Batch ${batchId} status=${upload.status}, no FY update yet`);
+    }
+}
+
 async function trackMessageAndCheck(batchId, messageStatus, transaction = null) {
     const db = getDb();
     const UploadHistory = db.uploadHistory;
@@ -814,3 +976,65 @@ const isDuplicateEntry = async (transactionId, userId, financialYear, type) => {
 
     return result !== null; // If exists, it's a duplicate
 };
+
+async function checkAndMarkFinancialYearReady(batchId, transaction = null) {
+    const db = getDb();
+    const UploadHistory = db.uploadHistory;
+    const FinancialYearTracking = db.financial_year_tracking;
+
+    try {
+        // 🔹 Step 1: Check cache first
+        const processedCount = cache.getCache(`${batchId}_processed`) || 0;
+        const skippedCount = cache.getCache(`${batchId}_skipped`) || 0;
+        const totalMessages = cache.getCache(`${batchId}_total`);
+
+        if (!totalMessages || totalMessages <= 0) {
+            if (processedCount === 0 && skippedCount === 0) {
+                // 🟢 Cache completely empty → this only happens after last message deletes cache
+                // → safe to hit DB once
+                const upload = await UploadHistory.findByPk(batchId, { transaction });
+                if (upload?.status === 7) {
+                    await FinancialYearTracking.update(
+                        { status: 3, error_message: null },
+                        { where: { user_id: upload.user_id, financial_year: upload.financial_year }, transaction }
+                    );
+                    console.log(`📊 FY marked ready via DB fallback (summary last case)`);
+                } else {
+                    console.log(`ℹ️ UploadHistory batch ${batchId} not yet completed (status=${upload?.status})`);
+                }
+            } else {
+                // 🟡 Messages are flowing but summary not yet arrived
+                // → don’t hit DB, just wait
+                console.log(`⏳ Batch ${batchId} has no summary yet, waiting...`);
+            }
+            return;
+        }
+
+        if (processedCount + skippedCount < totalMessages) {
+            console.log(`⏳ Batch ${batchId} still in progress (processed=${processedCount}, skipped=${skippedCount}, total=${totalMessages})`);
+            return; // not yet complete
+        }
+
+        // 🔹 Step 2: If cache not available, fallback to DB
+        const upload = await UploadHistory.findByPk(batchId, { transaction });
+        if (!upload) {
+            console.warn(`⚠️ UploadHistory not found for batchId ${batchId}`);
+            return;
+        }
+
+        if (upload.status === 7) {
+            // ✅ Mark FinancialYearTracking as ready
+            await FinancialYearTracking.update(
+                { status: 3, error_message: null },
+                { where: { user_id: upload.user_id, financial_year: upload.financial_year }, transaction }
+            );
+
+            console.log(`📊 FinancialYearTracking updated → user ${upload.user_id}, FY ${upload.financial_year} marked as READY`);
+        } else {
+            console.log(`ℹ️ UploadHistory batch ${batchId} not yet completed (status=${upload.status})`);
+        }
+    } catch (error) {
+        console.error(`❌ Error in checkAndMarkFinancialYearReady for batch ${batchId}:`, error.message);
+        throw error;
+    }
+}

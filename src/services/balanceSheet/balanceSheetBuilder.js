@@ -1,5 +1,5 @@
 const { normalize } = require('../tradingAccount/groupUtils');
-const { mapStructuredGroupsBySide } = require('../tradingAccount/flatGroups');
+const { mapStructuredGroupsBySide, buildGroupAccountMap } = require('../tradingAccount/flatGroups');
 const { injectDynamicChildren } = require('../dynamicGroups.service');
 const { getGroupHierarchyTree } = require('../groupMapping.service');
 
@@ -22,7 +22,9 @@ exports.mapBalanceSheetGroups = async (groupedAccounts, config, userId, financia
 
     const leftGroups = mapStructuredGroupsBySide(groupedAccounts, leftSet, enrichedConfig, fullTreeList);
     const rightGroups = mapStructuredGroupsBySide(groupedAccounts, rightSet, enrichedConfig, fullTreeList);
+    const groupAccountMap = buildGroupAccountMap(groupedAccounts, enrichedConfig);
 
-    return { leftGroups, rightGroups };
+
+    return { leftGroups, rightGroups, groupAccountMap };
 };
 

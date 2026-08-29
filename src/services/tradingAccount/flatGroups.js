@@ -296,3 +296,32 @@ function filterEmptyGroupsFlat(transformed) {
   });
 }
 
+exports.buildGroupAccountMap = (groupedAccounts, config) => {
+  const { STRUCTURED_GROUPS = [], RELATIONSHIP_GROUPS = [] } = config;
+  const groupMap = new Map(groupedAccounts.map(g => [normalize(g.groupName), g.accounts]));
+  const result = new Map();
+
+  STRUCTURED_GROUPS.forEach(struct => {
+    const groupName = struct.group;
+
+    if (struct.displayMode === 'flat') {
+      result.set(groupName, groupMap.get(normalize(groupName)) || []);
+    } else if (struct.displayMode === 'nested') {
+      const rel = RELATIONSHIP_GROUPS.find(r => normalize(r.parent) === normalize(groupName));
+      const children = rel?.children || [];
+      const accounts = children.flatMap(child => groupMap.get(normalize(child)) || []);
+      result.set(groupName, accounts);
+    } else if (struct.displayMode === 'mixed') {
+      const rel = RELATIONSHIP_GROUPS.find(r => normalize(r.parent) === normalize(groupName));
+      const children = rel?.children || [];
+      const accounts = [
+        ...(groupMap.get(normalize(groupName)) || []),
+        ...children.flatMap(child => groupMap.get(normalize(child)) || [])
+      ];
+      result.set(groupName, accounts);
+    }
+  });
+
+  return result;
+};
+
