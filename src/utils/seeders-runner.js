@@ -1,5 +1,11 @@
 const fs = require('fs');
 const path = require('path');
+const dotenv = require('dotenv');
+
+// Load the correct .env file based on NODE_ENV
+dotenv.config({
+  path: path.resolve(__dirname, `../../.env.${process.env.NODE_ENV || 'development'}`)
+});
 const {getDb} = require("./getDb");
 
 const seedersPath = path.join(__dirname, '../seeders');

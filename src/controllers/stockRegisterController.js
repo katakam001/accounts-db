@@ -1,51 +1,29 @@
-const { Client } = require('pg');
 const { getDb } = require("../utils/getDb");
 
 exports.generateStockRegister = async (req, res) => {
   const user_id = parseInt(req.query.userId, 10);
   const financial_year = req.query.financialYear;
-  const item_id = parseInt(req.query.itemId, 10); // Change to itemId
-  
-  if (isNaN(user_id)) {
-    return res.status(400).json({ error: 'userId query parameter must be an integer' });
-  }
-  if (isNaN(item_id)) {
-    return res.status(400).json({ error: 'itemId query parameter must be an integer' });
-  }
-  if (!financial_year) {
-    return res.status(400).json({ error: 'financialYear query parameter is required' });
+  const item_id = parseInt(req.query.itemId, 10);
+  const month = req.query.month ? parseInt(req.query.month, 10) : null;
+
+  if (isNaN(user_id) || isNaN(item_id) || !financial_year) {
+    return res.status(400).json({ error: 'Invalid query parameters' });
   }
 
   try {
     const db = getDb();
     const sequelize = db.sequelize;
 
-    // Get the connection details from Sequelize
-    const config = sequelize.config;
+    // ✅ Call stored procedure
+    await sequelize.query(
+      `CALL generate_stock_register(:item_id, :user_id, :financial_year)`,
+      {
+        replacements: { item_id, user_id, financial_year }
+      }
+    );
 
-    // Create a new PostgreSQL client
-    const client = new Client({
-      user: config.username,
-      host: config.host,
-      database: config.database,
-      password: config.password,
-      port: config.port
-    });
-
-    await client.connect();
-
-    // Listen for notice events
-    client.on('notice', (msg) => {
-      console.log('Notice:', msg.message);
-    });
-
-    // Call the stored procedure with the correct order of arguments
-    await client.query('CALL generate_stock_register($1, $2, $3)', [item_id, user_id, financial_year]);
-
-    console.log('Stored procedure executed successfully');
-
-    // Run the query to get the result set
-    const result = await client.query(`
+    // ✅ Build query with optional month filter
+    const baseQuery = `
       SELECT 
         sr.entry_date AS "Date",
         i.name AS "Item",
@@ -63,18 +41,22 @@ exports.generateStockRegister = async (req, res) => {
       JOIN 
         public.items i ON sr.item_id = i.id
       WHERE 
-        sr.financial_year = $1
-        AND sr.user_id = $2
-        AND sr.item_id = $3
+        sr.financial_year = :financial_year
+        AND sr.user_id = :user_id
+        AND sr.item_id = :item_id
+        ${month ? 'AND EXTRACT(MONTH FROM sr.entry_date) = :month' : ''}
       ORDER BY 
         sr.entry_date;
-    `, [financial_year, user_id, item_id]);
+    `;
 
-    await client.end();
+    const [rows] = await sequelize.query(baseQuery, {
+      replacements: { financial_year, user_id, item_id, ...(month && { month }) }
+    });
 
-    res.status(200).json(result.rows);
+    // ✅ Return full-year data
+    res.status(200).json(rows);
   } catch (error) {
-    console.error('Error executing query:', error);
+    console.error('Error executing stock register:', error);
     res.status(500).json({ error: 'Internal Server Error' });
   }
 };

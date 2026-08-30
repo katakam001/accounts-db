@@ -1,11 +1,25 @@
 const { getDb } = require("../utils/getDb");
-const { broadcast } = require('../websocket'); // Import the broadcast function
+
+let broadcast = () => {
+  // No-op when WebSocket is disabled
+};
+
+if (process.env.ENABLE_WEBSOCKET === 'true') {
+  const { broadcast: activeBroadcast } = require('../websocket');
+  broadcast = activeBroadcast;
+}
 
 exports.getAllProductionEntries = async (req, res) => {
   try {
     const db = getDb();
     const ProductionEntry = db.production_entries;
+    const { userId, financialYear } = req.query;
+
     const productionEntries = await ProductionEntry.findAll({
+      where: {
+        user_id: userId,
+        financial_year: financialYear
+      },
       include: [
         { model: db.items, as: 'rawItem' },
         { model: db.items, as: 'processedItem' },
@@ -54,8 +68,17 @@ exports.createProductionEntry = async (req, res) => {
     const t = await db.sequelize.transaction();
     const ProductionEntry = db.production_entries;
     const { processedItems, ...productionEntryData } = req.body;
+    const [[{ next_sequence_id }]] = await db.sequelize.query(
+      `SELECT nextval('group_entries_seq') AS next_sequence_id`
+    );
 
-    const productionEntry = await ProductionEntry.create(productionEntryData, { transaction: t });
+    const productionEntry = await ProductionEntry.create(
+      {
+        ...productionEntryData,
+        production_seq_id: next_sequence_id   // ✅ assign sequence ID
+      },
+      { transaction: t }
+    );
 
     // Insert each processed item as a separate entry in the production_entries table
     for (const item of processedItems) {
@@ -91,6 +114,7 @@ exports.createProductionEntry = async (req, res) => {
       financial_year: productionEntry.financial_year,
       conversion_id: productionEntry.conversion_id,
       conversion_rate: conversion ? conversion.rate : null,
+      production_seq_id: productionEntry.production_seq_id,
       processedItems: processedItems.map(item => ({
         item_id: item.item_id,
         quantity: item.quantity,
@@ -106,7 +130,7 @@ exports.createProductionEntry = async (req, res) => {
     // Broadcast the new production entry
     broadcast({ type: 'INSERT', data: formattedProductionEntry, entryType: 'productionEntry', user_id: productionEntry.user_id, financial_year: productionEntry.financial_year });
 
-    res.status(201).json({ message: 'Production entry created successfully' }); // Simplified response
+    res.status(201).json({ type: 'INSERT', data: formattedProductionEntry, entryType: 'productionEntry', user_id: productionEntry.user_id, financial_year: productionEntry.financial_year }); // Simplified response
   } catch (error) {
     await t.rollback();
     res.status(500).json({ error: 'Internal server error' });
@@ -165,10 +189,13 @@ exports.updateProductionEntry = async (req, res) => {
         financial_year: updatedProductionEntry.financial_year,
         conversion_id: updatedProductionEntry.conversion_id,
         conversion_rate: updatedProductionEntry.conversion ? updatedProductionEntry.conversion.rate : null,
+        production_seq_id:updatedProductionEntry.updatedProductionEntry,
         processedItems: processedItems.map(item => ({
           item_id: item.item_id,
+          item_name: item.item_name,
           quantity: item.quantity,
           unit_id: item.unit_id,
+          unit_name: item.unit_name,
           percentage: item.percentage,
           conversion_id: item.conversion_id
         }))
@@ -180,7 +207,7 @@ exports.updateProductionEntry = async (req, res) => {
       // Broadcast the updated production entry
       broadcast({ type: 'UPDATE', data: formattedProductionEntry, entryType: 'productionEntry', user_id: updatedProductionEntry.user_id, financial_year: updatedProductionEntry.financial_year });
 
-      res.status(200).json({ message: 'Production entry updated successfully' }); // Simplified response
+      res.status(200).json({ type: 'UPDATE', data: formattedProductionEntry, entryType: 'productionEntry', user_id: updatedProductionEntry.user_id, financial_year: updatedProductionEntry.financial_year }); // Simplified response
     } else {
       throw new Error('Production entry not found');
     }
@@ -217,7 +244,7 @@ exports.deleteProductionEntry = async (req, res) => {
       // Broadcast the deletion event
       broadcast({ type: 'DELETE', data: { id: entry.production_entry_id }, entryType: 'productionEntry', user_id, financial_year });
 
-      res.status(204).send(); // Simplified response
+      res.status(200).send({ type: 'DELETE', data: { id: entry.production_entry_id }, entryType: 'productionEntry', user_id, financial_year }); // Simplified response
     } else {
       await transaction.rollback();
       throw new Error('Production entry not found');
@@ -229,6 +256,3 @@ exports.deleteProductionEntry = async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 };
-
-
-

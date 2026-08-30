@@ -3,7 +3,7 @@ const config = require("../config/auth.config");
 const jwt = require("jsonwebtoken");
 const fs = require('fs');
 const privateKey = fs.readFileSync(config.privateKeyPath, 'utf8');
-const algorithm =config.algorithm;
+const algorithm = config.algorithm;
 
 
 exports.getUsersForAdmin = async (req, res) => {
@@ -17,9 +17,9 @@ exports.getUsersForAdmin = async (req, res) => {
     const adminUsers = await AdminUser.findAll({
       where: { admin_id: adminId },
       include: [{
-        model: User, 
-        as: "user", 
-        attributes: ["id", "username", "email"], 
+        model: User,
+        as: "user",
+        attributes: ["id", "username", "email", "contact_number", "is_profile_completed"],
         include: [{
           model: Role,
           as: "roles",
@@ -33,6 +33,9 @@ exports.getUsersForAdmin = async (req, res) => {
       return {
         id: user.id,
         username: user.username,
+        contact_number: user.contact_number,
+        last_login: user.last_login,
+        profile_completed: user.is_profile_completed,
         email: user.email,
         roles: user.roles.map(role => "ROLE_" + role.name.toUpperCase())
       };
@@ -48,55 +51,72 @@ exports.getUsersForAdmin = async (req, res) => {
 
 // Login as User
 exports.loginAsUser = async (req, res) => {
-    try {
-        const adminId = req.userId; // Assuming adminId is stored in req object by middleware
-        const userId = req.body.userId;
+  try {
+    const adminId = req.userId; // Assuming adminId is stored in req object by middleware
+    const userId = req.body.userId;
 
-        const db = getDb();
-        const User = db.user;
-        const Role = db.role;
-        const AdminUser = db.admin_user;
+    const db = getDb();
+    const User = db.user;
+    const Role = db.role;
+    const AdminUser = db.admin_user;
+    const UserDetails = db.userDetails;
 
-        const adminUser = await AdminUser.findOne({
-            where: { admin_id:adminId, user_id:userId }
-        });
 
-        if (!adminUser) {
-            return res.status(403).send({ message: "User not associated with this admin." });
-        }
+    const adminUser = await AdminUser.findOne({
+      where: { admin_id: adminId, user_id: userId }
+    });
 
-        const user = await User.findByPk(userId, {
-            include: [{ model: Role, as: "roles", through: { attributes: [] } }]
-        });
-
-        if (!user) {
-            return res.status(404).send({ message: "User not found" });
-        }
-
-        const role = user.roles[0]; // Assuming each user has one role for simplicity
-        const accessToken = generateAccessToken(user.id, role.name);
-        const refreshToken = generateRefreshToken(user.id, role.name);
-
-        // Regular user tokens
-        res.cookie('userAccessToken', accessToken, {
-            httpOnly: true,
-            secure: true, // Set to true if using HTTPS
-            sameSite: 'None', // Prevents CSRF attacks
-            maxAge: 24 * 60 * 60 * 1000, // 24 hours
-            path: '/' // Ensure the path is set to root
-        });
-
-        res.cookie('userRefreshToken', refreshToken, {
-            httpOnly: true,
-            secure: true, // Set to true if using HTTPS
-            sameSite: 'None', // Prevents CSRF attacks
-            maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-            path: '/' // Ensure the path is set to root
-        });
-        res.status(200).send({ message: "Logged in as user" });
-    } catch (error) {
-        res.status(500).send({ message: "Error logging in as user", error: error.message });
+    if (!adminUser) {
+      return res.status(403).send({ message: "User not associated with this admin." });
     }
+
+    const user = await User.findByPk(userId, {
+      include: [{ model: Role, as: "roles", through: { attributes: [] } }]
+    });
+
+    if (!user) {
+      return res.status(404).send({ message: "User not found" });
+    }
+
+    const userDetails = await UserDetails.findOne({ where: { user_id: userId } });
+
+
+    const roles = await user.getRoles();
+    const authorities = roles.map(role => "ROLE_" + role.name.toUpperCase());
+
+    const role = user.roles[0]; // Assuming each user has one role for simplicity
+    const accessToken = generateAccessToken(user.id, role.name);
+    const refreshToken = generateRefreshToken(user.id, role.name);
+
+    // Regular user tokens
+    res.cookie('userAccessToken', accessToken, {
+      httpOnly: true,
+      secure: true, // Set to true if using HTTPS
+      sameSite: 'None', // Prevents CSRF attacks
+      maxAge: 24 * 60 * 60 * 1000, // 24 hours
+      path: '/' // Ensure the path is set to root
+    });
+
+    res.cookie('userRefreshToken', refreshToken, {
+      httpOnly: true,
+      secure: true, // Set to true if using HTTPS
+      sameSite: 'None', // Prevents CSRF attacks
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      path: '/' // Ensure the path is set to root
+    });
+    return res.status(200).send({
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      contact_number: user.contact_number,
+      last_login: user.last_login,
+      roles: authorities,
+      profile_completed: user.is_profile_completed,
+      user_details: userDetails || null
+    });
+  } catch (error) {
+    res.status(500).send({ message: "Error logging in as user", error: error.message });
+  }
 };
 
 function generateAccessToken(id, role) {
@@ -112,6 +132,3 @@ function generateRefreshToken(id, role) {
     expiresIn: "7d" // 7 days
   });
 }
-
-
-

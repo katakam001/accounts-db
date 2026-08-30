@@ -1,5 +1,13 @@
 const { getDb } = require("../utils/getDb");
-const { broadcast } = require('../websocket'); // Import the broadcast function
+
+let broadcast = () => {
+  // No-op when WebSocket is disabled
+};
+
+if (process.env.ENABLE_WEBSOCKET === 'true') {
+  const { broadcast: activeBroadcast } = require('../websocket');
+  broadcast = activeBroadcast;
+}
 
 exports.cashBookListForDayBook = async (req, res) => {
   try {
@@ -142,7 +150,7 @@ exports.cashBookList = async (req, res) => {
       WHERE cce.user_id = :userId 
       AND cce.financial_year = :financialYear
       AND cce.is_cash_adjustment IS NOT TRUE
-      ORDER BY cce.cash_date ASC
+      ORDER BY cce.cash_date ASC,al.name ASC
       `,
       {
         replacements: { userId: userid, financialYear: financial_year },
@@ -242,7 +250,7 @@ exports.cashEntryUpdate = async (req, res) => {
       await mirrorEntry.save();
     }
     broadcast({ type: 'UPDATE', data: { ...cashEntry.toJSON(), unique_entry_id: uniqueEntryId }, entryType: 'cash', user_id, financial_year, cash_date: cash_entry_date }); // Emit WebSocket message
-    return res.status(200).json({ message: 'Cash entry updated successfully' }); // Simplified response
+    return res.status(200).json({ type: 'UPDATE', data: { ...cashEntry.toJSON(), unique_entry_id: uniqueEntryId }, entryType: 'cash', user_id, financial_year, cash_date: cash_entry_date }); // Simplified response
   } catch (err) {
     console.error(err);
     return res.status(500).json({ error: 'Internal server error' });
@@ -316,9 +324,115 @@ exports.cashEntryCreate = async (req, res) => {
       cash_date: mainEntry.cash_date
     });
 
-    return res.status(201).json({ message: 'Cash entry created successfully' });
+    return res.status(201).json({
+      type: 'INSERT',
+      data: {
+        ...mainEntry.toJSON(),
+        unique_entry_id: `CE_${mainEntry.id}`,
+        amount: parseFloat(formattedAmount)
+      },
+      entryType: 'cash',
+      user_id,
+      financial_year,
+      cash_date: mainEntry.cash_date
+    });
   } catch (err) {
     console.error(err);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+
+exports.bulkCashEntryCreate = async (req, res) => {
+  const {
+    cash_date,
+    user_id,
+    financial_year,
+    cash_account_id,
+    cash_group_id,
+    entries
+  } = req.body;
+
+  const db = getDb();
+  const CashEntry = db.cash;
+  const sequelize = db.sequelize; // Ensure this gives you the Sequelize instance
+
+  const transaction = await sequelize.transaction();
+
+  try {
+    const allEntriesToCreate = [];
+
+    for (let i = 0; i < entries.length; i++) {
+      const entry = entries[i];
+      const pairTransactionId = `TXN-${Date.now()}-${i}`;
+
+      const mainEntry = {
+        cash_date,
+        narration: entry.narration_description,
+        account_id: entry.account_id,
+        type: entry.type,
+        amount: entry.amount,
+        user_id,
+        financial_year,
+        transaction_id:pairTransactionId,
+        is_cash_adjustment: false,
+        group_id: entry.group_id
+      };
+
+      const mirrorEntry = {
+        cash_date,
+        narration: entry.account_name,
+        account_id: cash_account_id,
+        type: !entry.type,
+        amount: entry.amount,
+        user_id,
+        financial_year,
+        transaction_id:pairTransactionId,
+        is_cash_adjustment: true,
+        group_id: cash_group_id
+      };
+
+      allEntriesToCreate.push(mainEntry, mirrorEntry);
+    }
+
+    const createdEntries = await CashEntry.bulkCreate(allEntriesToCreate, {
+      returning: true,
+      transaction
+    });
+
+    const mainCreatedEntries = createdEntries.filter(e => !e.is_cash_adjustment);
+
+    const responseData = mainCreatedEntries.map(entry => ({
+      ...entry.toJSON(),
+      unique_entry_id: `CE_${entry.id}`,
+      amount: parseFloat(entry.amount)
+    }));
+
+    const resolvedCashDate = mainCreatedEntries[0]?.cash_date;
+
+    broadcast({
+      type: 'BULK_INSERT',
+      entryType: 'cash',
+      user_id,
+      financial_year,
+      cash_date: resolvedCashDate,
+      data: responseData
+    });
+
+    await transaction.commit();
+
+    return res.status(201).json({
+      type: 'BULK_INSERT',
+      entryType: 'cash',
+      user_id,
+      financial_year,
+      cash_date: resolvedCashDate,
+      data: responseData
+    });
+
+  } catch (err) {
+    await transaction.rollback();
+    console.error("❌ Transaction failed:", err);
     return res.status(500).json({ error: 'Internal server error' });
   }
 };
@@ -372,7 +486,7 @@ exports.cashEntryDelete = async (req, res) => {
       }
     });
     broadcast({ type: 'DELETE', data: { unique_entry_id: uniqueEntryId, account_id: account_id }, entryType: 'cash', user_id: cashEntry.user_id, financial_year: cashEntry.financial_year, cash_date: cash_date }); // Emit WebSocket message
-    return res.status(204).send(); // Simplified response
+    return res.status(200).send({ type: 'DELETE', data: { unique_entry_id: uniqueEntryId, account_id: account_id }, entryType: 'cash', user_id: cashEntry.user_id, financial_year: cashEntry.financial_year, cash_date: cash_date }); // Simplified response
   } catch (err) {
     console.error(err);
     return res.status(500).json({ error: 'Internal server error' });

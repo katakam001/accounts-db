@@ -1,127 +1,15 @@
 const {getDb} = require("../utils/getDb");
-
-exports.groupMappingTree = async (req, res) => {
-  try {
-    const db = getDb();
-    const GroupMapping = db.groupMapping;
-    const Group=db.group;
-    const groups = await GroupMapping.findAll({
-      include: [
-        {
-          model: GroupMapping,
-          as: 'children',
-          include: {
-            model: GroupMapping,
-            as: 'children'
-          }
-        },
-        {
-          model: Group, // Include the Group model
-          attributes: [['name', 'name']], // Select the name attribute as name
-        }
-      ]
-    });
-
-
-    const buildTree = (data, parentId = null) => {
-      return data
-        .filter(item => item.parent_id === parentId)
-        .map(item => ({
-          id: item.id,
-          parent_id: item.parent_id,
-          group_id: item.group_id,
-          createdAt: item.createdAt,
-          updatedAt: item.updatedAt,
-          name: item.Group.name, // Use the name from Group
-          children: buildTree(data, item.id)
-        }));
-    };
-    
-
-    const hierarchicalData = buildTree(groups);
-    res.json(hierarchicalData);
-  } catch (error) {
-    console.error('Error fetching hierarchical data:', error);
-    res.status(500).send('Server Error');
-  }
-};
+const { getGroupMappingTree } = require('../services/groupMapping.service');
 
 exports.groupToAccountMappingTree = async (req, res) => {
   try {
-    const { userId, financialYear } = req.query; // Get user_id and financial_year from request query
-    const db = getDb();
-    const GroupMapping = db.groupMapping;
-    const Group = db.group;
-
-    const groups = await GroupMapping.findAll({
-      where: {
-        user_id: userId,
-        financial_year: financialYear
-      },
-      include: [
-        {
-          model: GroupMapping,
-          as: 'children',
-          include: {
-            model: GroupMapping,
-            as: 'children'
-          }
-        },
-        {
-          model: Group, // Include the Group model
-          attributes: [['name', 'name']], // Select the name attribute as name
-        }
-      ]
-    });
-
-    const accounts = await db.sequelize.query(`
-      SELECT 
-        ag.group_id,
-        a.id AS account_id,
-        a.name AS account_name
-      FROM 
-        account_group ag
-      JOIN 
-        account_list a ON ag.account_id = a.id
-      WHERE 
-        a.user_id = :user_id
-        AND a.financial_year = :financial_year;
-    `, {
-      type: db.sequelize.QueryTypes.SELECT,
-      replacements: { user_id: userId, financial_year: financialYear }
-    });
-
-    const hierarchicalData = buildTree(groups, accounts);
-    res.json(hierarchicalData);
+    const { userId, financialYear, rootGroupName } = req.query;
+    const data = await getGroupMappingTree(userId, financialYear, rootGroupName);
+    res.json(data);
   } catch (error) {
     console.error('Error fetching hierarchical data:', error);
     res.status(500).send('Server Error');
   }
-};
-
-const buildTree = (data, accounts, parentId = null) => {
-  if (!data || !accounts) {
-    return [];
-  }
-
-  return data
-    .filter(item => item.parent_id === parentId)
-    .map(item => {
-      const children = buildTree(data, accounts, item.id);
-      const groupAccounts = accounts
-        .filter(account => account.group_id === item.group_id)
-        .map(account => ({
-          id: account.account_id,
-          name: account.account_name
-        }));
-
-      return {
-        id: item.id,
-        parent_id: item.parent_id,
-        name: item.Group.name, // Use the name from Group
-        children: [...children, ...groupAccounts] // Include both children and accounts
-      };
-    });
 };
 
 exports.addGroupMapping = async (req, res) => {

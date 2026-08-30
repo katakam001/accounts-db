@@ -1,4 +1,7 @@
 const { getDb } = require("../utils/getDb");
+const { uploadToS3 } = require("../services/s3Upload.service");
+const { fetchTrialBalanceRows } = require('../services/trialBalance.service');
+const { transformTrialBalanceRows } = require('../utils/trialBalanceUtils');
 
 exports.getTrailBalance = async (req, res) => {
     const { userId, fromDate, toDate, financialYear } = req.body;
@@ -88,22 +91,8 @@ CombinedWithOpeningBalances AS (
 ),
 GroupedItems AS (
     SELECT 
-        CASE 
-            WHEN g.name IN ('Sundry Debtors', 'Sundry Creditors') THEN g.id::text 
-            ELSE g.id::text 
-        END AS group_id,
-        CASE 
-            WHEN g.name IN ('Sundry Debtors', 'Sundry Creditors') THEN g.name 
-            ELSE g.name 
-        END AS group_name,
-        CASE 
-            WHEN g.name IN ('Sundry Debtors', 'Sundry Creditors') THEN NULL 
-            ELSE al.id 
-        END AS account_id,
-        CASE 
-            WHEN g.name IN ('Sundry Debtors', 'Sundry Creditors') THEN NULL 
-            ELSE al.name 
-        END AS account_name,
+        g.id::text AS group_id,
+        g.name AS group_name,
         SUM(cob.total_credit) AS total_credit,
         SUM(cob.total_debit) AS total_debit,
         SUM(cob.total_credit - cob.total_debit) AS balance
@@ -111,43 +100,19 @@ GroupedItems AS (
         CombinedWithOpeningBalances cob
     JOIN 
         group_list g ON cob.group_id = g.id
-    LEFT JOIN 
-        account_list al ON cob.account_id = al.id
     GROUP BY 
-        CASE 
-            WHEN g.name IN ('Sundry Debtors', 'Sundry Creditors') THEN g.id::text 
-            ELSE g.id::text 
-        END,
-        CASE 
-            WHEN g.name IN ('Sundry Debtors', 'Sundry Creditors') THEN g.name 
-            ELSE g.name 
-        END,
-        CASE 
-            WHEN g.name IN ('Sundry Debtors', 'Sundry Creditors') THEN NULL 
-            ELSE al.id 
-        END,
-        CASE 
-            WHEN g.name IN ('Sundry Debtors', 'Sundry Creditors') THEN NULL 
-            ELSE al.name 
-        END
+        g.id, g.name
 )
 SELECT 
     group_id,
     group_name,
-    account_id,
-    account_name,
     COALESCE(total_debit, 0) AS total_debit,
     COALESCE(total_credit, 0) AS total_credit,
     COALESCE(balance, 0) AS balance
 FROM 
     GroupedItems
 ORDER BY 
-    CASE 
-        WHEN group_name IN ('Sundry Debtors', 'Sundry Creditors') THEN 1 
-        ELSE 0 
-    END,
-    group_name,
-    account_id;    `;
+    group_name;    `;
 
     try {
         const db = getDb();
@@ -173,6 +138,115 @@ ORDER BY
         res.status(500).send('Error executing query');
     }
 };
+
+exports.exportTrailBalanceToPDF = async (req, res) => {
+    const userId = req.query.userId;
+    const financialYear = req.query.financialYear;
+    const fromDate = req.query.fromDate ? new Date(req.query.fromDate) : null;
+    const toDate = req.query.toDate ? new Date(req.query.toDate) : null;
+    const companyName = req.query.companyName;
+    const city = req.query.city;
+    const db = getDb();
+    const Exports = db.exports;
+
+    try {
+        const rows = await fetchTrialBalanceRows({
+            db,
+            userId,
+            financialYear,
+            fromDate,
+            toDate
+        });
+
+        const { groupedAccounts, totalDebit, totalCredit } = transformTrialBalanceRows(rows);
+
+        const inputKeyTimestamp = new Date().toISOString();
+
+        // Step 2: Insert export record with status = 0 (DATA GENERATED)
+        const exportRecord = await Exports.create({
+            file_type: 'trailBalanceExport',
+            financial_year: financialYear,
+            status: 0,
+            user_id: userId,
+            input_key: '',
+            input_key_timestamp: inputKeyTimestamp,
+            output_key: '',
+            output_key_timestamp: null
+        });
+
+        const exportId = exportRecord.id;
+
+        const data = {
+            userId,
+            financialYear,
+            companyName,
+            cityName: city,
+            reportDate: getFinancialYearEndDate(financialYear),
+            totalDebit,
+            totalCredit,
+            groupedAccounts,
+        };
+
+        const buffer = Buffer.from(JSON.stringify(data));
+
+        const fileSize = buffer.length; // Get size in bytes
+
+        // Determine size tier
+        let sizeTier = "small"; // default
+        if (fileSize > 1024 * 1024 * 2.00) {
+            sizeTier = "large";
+        } else if (fileSize > 1024 * 1024 * 1.0) {
+            sizeTier = "medium";
+        }
+
+        // Construct prefix with size tier
+        const keyPrefix = `pdf-inputs/${sizeTier}/${userId}/`;
+        const fileName = `trailBalance_${financialYear}_${Date.now()}.json`;
+
+        // Step 3: Upload to S3
+        let s3Key;
+        try {
+            s3Key = await uploadToS3({
+                keyPrefix, fileName,
+                dataBuffer: buffer,
+                contentType: 'application/json',
+                metadata: {
+                    exportId: exportId.toString(),
+                    userId: userId.toString(),
+                    fileType: 'trailBalanceExport',
+                    financialYear,
+                    generatedAt: inputKeyTimestamp
+                }
+            });
+        } catch (uploadErr) {
+            console.error('❌ S3 upload failed:', uploadErr);
+            await exportRecord.update({ status: 5 }); // S3 INPUT KEY UPLOAD FAILED
+            return res.status(500).json({ error: 'Failed to upload input file to S3.' });
+        }
+
+        // Step 4: Update export record with input key and status = 1 (INTRANSIT)
+        await exportRecord.update({
+            input_key: s3Key,
+            status: 1
+        });
+
+        console.log(`✅ Uploaded to S3 at ${s3Key}`);
+        res.status(200).send({ message: 'PDF input data successfully uploaded to S3 and tracked.' });
+
+    } catch (err) {
+        console.error('❌ Data generation failed:', err);
+        // If exportRecord exists, mark as failed
+        if (typeof exportRecord !== 'undefined') {
+            await exportRecord.update({ status: 4 }); // DATA GENERATION FAILED
+        }
+        res.status(500).json({ error: 'Internal server error' });
+    }
+};
+
+function getFinancialYearEndDate(financialYear) {
+    const [, endYear] = financialYear.split("-");
+    return `${endYear}-03-31`;
+}
 
 exports.getAccountsForGroupForTrailBalance = async (req, res) => {
     const { groupId, userId, fromDate, toDate, financialYear } = req.body;

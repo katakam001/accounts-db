@@ -10,8 +10,17 @@ module.exports = (sequelize, Sequelize) => {
             primaryKey: true,
             allowNull: false,
         },
+        status: {
+            type: Sequelize.INTEGER, // 1 = default seeded, 2 = carry-forward in progress, 3 = ready, etc.
+            allowNull: false,
+            defaultValue: 1
+        },
+        error_message: {
+            type: Sequelize.TEXT,
+            allowNull: true
+        }
     }, {
-        tableName: 'financial_year_tracking',
+        tableName: 'financial_year_tracking'
     });
 
     return FinancialYearTracking;
