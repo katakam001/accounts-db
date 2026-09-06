@@ -14,6 +14,7 @@ WITH JournalEntries AS (
         journal_entries 
     WHERE 
         user_id = :userId 
+        AND financial_year = :financialYear
         AND journal_date BETWEEN :fromDate AND :toDate
 ),
 JournalItems AS (
@@ -37,6 +38,7 @@ CashEntries AS (
         combined_cash_entries ce
     WHERE 
         ce.user_id = :userId 
+        AND ce.financial_year = :financialYear
         AND cash_date BETWEEN :fromDate AND :toDate
 ),
 CombinedEntries AS (
