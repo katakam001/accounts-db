@@ -16,7 +16,7 @@ module.exports = (sequelize, Sequelize, UploadHistory) => {
       onDelete: 'RESTRICT'
     },
     transaction_id: {
-      type: Sequelize.STRING(64),
+      type: Sequelize.STRING(68),
       allowNull: false
     },
     user_id: {
