@@ -140,8 +140,9 @@ function pushNested(transformed, label, children, groupMap) {
 
   children.forEach(child => {
     const childAccounts = groupMap.get(normalize(child))?.accounts || [];
+    const group_id = childAccounts.length > 0 ? childAccounts[0].group_id : null;
 
-    transformed.push({ label: child, groupMode: 'flat', type: 'group', group_id: childAccounts[0].group_id, innerAmount: 0, outerAmount: 0 });
+    transformed.push({ label: child, groupMode: 'flat', type: 'group', group_id, innerAmount: 0, outerAmount: 0 });
 
     childAccounts.forEach(acc => {
       const debit = acc.debit || 0;
