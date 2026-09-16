@@ -9,7 +9,7 @@ const fs = require('fs');
 
 const privateKey = fs.readFileSync(config.privateKeyPath, 'utf8');
 const publicKey = fs.readFileSync(config.publicKeyPath, 'utf8');
-const algorithm =config.algorithm;
+const algorithm = config.algorithm;
 
 
 
@@ -22,35 +22,87 @@ const oAuth2Client = new google.auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_U
 oAuth2Client.setCredentials({ refresh_token: REFRESH_TOKEN });
 
 exports.signup = async (req, res) => {
-  try {
-    const db = getDb();
-    const User = db.user;
-    const Role = db.role;
-    const AdminUser = db.admin_user;
-    const { adminId, role } = req.body; // Assuming adminId and role are passed in the request body
+  const db = getDb();
+  const User = db.user;
+  const Role = db.role;
+  const AdminUser = db.admin_user;
+  const { adminId, role } = req.body;
 
-    // Create new user
+  const t = await db.sequelize.transaction();
+
+  try {
+    // Create user record
     const user = await User.create({
-      firstname: req.body.firstname,
-    
-      middlename: req.body.middlename,
-      lastname: req.body.lastname,
       username: req.body.username,
       password: bcrypt.hashSync(req.body.password, 8),
-      email: req.body.email
-    });
+      email: req.body.email,
+      contact_number: req.body.contact_number,
+      is_email_verified: false,
+      is_contact_verified: false
+    }, { transaction: t });
 
-    // Assign the selected role
+    // Assign role
     const roleInstance = await Role.findOne({ where: { name: role } });
-    await user.setRoles([roleInstance]);
+    if (roleInstance) {
+      await user.setRoles([roleInstance], { transaction: t });
+    }
 
-    // Assign user to admin if adminId is provided (for automated assignment use case)
+    // Assign admin relationship
     if (adminId) {
-      await AdminUser.create({ admin_id: adminId, user_id: user.id });
+      await AdminUser.create({ admin_id: adminId, user_id: user.id }, { transaction: t });
+    }
+
+    await t.commit();
+
+    const roles = await user.getRoles();
+    const roleName = roles[0]?.name || 'user';
+
+    const accessToken = generateAccessToken(user.id, roleName);
+    const refreshToken = generateRefreshToken(user.id, roleName);
+
+    // Set cookies
+
+    if (roleName === 'admin') {
+      // Admin tokens
+      res.cookie('accessToken', accessToken, {
+        httpOnly: true,
+        secure: true, // Set to true if using HTTPS
+        sameSite: 'None', // Prevents CSRF attacks
+        maxAge: 24 * 60 * 60 * 1000, // 24 hours
+        path: '/' // Ensure the path is set to root
+      });
+
+      res.cookie('refreshToken', refreshToken, {
+        httpOnly: true,
+        secure: true, // Set to true if using HTTPS
+        sameSite: 'None', // Prevents CSRF attacks
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+        path: '/' // Ensure the path is set to root
+      });
+    } else {
+      // Regular user tokens
+      res.cookie('userAccessToken', accessToken, {
+        httpOnly: true,
+        secure: true, // Set to true if using HTTPS
+        sameSite: 'None', // Prevents CSRF attacks
+        maxAge: 24 * 60 * 60 * 1000, // 24 hours
+        path: '/' // Ensure the path is set to root
+      });
+
+      res.cookie('userRefreshToken', refreshToken, {
+        httpOnly: true,
+        secure: true, // Set to true if using HTTPS
+        sameSite: 'None', // Prevents CSRF attacks
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+        path: '/' // Ensure the path is set to root
+      });
     }
 
     return res.status(201).send({ message: "User registered successfully!" });
+
   } catch (error) {
+    await t.rollback();
+    console.error("❌ Signup failed:", error);
     return res.status(500).send({ message: error.message });
   }
 };
@@ -59,6 +111,8 @@ exports.signin = async (req, res) => {
   try {
     const db = getDb();
     const User = db.user;
+    const UserDetails = db.userDetails;
+
     const user = await User.findOne({
       where: {
         username: req.body.username,
@@ -68,6 +122,7 @@ exports.signin = async (req, res) => {
     if (!user) {
       return res.status(404).send({ message: "User Not found." });
     }
+    const userDetails = await UserDetails.findOne({ where: { user_id: user.id } });
 
     const passwordIsValid = bcrypt.compareSync(req.body.password, user.password);
 
@@ -82,11 +137,8 @@ exports.signin = async (req, res) => {
       return res.status(401).send({ message: "Invalid Password!" });
     }
 
-    let authorities = [];
     const roles = await user.getRoles();
-    for (let i = 0; i < roles.length; i++) {
-      authorities.push("ROLE_" + roles[i].name.toUpperCase());
-    }
+    const authorities = roles.map(role => "ROLE_" + role.name.toUpperCase());
 
     const role = roles[0]; // Assuming each user has one role for simplicity
     const accessToken = generateAccessToken(user.id, role.name);
@@ -134,12 +186,17 @@ exports.signin = async (req, res) => {
         path: '/' // Ensure the path is set to root
       });
     }
+    const updatedUserRecord = await User.findByPk(user.id);
 
     return res.status(200).send({
-      id: user.id,
-      username: user.username,
-      email: user.email,
-      roles: authorities
+      id: updatedUserRecord.id,
+      username: updatedUserRecord.username,
+      email: updatedUserRecord.email,
+      contact_number: updatedUserRecord.contact_number,
+      last_login: updatedUserRecord.last_login,
+      roles: authorities,
+      profile_completed: updatedUserRecord.is_profile_completed,
+      user_details: userDetails || null
     });
   } catch (error) {
     console.log(error);
@@ -345,6 +402,98 @@ exports.changePassword = async (req, res) => {
     res.status(500).send({ message: 'An error occurred', error: error.message });
   }
 };
+
+exports.updateUserProfile = async (req, res) => {
+  const db = getDb();
+  const User = db.user;
+  const UserDetails = db.userDetails;
+  const AdminUser = db.admin_user;
+
+  const adminId = req.body.userId ? req.userId : null;
+  const userId = req.body.userId || req.userId;
+
+  const t = await db.sequelize.transaction();
+
+  try {
+    if (adminId) {
+      const adminUser = await AdminUser.findOne({
+        where: { admin_id: adminId, user_id: userId }
+      });
+
+      if (!adminUser) {
+        await t.rollback();
+        return res.status(403).send({ message: "User not associated with this admin." });
+      }
+    }
+
+    const existingUser = await User.findByPk(userId, { transaction: t });
+    if (!existingUser) {
+      await t.rollback();
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    // Enforce required business field
+    if (!req.body.company_name || req.body.company_name.trim() === '') {
+      await t.rollback();
+      return res.status(400).json({ message: "Company name is required." });
+    }
+
+    // Prepare user update payload
+    const updatedUser = {
+      email: req.body.email ?? existingUser.email,
+      contact_number: req.body.contact_number ?? existingUser.contact_number,
+      is_email_verified: req.body.is_email_verified ?? existingUser.is_email_verified,
+      is_contact_verified: req.body.is_contact_verified ?? existingUser.is_contact_verified,
+      is_profile_completed: true
+    };
+
+    // Prepare user_details payload
+    const detailsPayload = {
+      company_name: req.body.company_name,
+      owner_name: req.body.owner_name ?? "",
+      user_type: req.body.user_type ?? 0,
+      pan_number: req.body.pan_number ?? "",
+      gst_number: req.body.gst_number ?? "",
+      city: req.body.city ?? "",
+      jurisdiction: req.body.jurisdiction ?? ""
+    };
+
+    const existingDetails = await UserDetails.findOne({ where: { user_id: userId }, transaction: t });
+
+    if (!existingDetails) {
+      await UserDetails.create({ user_id: userId, ...detailsPayload }, { transaction: t });
+    } else {
+      await UserDetails.update(detailsPayload, { where: { user_id: userId }, transaction: t });
+    }
+
+    await User.update(updatedUser, { where: { id: userId }, transaction: t });
+
+    await t.commit();
+
+    // Fetch updated records
+    const updatedUserRecord = await User.findByPk(userId);
+    const updatedDetailsRecord = await UserDetails.findOne({ where: { user_id: userId } });
+    const roles = await updatedUserRecord.getRoles();
+    const authorities = roles.map(role => "ROLE_" + role.name.toUpperCase());
+
+    return res.status(200).json({
+      id: updatedUserRecord.id,
+      username: updatedUserRecord.username,
+      email: updatedUserRecord.email,
+      contact_number: updatedUserRecord.contact_number,
+      last_login: updatedUserRecord.last_login,
+      roles: authorities,
+      profile_completed: updatedUserRecord.is_profile_completed,
+      user_details: updatedDetailsRecord || null
+    });
+
+  } catch (error) {
+    await t.rollback();
+    console.error("❌ Update failed:", error);
+    return res.status(500).json({ message: "Internal server error." });
+  }
+};
+
 
 function generateAccessToken(id, role) {
   return jwt.sign({ id: id, role: role }, privateKey, {

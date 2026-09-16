@@ -10,5 +10,7 @@ module.exports = function (app) {
   // Route for Presigned URL Generation
   app.get("/api/upload/get-presigned-url", [authJwt.verifyToken], controller.getPresignedUrl);
   app.post("/api/upload/start-sqs", [authJwt.verifyToken], controller.startMonitoring);
+  app.get("/api/upload/history", [authJwt.verifyToken], controller.getUploadHistory);
+  app.post("/api/upload/mark-failure", [authJwt.verifyToken], controller.markUploadFailure);
 
 };

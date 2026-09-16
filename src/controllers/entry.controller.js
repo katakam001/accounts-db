@@ -1,65 +1,72 @@
 const { getDb } = require("../utils/getDb");
-const { broadcast } = require('../websocket'); // Import the broadcast function
 const entryService = require('../services/entry.service');
 
+let broadcast = () => {
+  // No-op when WebSocket is disabled
+};
+
+if (process.env.ENABLE_WEBSOCKET === 'true') {
+  const { broadcast: activeBroadcast } = require('../websocket');
+  broadcast = activeBroadcast;
+}
 
 exports.getEntries = async (req, res) => {
   const user_id = req.query.userId;
   const financial_year = req.query.financialYear;
-  const type = req.query.type;
+  const type = parseInt(req.query.type, 10);
   const startRow = parseInt(req.query.nextStartRow, 10) || 1;
   const pageSize = parseInt(req.query.pageSize, 10) || 10;
-  const fromDate = req.query.fromDate ? new Date(req.query.fromDate) : null; // Parse fromDate if provided
+  const fromDate = req.query.fromDate ? new Date(req.query.fromDate) : null;
   const toDate = req.query.toDate ? new Date(req.query.toDate) : null;
 
-  if (!user_id) {
-    return res.status(400).json({ error: 'userId query parameter is required' });
-  }
-  if (!financial_year) {
-    return res.status(400).json({ error: 'financialYear query parameter is required' });
-  }
-  if (!type) {
-    return res.status(400).json({ error: 'type query parameter is required' });
+  if (!user_id || !financial_year || !type) {
+    return res.status(400).json({ error: 'Missing required query parameters' });
   }
 
   try {
     const db = getDb();
     const bufferSize = 10;
     const endRow = startRow + pageSize + bufferSize;
-    const dateFilterConditions = []; // Collect date filters dynamically
-    if (fromDate) {
-      dateFilterConditions.push(`e.entry_date >= :fromDate`);
-    }
-    if (toDate) {
-      dateFilterConditions.push(`e.entry_date <= :toDate`);
-    }
+    const dateFilterConditions = [];
+
+    if (fromDate) dateFilterConditions.push(`e.entry_date >= :fromDate`);
+    if (toDate) dateFilterConditions.push(`e.entry_date <= :toDate`);
     const dateFilterSQL = dateFilterConditions.length > 0 ? `AND ${dateFilterConditions.join(' AND ')}` : '';
-   
+
+    // 🔹 Determine table names based on type
+    const isCashSale = type === 8;
+    const entryTable = isCashSale ? 'cash_sale_entries' : 'entries';
+    const fieldTable = isCashSale ? 'cash_entry_fields' : 'entry_fields';
+    const fieldJoinKey = isCashSale ? 'cash_sale_entry_id' : 'entry_id';
+
     const [entriesBuffer] = await db.sequelize.query(
       `WITH CTE AS (
-          SELECT e.*, 
-                 json_agg(json_build_object('field_id', ef.field_id, 'field_value', ef.field_value)) AS fields, 
-                 ROW_NUMBER() OVER (ORDER BY e.entry_date , e.id) as row_num
-          FROM entries e
-          LEFT JOIN entry_fields ef ON e.id = ef.entry_id
-          WHERE e.user_id = :user_id AND e.financial_year = :financial_year AND e.type = :type ${dateFilterSQL}
-          GROUP BY e.id
+        SELECT e.*, 
+               json_agg(json_build_object('field_id', ef.field_id, 'field_value', ef.field_value)) AS fields, 
+               ROW_NUMBER() OVER (ORDER BY e.entry_date, e.id) as row_num
+        FROM ${entryTable} e
+        LEFT JOIN ${fieldTable} ef ON e.id = ef.${fieldJoinKey}
+        WHERE e.user_id = :user_id AND e.financial_year = :financial_year AND e.type = :type ${dateFilterSQL}
+        GROUP BY e.id
       )
       SELECT * FROM CTE
-            WHERE row_num BETWEEN :startRow AND :endRow`,
+      WHERE row_num BETWEEN :startRow AND :endRow`,
       {
-        replacements: { user_id, financial_year, type, startRow, endRow,fromDate: fromDate ? fromDate.toISOString() : undefined,toDate: toDate ? toDate.toISOString() : undefined }
+        replacements: {
+          user_id,
+          financial_year,
+          type,
+          startRow,
+          endRow,
+          fromDate: fromDate ? fromDate.toISOString() : undefined,
+          toDate: toDate ? toDate.toISOString() : undefined
+        }
       }
     );
 
-    // console.log(entriesBuffer);
-    
-
-    // Step 2: Identify the last invoice number in the batch
+    // 🔹 Extend buffer to include full invoice group
     const lastInvoiceNumber = entriesBuffer[pageSize - 1]?.invoice_seq_id;
     let lastIndex = pageSize - 1;
-
-    // Step 3: Ensure all entries with the same invoice number are included
     for (let i = pageSize; i < entriesBuffer.length; i++) {
       if (entriesBuffer[i].invoice_seq_id === lastInvoiceNumber) {
         lastIndex = i;
@@ -68,11 +75,7 @@ exports.getEntries = async (req, res) => {
       }
     }
 
-    // Step 3: Ensure all entries with the same invoice number are included
     const validEntries = entriesBuffer.slice(0, lastIndex + 1);
-    // console.log(validEntries)
-
-    // Step 4: Determine if there are more records
     const hasMoreRecords = entriesBuffer.length > validEntries.length;
     const nextStartRow = startRow + validEntries.length;
 
@@ -92,50 +95,47 @@ exports.getEntries = async (req, res) => {
       type: entry.type,
       unit_id: entry.unit_id,
       invoiceNumber: entry.invoiceNumber,
-      invoice_seq_id:entry.invoice_seq_id,
-      sNo:entry.sNo,
+      invoice_seq_id: entry.invoice_seq_id,
+      sNo: entry.sNo,
       category_account_id: entry.category_account_id,
       fields: entry.fields ? JSON.parse(JSON.stringify(entry.fields)) : []
     }));
 
-
     res.json({
       entries: groupedEntries,
-      nextStartRow: nextStartRow,
+      nextStartRow,
       hasMore: hasMoreRecords
     });
   } catch (error) {
+    console.error(error);
     res.status(500).json({ error: error.message });
   }
 };
+
 exports.getTaxSummary = async (req, res) => {
   const user_id = req.query.userId;
   const financial_year = req.query.financialYear;
-  const type = req.query.type;
+  const type = parseInt(req.query.type, 10);
   const fromDate = req.query.fromDate ? new Date(req.query.fromDate) : null;
   const toDate = req.query.toDate ? new Date(req.query.toDate) : null;
 
-  if (!user_id) {
-    return res.status(400).json({ error: 'userId query parameter is required' });
-  }
-  if (!financial_year) {
-    return res.status(400).json({ error: 'financialYear query parameter is required' });
-  }
-  if (!type) {
-    return res.status(400).json({ error: 'type query parameter is required' });
+  if (!user_id || !financial_year || !type) {
+    return res.status(400).json({ error: 'Missing required query parameters' });
   }
 
   try {
     const db = getDb();
     const dateFilterConditions = [];
 
-    if (fromDate) {
-      dateFilterConditions.push(`e.entry_date >= :fromDate`);
-    }
-    if (toDate) {
-      dateFilterConditions.push(`e.entry_date <= :toDate`);
-    }
+    if (fromDate) dateFilterConditions.push(`e.entry_date >= :fromDate`);
+    if (toDate) dateFilterConditions.push(`e.entry_date <= :toDate`);
     const dateFilterSQL = dateFilterConditions.length > 0 ? `AND ${dateFilterConditions.join(' AND ')}` : '';
+
+    // 🔹 Determine table names based on type
+    const isCashSale = type === 8;
+    const entryTable = isCashSale ? 'cash_sale_entries' : 'entries';
+    const fieldTable = isCashSale ? 'cash_entry_fields' : 'entry_fields';
+    const fieldJoinKey = isCashSale ? 'cash_sale_entry_id' : 'entry_id';
 
     const [summaryData] = await db.sequelize.query(
       `WITH tax_per_entry AS (
@@ -145,8 +145,8 @@ exports.getTaxSummary = async (req, res) => {
               fm.field_id,
               f.field_name,
               CAST(ef.field_value AS FLOAT) AS total_tax_value
-          FROM entries e
-          INNER JOIN entry_fields ef ON e.id = ef.entry_id
+          FROM ${entryTable} e
+          INNER JOIN ${fieldTable} ef ON e.id = ef.${fieldJoinKey}
           INNER JOIN fields_mapping fm ON ef.field_id = fm.field_id
           INNER JOIN fields f ON fm.field_id = f.id
           WHERE fm.field_category = 1
@@ -170,7 +170,7 @@ exports.getTaxSummary = async (req, res) => {
               e.category_account_id,
               ROUND(SUM(CAST(e.value AS FLOAT))::numeric, 2) AS total_value,
               ROUND(SUM(CAST(e.total_amount AS FLOAT))::numeric, 2) AS total_amount
-          FROM entries e
+          FROM ${entryTable} e
           WHERE e.user_id = :user_id
             AND e.financial_year = :financial_year
             AND e.type = :type
@@ -209,63 +209,65 @@ exports.getTaxSummary = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
 exports.getEntryTypeSummary = async (req, res) => {
   const user_id = req.query.userId;
   const financial_year = req.query.financialYear;
   const fromDate = req.query.fromDate ? new Date(req.query.fromDate) : null;
   const toDate = req.query.toDate ? new Date(req.query.toDate) : null;
 
-  // Validate required query parameters
-  if (!user_id) {
-    return res.status(400).json({ error: 'userId query parameter is required' });
-  }
-  if (!financial_year) {
-    return res.status(400).json({ error: 'financialYear query parameter is required' });
+  if (!user_id || !financial_year) {
+    return res.status(400).json({ error: 'Missing required query parameters' });
   }
 
   try {
-    const db = getDb(); // Initialize your database connection
+    const db = getDb();
     const dateFilterConditions = [];
 
-    // Handle optional date filters
-    if (fromDate) {
-      dateFilterConditions.push(`entry_date >= :fromDate`);
-    }
-    if (toDate) {
-      dateFilterConditions.push(`entry_date <= :toDate`);
-    }
+    if (fromDate) dateFilterConditions.push(`entry_date >= :fromDate`);
+    if (toDate) dateFilterConditions.push(`entry_date <= :toDate`);
     const dateFilterSQL = dateFilterConditions.length > 0 ? `AND ${dateFilterConditions.join(' AND ')}` : '';
 
-    // Execute query for total amount per type
-    const [summaryData] = await db.sequelize.query(
+    // 🔹 Shared replacements object
+    const replacements = {
+      user_id,
+      financial_year,
+      fromDate: fromDate ? fromDate.toISOString() : undefined,
+      toDate: toDate ? toDate.toISOString() : undefined
+    };
+
+    // 🔹 Query entries (types 1–6)
+    const [normalSummary] = await db.sequelize.query(
       `SELECT 
           type,
           ROUND(CAST(COALESCE(SUM(total_amount), 0) AS NUMERIC), 2) AS total_amount_sum
-       FROM 
-          entries
-       WHERE 
-          user_id = :user_id
-          AND financial_year = :financial_year
-          AND type IN (1, 2, 3, 4, 5, 6)
-          ${dateFilterSQL}
-       GROUP BY 
-          type
-       ORDER BY 
-          type;`,
-      {
-        replacements: {
-          user_id,
-          financial_year,
-          fromDate: fromDate ? fromDate.toISOString() : undefined,
-          toDate: toDate ? toDate.toISOString() : undefined,
-        },
-      }
+       FROM entries
+       WHERE user_id = :user_id
+         AND financial_year = :financial_year
+         AND type IN (1, 2, 3, 4, 5, 6)
+         ${dateFilterSQL}
+       GROUP BY type`,
+      { replacements }
     );
 
-    // Return the summarized data
-    res.json(summaryData);
+    // 🔹 Query cash_sale_entries (type 8)
+    const [cashSummary] = await db.sequelize.query(
+      `SELECT 
+          type,
+          ROUND(CAST(COALESCE(SUM(total_amount), 0) AS NUMERIC), 2) AS total_amount_sum
+       FROM cash_sale_entries
+       WHERE user_id = :user_id
+         AND financial_year = :financial_year
+         AND type = 8
+         ${dateFilterSQL}
+       GROUP BY type`,
+      { replacements }
+    );
+
+    const combinedSummary = [...normalSummary, ...cashSummary].sort((a, b) => a.type - b.type);
+
+    res.json(combinedSummary);
   } catch (error) {
-    // Handle any errors gracefully
     res.status(500).json({ error: error.message });
   }
 };
@@ -273,17 +275,21 @@ exports.getEntryTypeSummary = async (req, res) => {
 exports.getEntryByInvoiceNumberByType = async (req, res) => {
   const { invoice_seq_id, type } = req.params;
 
-  if (!invoice_seq_id) {
-    return res.status(400).json({ error: 'invoice_seq_id is required' });
-  }
-  if (!type) {
-    return res.status(400).json({ error: 'type is required' });
+  if (!invoice_seq_id || !type) {
+    return res.status(400).json({ error: 'invoice_seq_id and type are required' });
   }
 
   try {
     const db = getDb();
+    const entryType = parseInt(type);
 
-    // Define the native SQL query
+    // 🔹 Determine table names based on type
+    const isCashSale = entryType === 8;
+    const entryTable = isCashSale ? 'cash_sale_entries' : 'entries';
+    const fieldTable = isCashSale ? 'cash_entry_fields' : 'entry_fields';
+    const fieldJoinKey = isCashSale ? 'cash_sale_entry_id' : 'entry_id';
+
+    // 🔹 Build SQL query
     const entriesQuery = `
       SELECT 
         e.*,
@@ -291,43 +297,31 @@ exports.getEntryByInvoiceNumberByType = async (req, res) => {
             json_build_object(
                 'field_id', ef.field_id, 
                 'field_value', ef.field_value, 
-                'field_name', f.field_name, -- Include field_name from fields
-                'field_category', fm.field_category, -- Include field_category from fieldsMapping
-                'tax_account_id', fm.account_id -- Include tax_account_id from fieldsMapping
+                'field_name', f.field_name,
+                'field_category', fm.field_category,
+                'tax_account_id', fm.account_id
             )
         ) AS fields,
         c.name AS category_name,
         a.name AS account_name,
         u.name AS unit_name,
         i.name AS item_name
-      FROM 
-        entries e
-      LEFT JOIN 
-        entry_fields ef ON e.id = ef.entry_id
-      LEFT JOIN 
-        fields f ON ef.field_id = f.id
-      LEFT JOIN 
-        fields_mapping fm ON f.id = fm.field_id AND fm.category_id = e.category_id
-      LEFT JOIN 
-        categories c ON e.category_id = c.id
-      LEFT JOIN 
-        account_list a ON e.account_id = a.id
-      LEFT JOIN 
-        units u ON e.unit_id = u.id
-      LEFT JOIN 
-        items i ON e.item_id = i.id
-      WHERE 
-        e.invoice_seq_id = :invoice_seq_id 
-        AND e.type = :type
-      GROUP BY 
-        e.id, c.name, a.name, u.name, i.name;
+      FROM ${entryTable} e
+      LEFT JOIN ${fieldTable} ef ON e.id = ef.${fieldJoinKey}
+      LEFT JOIN fields f ON ef.field_id = f.id
+      LEFT JOIN fields_mapping fm ON f.id = fm.field_id AND fm.category_id = e.category_id
+      LEFT JOIN categories c ON e.category_id = c.id
+      LEFT JOIN account_list a ON e.account_id = a.id
+      LEFT JOIN units u ON e.unit_id = u.id
+      LEFT JOIN items i ON e.item_id = i.id
+      WHERE e.invoice_seq_id = :invoice_seq_id AND e.type = :type
+      GROUP BY e.id, c.name, a.name, u.name, i.name;
     `;
 
-    // Execute the query
     const entries = await db.sequelize.query(entriesQuery, {
       replacements: {
-        invoice_seq_id: invoice_seq_id,
-        type: parseInt(type),
+        invoice_seq_id,
+        type: entryType,
       },
       type: db.Sequelize.QueryTypes.SELECT,
     });
@@ -343,7 +337,6 @@ exports.getEntryByInvoiceNumberByType = async (req, res) => {
       entry_date: entries[0].entry_date, // Assuming all entries have the same invoice date
       account_id: entries[0].account_id, // Assuming all entries have the same account_id
       customerName: entries[0].account_name, // Using account_name as customerName
-      account_id: entries[0].account_id, // Using account_name as customerName
       groupEntryValue: entries.reduce((sum, entry) => sum + parseFloat(entry.value), 0), // Summing up values
       groupTotalAmount: entries.reduce((sum, entry) => sum + parseFloat(entry.total_amount), 0), // Summing up total amounts
       entries: entries.map(entry => ({
@@ -379,36 +372,134 @@ exports.getEntryByInvoiceNumberByType = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
 exports.addEntries = async (req, res) => {
   const { entries } = req.body;
+  const db = getDb();
+  const t = await db.sequelize.transaction();
 
   try {
-    const result = await entryService.addEntriesService(entries);
+    const result = await entryService.addEntriesService(entries, t); // 👈 Pass transaction
 
-    // Extract data from the service result
     const { data } = result;
-    const { journalEntry, entries: updatedEntries, invoiceNumber, invoice_seq_id } = data; // Include invoiceNumber and invoice_seq_id
+    const { journalEntry, entries: updatedEntries, invoiceNumber, invoice_seq_id } = data;
     const { user_id, financial_year, entry_date } = entries[0];
 
-    // Include invoiceNumber and invoice_seq_id in broadcastData
     broadcast({
       type: 'INSERT',
       data: {
         entries: updatedEntries,
         group: { type: data.group.type },
-        journalEntry:journalEntry,
-        invoiceNumber,      // Ensure invoiceNumber is included
-        invoice_seq_id,     // Ensure invoice_seq_id is included
+        journalEntry,
+        invoiceNumber,
+        invoice_seq_id,
       },
       entryType: 'entry',
       user_id,
       financial_year,
-      journal_date:entry_date,
+      journal_date: entry_date,
     });
 
-    res.status(201).json({ message: result.message }); // Return the result as response
+    await t.commit(); // 👈 Commit here
+
+    res.status(201).json({
+      type: 'INSERT',
+      data: {
+        entries: updatedEntries,
+        group: { type: data.group.type },
+        journalEntry,
+        invoiceNumber,
+        invoice_seq_id,
+      },
+      entryType: 'entry',
+      user_id,
+      financial_year,
+      journal_date: entry_date,
+    });
   } catch (error) {
+    await t.rollback(); // 👈 Rollback here
     res.status(500).json({ error: error.message });
+  }
+};
+
+exports.addCashEntries = async (req, res) => {
+  const { entries } = req.body;
+  const db = getDb();
+  const t = await db.sequelize.transaction();
+
+  try {
+    const result = await entryService.addCashEntriesService(entries, t);
+
+    const { data } = result;
+    const { entries: updatedEntries, invoiceNumber, invoice_seq_id } = data;
+    const { user_id, financial_year, entry_date } = entries[0];
+
+    await entryService.processCashEntryLedgerService(updatedEntries, t);
+
+    await t.commit();
+
+    broadcast({
+      type: 'INSERT',
+      data: {
+        entries: updatedEntries,
+        group: { type: data.group.type },
+        invoiceNumber,
+        invoice_seq_id,
+      },
+      entryType: 'cashSaleEntry',
+      user_id,
+      financial_year,
+      journal_date: entry_date,
+    });
+
+    res.status(201).json({
+      type: 'INSERT',
+      data: {
+        entries: updatedEntries,
+        group: { type: data.group.type },
+        invoiceNumber,
+        invoice_seq_id,
+      },
+      entryType: 'cashSaleEntry',
+      user_id,
+      financial_year,
+      journal_date: entry_date,
+    });
+  } catch (error) {
+    await t.rollback();
+    res.status(500).json({ error: error.message });
+  }
+};
+
+exports.triggerLedgerJob = async (req, res) => {
+  const { uploadId } = req.params;
+
+  const db = getDb();
+  const UploadHistory = db.uploadHistory;
+  const transaction = await db.sequelize.transaction();
+  try {
+    const upload = await UploadHistory.findByPk(uploadId, { transaction });
+    if (!upload) {
+      await transaction.rollback();
+      return res.status(404).json({ error: 'Upload not found' });
+    }
+
+    if (
+      upload.status === 7 &&
+      ['cashSaleCgst', 'cashSaleIgst'].includes(upload.file_type)
+    ) {
+      await entryService.runCashSalesLedgerJob(upload.user_id, upload.financial_year, transaction);
+      await upload.update({ status: 8 }, { transaction }); // mark as ledger processed
+      await transaction.commit();
+      return res.json({ message: 'Ledger job triggered successfully' });
+    }
+
+    await transaction.rollback();
+    return res.status(400).json({ error: 'Upload not eligible for ledger job' });
+  } catch (error) {
+    await transaction.rollback();
+    console.error('Ledger job error:', error.message);
+    return res.status(500).json({ error: 'Internal server error' });
   }
 };
 
@@ -513,6 +604,7 @@ exports.updateEntries = async (req, res) => {
     const userId = entries[0].user_id;
     const financialYear = entries[0].financial_year;
     const type = entries[0].type;
+    const existing_seq_no = entries[0].s_no;
 
     // Step 1: Update or create a new journal entry
     let journalEntry = await JournalEntry.findOne({
@@ -536,7 +628,7 @@ exports.updateEntries = async (req, res) => {
       },
       transaction: t,
     });
-    
+
     const existingEntryIds = existingEntries.map(entry => entry.id);
 
     // Identify and delete entries and their associated fields that are no longer present
@@ -553,7 +645,7 @@ exports.updateEntries = async (req, res) => {
     const updatedEntries = []; // Array to store updated entries
 
     for (const entry of entries) {
-      const { id, dynamicFields,customerName, ...entryWithoutDynamicFields } = entry;
+      const { id, dynamicFields, customerName, ...entryWithoutDynamicFields } = entry;
 
       // Step 2: Update or create new entries with the journal_id
       let updatedEntry;
@@ -565,6 +657,7 @@ exports.updateEntries = async (req, res) => {
         entryWithoutDynamicFields.journal_id = journalEntry.id;
         entryWithoutDynamicFields.invoiceNumber = newInvoiceNumber; // Update to new invoice number
         entryWithoutDynamicFields.invoice_seq_id = invoiceSeqId; // Assign the existing `invoice_seq_id`
+        entryWithoutDynamicFields.sNo = existing_seq_no;
         updatedEntry = await Entry.create(entryWithoutDynamicFields, { transaction: t });
       }
 
@@ -587,7 +680,7 @@ exports.updateEntries = async (req, res) => {
       });
 
       // Step 3: Insert journal items for the entry
-      const journalItems = await getJournalItems(entry, dynamicFields, journalEntry.id, amount,customerName);
+      const journalItems = await getJournalItems(entry, dynamicFields, journalEntry.id, amount, customerName);
       allJournalItems.push(...journalItems);
     }
 
@@ -599,8 +692,8 @@ exports.updateEntries = async (req, res) => {
     // Step 4: Delete existing journal items and insert new ones
     await JournalItem.destroy({ where: { journal_id: journalEntry.id }, transaction: t });
     await JournalItem.bulkCreate(allJournalItems, {
-      fields: ['journal_id', 'account_id', 'group_id', 'amount', 'type', 'createdAt', 'updatedAt','narration'],
-      returning: ['journal_id', 'account_id', 'group_id', 'amount', 'type', 'createdAt', 'updatedAt','narration'],
+      fields: ['journal_id', 'account_id', 'group_id', 'amount', 'type', 'createdAt', 'updatedAt', 'narration'],
+      returning: ['journal_id', 'account_id', 'group_id', 'amount', 'type', 'createdAt', 'updatedAt', 'narration'],
       transaction: t
     });
 
@@ -622,9 +715,9 @@ exports.updateEntries = async (req, res) => {
     };
 
 
-    broadcast({ type: 'UPDATE', data: broadcastData, entryType: 'entry', user_id: userId, financial_year: financialYear,journal_date:journalDate });
+    broadcast({ type: 'UPDATE', data: broadcastData, entryType: 'entry', user_id: userId, financial_year: financialYear, journal_date: journalDate });
 
-    res.status(200).json({ message: 'Entries updated successfully' });
+    res.status(200).json({ type: 'UPDATE', data: broadcastData, entryType: 'entry', user_id: userId, financial_year: financialYear, journal_date: journalDate });
   } catch (error) {
     console.log(error);
     await t.rollback();
@@ -632,8 +725,326 @@ exports.updateEntries = async (req, res) => {
   }
 };
 
+exports.updateCashEntries = async (req, res) => {
+  const { entries } = req.body;
+  const db = getDb();
+  const t = await db.sequelize.transaction();
+
+  try {
+    const {
+      cashSaleEntries: CashSaleEntry,
+      cashEntryFields: CashEntryField,
+      dailyCashEntrySummary: DailySummary,
+      cash: CashEntries,
+      cashSaleEntryLinks: CashSaleEntryLink,
+      account: Account,
+      group: Group,
+      fieldsMapping: FieldsMapping
+    } = db;
+
+    const invoiceSeqId = entries[0].invoice_seq_id;
+    const newInvoiceNumber = entries[0].invoiceNumber;
+    const userId = entries[0].user_id;
+    const financialYear = entries[0].financial_year;
+    const type = entries[0].type;
+    const existing_seq_no = entries[0].s_no;
+
+
+    const existingEntries = await CashSaleEntry.findAll({
+      where: { invoice_seq_id: invoiceSeqId },
+      include: [{ model: CashEntryField, as: 'fields' }],
+      transaction: t
+    });
+    for (const entry of existingEntries) {
+      const entryFields = entry.fields || [];
+
+      // Extract field_ids from this entry
+      const fieldIds = entryFields.map(field => field.field_id);
+
+      // Fetch field mappings for these field_ids and the entry's category
+      const fieldMappings = await FieldsMapping.findAll({
+        where: {
+          field_id: fieldIds,
+          category_id: entry.category_id
+        },
+        attributes: ['field_id', 'field_type', 'field_category', 'exclude_from_total', 'account_id']
+      });
+
+      // Combine entry fields and field mappings
+      entry.dynamicFields = entryFields.map(field => {
+        const fieldMapping = fieldMappings.find(mapping => mapping.field_id === field.field_id);
+        return {
+          field_id: field.field_id,
+          field_value: field.field_value,
+          field_type: fieldMapping?.field_type,
+          field_category: fieldMapping?.field_category,
+          exclude_from_total: fieldMapping?.exclude_from_total,
+          tax_account_id: fieldMapping?.account_id
+        };
+      });
+    }
+
+    const existingEntryMap = new Map();
+    existingEntries.forEach(entry => existingEntryMap.set(entry.id, entry));
+    const existingEntryIds = existingEntries.map(entry => entry.id);
+
+    const deltaMap = new Map();
+    const updatedEntries = [];
+    const pendingLinks = [];
+
+    const cashAccount = await Account.findOne({
+      where: { name: 'CASH', user_id: userId, financial_year: financialYear },
+      include: [{ model: Group, as: 'group', through: { attributes: [] } }],
+      transaction: t
+    });
+    const cash_account_id = cashAccount.id;
+    const cash_group_id = cashAccount.group[0].id;
+
+    const addTo = (date, accountId, amount) => {
+      if (!date || !accountId) return; // Skip malformed keys
+      const key = `${date}_${accountId}`;
+      const delta = deltaMap.get(key) || { add: 0, subtract: 0 };
+      delta.add += parseFloat(amount);
+      deltaMap.set(key, delta);
+    };
+
+    const subtractFrom = (date, accountId, amount) => {
+      if (!date || !accountId) return;
+      const key = `${date}_${accountId}`;
+      const delta = deltaMap.get(key) || { add: 0, subtract: 0 };
+      delta.subtract += parseFloat(amount);
+      deltaMap.set(key, delta);
+    };
+
+
+    // 🔹 Step 1: Handle deleted entries
+    for (const entry of existingEntries) {
+      if (!entries.some(e => e.id === entry.id)) {
+        const oldDate = new Date(entry.entry_date).toISOString().split('T')[0];
+        subtractFrom(oldDate, entry.category_account_id, entry.value);
+        for (const field of entry.dynamicFields || []) {
+          subtractFrom(oldDate, field.tax_account_id, field.field_value);
+        }
+
+        await CashEntryField.destroy({ where: { cash_sale_entry_id: entry.id }, transaction: t });
+        await CashSaleEntryLink.destroy({ where: { cash_sale_entry_id: entry.id }, transaction: t });
+        await CashSaleEntry.destroy({ where: { id: entry.id }, transaction: t });
+      }
+    }
+
+    // 🔹 Step 2: Handle updated or new entries
+    for (const entry of entries) {
+      const { id, dynamicFields, customerName, ...entryData } = entry;
+      const newDate = new Date(entry.entry_date).toISOString().split('T')[0];
+
+      let updatedEntry;
+      if (id && existingEntryIds.includes(id)) {
+        const oldEntry = existingEntryMap.get(id);
+        const oldDate = new Date(oldEntry.entry_date).toISOString().split('T')[0];
+
+        // Always subtract old values
+        subtractFrom(oldDate, oldEntry.category_account_id, oldEntry.value);
+        for (const field of oldEntry.dynamicFields || []) {
+          console.log('Subtracting tax:', field.tax_account_id, field.field_value);
+          subtractFrom(oldDate, field.tax_account_id, field.field_value);
+        }
+
+        // Always add new values
+        addTo(newDate, entry.category_account_id, entry.value);
+        for (const field of dynamicFields || []) {
+          addTo(newDate, field.tax_account_id, field.field_value);
+        }
+
+        // If entry_date changed, remove old links
+        if (oldDate !== newDate) {
+          await CashSaleEntryLink.destroy({ where: { cash_sale_entry_id: id }, transaction: t });
+        }
+
+        await CashSaleEntry.update(entryData, { where: { id }, transaction: t });
+        updatedEntry = await CashSaleEntry.findOne({ where: { id }, transaction: t });
+        await CashEntryField.destroy({ where: { cash_sale_entry_id: id }, transaction: t });
+      } else {
+        entryData.invoice_seq_id = invoiceSeqId;
+        entryData.invoiceNumber = newInvoiceNumber;
+        entryData.sNo = existing_seq_no;
+        updatedEntry = await CashSaleEntry.create(entryData, { transaction: t });
+
+        addTo(newDate, entry.category_account_id, entry.value);
+        for (const field of dynamicFields || []) {
+          addTo(newDate, field.tax_account_id, field.field_value);
+        }
+      }
+
+      const entryFields = dynamicFields.map(field => ({
+        cash_sale_entry_id: updatedEntry.id,
+        field_id: field.field_id,
+        field_value: field.field_value
+      }));
+
+      await CashEntryField.bulkCreate(entryFields, { transaction: t });
+      pendingLinks.push({
+        entry_id: updatedEntry.id,
+        entry_date: newDate,
+        account_id: updatedEntry.category_account_id
+      });
+
+      for (const field of dynamicFields || []) {
+        pendingLinks.push({
+          entry_id: updatedEntry.id,
+          entry_date: newDate,
+          account_id: field.tax_account_id
+        });
+      }
+
+      updatedEntries.push({
+        ...updatedEntry.toJSON(),
+        dynamicFields
+      });
+    }
+
+    // 🔹 Step 3: Apply delta to ledger
+    for (const [key, delta] of deltaMap.entries()) {
+      const [entry_date, account_id] = key.split('_');
+      const transaction_id = `TXN-${entry_date}-${account_id}`;
+      const netAmount = parseFloat((delta.add - delta.subtract).toFixed(2));
+      if (netAmount === 0) continue;
+
+      let summary = await DailySummary.findOne({
+        where: { entry_date, account_id, user_id: userId, financial_year: financialYear },
+        transaction: t
+      });
+
+      if (summary) {
+        summary.total_amount = parseFloat(summary.total_amount) + netAmount;
+        await summary.save({ transaction: t });
+      } else {
+        summary = await DailySummary.create({
+          entry_date,
+          account_id,
+          total_amount: netAmount,
+          user_id: userId,
+          financial_year: financialYear
+        }, { transaction: t });
+      }
+
+      // 🔹 Link to summary immediately
+      console.log(pendingLinks);
+      const linkedEntries = pendingLinks.filter(link =>
+        link.entry_date === entry_date && link.account_id === parseInt(account_id, 10)
+      );
+
+      for (const { entry_id } of linkedEntries) {
+        const exists = await CashSaleEntryLink.findOne({
+          where: { cash_sale_entry_id: entry_id, summary_id: summary.id },
+          transaction: t
+        });
+
+        if (!exists) {
+          await CashSaleEntryLink.create({
+            cash_sale_entry_id: entry_id,
+            summary_id: summary.id
+          }, { transaction: t });
+        }
+      }
+
+      const account = await Account.findOne({
+        where: { id: account_id, user_id: userId, financial_year: financialYear },
+        include: [{ model: Group, as: 'group', through: { attributes: [] } }],
+        transaction: t
+      });
+      const group_id = account.group[0].id;
+      const account_name = account.name;
+
+      const mainEntry = await CashEntries.findOne({
+        where: {
+          transaction_id,
+          user_id: userId,
+          financial_year: financialYear,
+          is_cash_adjustment: false
+        },
+        transaction: t
+      });
+
+      if (mainEntry) {
+        mainEntry.amount = parseFloat(mainEntry.amount) + netAmount;
+        await mainEntry.save({ transaction: t });
+      } else {
+        await CashEntries.create({
+          cash_date: entry_date,
+          narration: `Aggregated ${account_name} for ${entry_date}`,
+          account_id,
+          type: true,
+          amount: netAmount,
+          user_id: userId,
+          financial_year: financialYear,
+          transaction_id,
+          is_cash_adjustment: false,
+          group_id
+        }, { transaction: t });
+      }
+
+      const cashEntry = await CashEntries.findOne({
+        where: {
+          transaction_id,
+          user_id: userId,
+          financial_year: financialYear,
+          is_cash_adjustment: true
+        },
+        transaction: t
+      });
+
+      if (cashEntry) {
+        cashEntry.amount = parseFloat(cashEntry.amount) + netAmount;
+        await cashEntry.save({ transaction: t });
+      } else {
+        await CashEntries.create({
+          cash_date: entry_date,
+          narration: `CASH entry for ${account_name} for ${entry_date}`,
+          account_id: cash_account_id,
+          type: false,
+          amount: netAmount,
+          user_id: userId,
+          financial_year: financialYear,
+          transaction_id,
+          is_cash_adjustment: true,
+          group_id: cash_group_id
+        }, { transaction: t });
+      }
+    }
+
+    await t.commit();
+
+    const broadcastData = {
+      entries: updatedEntries,
+      group: { type },
+      invoice_seq_id: invoiceSeqId,
+      invoiceNumber: newInvoiceNumber
+    };
+
+    broadcast({
+      type: 'UPDATE',
+      data: broadcastData,
+      entryType: 'cashSaleEntry',
+      user_id: userId,
+      financial_year: financialYear,
+    });
+
+    res.status(200).json({
+      type: 'UPDATE',
+      data: broadcastData,
+      entryType: 'cashSaleEntry',
+      user_id: userId,
+      financial_year: financialYear,
+    });
+  } catch (error) {
+    console.error(error);
+    await t.rollback();
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
 exports.deleteEntries = async (req, res) => {
-  const { invoice_seq_id,  type } = req.params; // Include required parameters
+  const { invoice_seq_id, type } = req.params; // Include required parameters
 
   try {
     const db = getDb();
@@ -676,14 +1087,14 @@ exports.deleteEntries = async (req, res) => {
 
     }
 
-      // Retrieve the list of account IDs associated with this journal entry
-      const journalItems = await JournalItem.findAll({
-        attributes: ['account_id'],
-        where: { journal_id: journalId },
-        transaction: t
-      });
-  
-      const accountIds = journalItems.map(item => item.account_id);  
+    // Retrieve the list of account IDs associated with this journal entry
+    const journalItems = await JournalItem.findAll({
+      attributes: ['account_id'],
+      where: { journal_id: journalId },
+      transaction: t
+    });
+
+    const accountIds = journalItems.map(item => item.account_id);
 
     // Delete the journal items
     await JournalItem.destroy({ where: { journal_id: journalId }, transaction: t });
@@ -707,13 +1118,184 @@ exports.deleteEntries = async (req, res) => {
 
     broadcast({ type: 'DELETE', data: broadcastData, entryType: 'entry', user_id: journalEntryExist.user_id, financial_year: journalEntryExist.financial_year, journal_date: journalEntryExist.journal_date });
 
-    res.status(204).send(); // No content
+    res.status(200).json({ type: 'DELETE', data: broadcastData, entryType: 'entry', user_id: journalEntryExist.user_id, financial_year: journalEntryExist.financial_year, journal_date: journalEntryExist.journal_date });
   } catch (error) {
     console.log(error);
     await t.rollback();
     res.status(500).json({ error: 'Internal server error' });
   }
 };
+
+exports.deleteCashEntries = async (req, res) => {
+  const { invoice_seq_id, type } = req.params;
+
+  if (!invoice_seq_id || !type) {
+    return res.status(400).json({ error: 'invoice_seq_id and type are required' });
+  }
+
+  let t;
+  try {
+    const db = getDb();
+    t = await db.sequelize.transaction();
+
+    const {
+      cashSaleEntries: CashSaleEntry,
+      cashEntryFields: CashEntryField,
+      dailyCashEntrySummary: DailySummary,
+      cash: CashEntries,
+      cashSaleEntryLinks: CashSaleEntryLink,
+      fieldsMapping: FieldsMapping,
+      account: Account,
+      group: Group
+    } = db;
+
+    const entries = await CashSaleEntry.findAll({
+      where: { invoice_seq_id },
+      include: [{ model: CashEntryField, as: 'fields' }],
+      transaction: t
+    });
+
+    if (entries.length === 0) {
+      await t.rollback();
+      return res.status(404).json({ error: 'No cash sale entries found for the provided invoice sequence ID' });
+    }
+
+    const invoiceNumber = entries[0].invoiceNumber;
+    const user_id = entries[0].user_id;
+    const financial_year = entries[0].financial_year;
+    const entry_date = entries[0].entry_date;
+
+    const deltaMap = new Map();
+
+    const subtractFrom = (date, accountId, amount) => {
+      if (!date || !accountId) return;
+      const key = `${date}_${accountId}`;
+      const delta = deltaMap.get(key) || { add: 0, subtract: 0 };
+      delta.subtract += parseFloat(amount);
+      deltaMap.set(key, delta);
+    };
+
+    for (const entry of entries) {
+      const entry_date = new Date(entry.entry_date).toISOString().split('T')[0];
+
+      subtractFrom(entry_date, entry.category_account_id, entry.value);
+
+      const fieldIds = entry.fields.map(f => f.field_id);
+      const fieldMappings = await FieldsMapping.findAll({
+        where: { field_id: fieldIds, category_id: entry.category_id },
+        attributes: ['field_id', 'account_id']
+      });
+
+      for (const field of entry.fields || []) {
+        const mapping = fieldMappings.find(m => m.field_id === field.field_id);
+        if (mapping?.account_id) {
+          subtractFrom(entry_date, mapping.account_id, field.field_value);
+        }
+      }
+
+      await CashEntryField.destroy({ where: { cash_sale_entry_id: entry.id }, transaction: t });
+      await CashSaleEntryLink.destroy({ where: { cash_sale_entry_id: entry.id }, transaction: t });
+      await CashSaleEntry.destroy({ where: { id: entry.id }, transaction: t });
+    }
+
+    // Apply delta to ledger
+    for (const [key, delta] of deltaMap.entries()) {
+      const [entry_date, account_id] = key.split('_');
+      const transaction_id = `TXN-${entry_date}-${account_id}`;
+      const netAmount = parseFloat((delta.add - delta.subtract).toFixed(2));
+      if (netAmount === 0) continue;
+
+      const summary = await DailySummary.findOne({
+        where: { entry_date, account_id, user_id, financial_year },
+        transaction: t
+      });
+
+      if (summary) {
+        summary.total_amount = parseFloat(summary.total_amount) + netAmount;
+        await summary.save({ transaction: t });
+      }
+
+      const account = await Account.findOne({
+        where: { id: account_id, user_id, financial_year },
+        include: [{ model: Group, as: 'group', through: { attributes: [] } }],
+        transaction: t
+      });
+      console.log(account);
+      const group_id = account.group[0].id;
+      const account_name = account.name;
+
+      const mainEntry = await CashEntries.findOne({
+        where: {
+          transaction_id,
+          user_id,
+          financial_year,
+          is_cash_adjustment: false
+        },
+        transaction: t
+      });
+
+      if (mainEntry) {
+        mainEntry.amount = parseFloat(mainEntry.amount) + netAmount;
+        await mainEntry.save({ transaction: t });
+      }
+
+      const cashAccount = await Account.findOne({
+        where: { name: 'CASH', user_id, financial_year },
+        include: [{ model: Group, as: 'group', through: { attributes: [] } }],
+        transaction: t
+      });
+      const cash_account_id = cashAccount.id;
+      const cash_group_id = cashAccount.group[0].id;
+
+      const cashEntry = await CashEntries.findOne({
+        where: {
+          transaction_id,
+          user_id,
+          financial_year,
+          is_cash_adjustment: true
+        },
+        transaction: t
+      });
+
+      if (cashEntry) {
+        cashEntry.amount = parseFloat(cashEntry.amount) + netAmount;
+        await cashEntry.save({ transaction: t });
+      }
+    }
+
+    await t.commit();
+
+    const broadcastData = {
+      group: {
+        invoiceNumber,
+        type: parseInt(type),
+        invoice_seq_id,
+        entry_date: entry_date
+      },
+    };
+
+    broadcast({
+      type: 'DELETE',
+      data: broadcastData,
+      entryType: 'cashSaleEntry',
+      user_id,
+      financial_year
+    });
+
+    res.status(200).json({
+      type: 'DELETE',
+      data: broadcastData,
+      entryType: 'cashSaleEntry',
+      user_id,
+      financial_year
+    });
+  } catch (error) {
+    console.error(error);
+    await t.rollback();
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
 
 exports.generateJournalEntriesAndUpdateEntries = async () => {
   try {
@@ -744,7 +1326,7 @@ exports.generateJournalEntriesAndUpdateEntries = async () => {
         'invoiceNumber',
         'invoice_seq_id',
         'category_account_id',
-            ] // Specify the columns you need
+      ] // Specify the columns you need
     });
 
     const cleanEntries = entries.map(entry => entry.dataValues);
@@ -765,34 +1347,34 @@ exports.generateJournalEntriesAndUpdateEntries = async () => {
       if (groupedEntries.hasOwnProperty(invoice_seq_id)) {
         const group = groupedEntries[invoice_seq_id];
 
-                // Fetch entry fields and their corresponding field mappings for the current group
-                for (const entry of group) {
-                  // Fetch entry fields for the current entry
-                  const entryFields = await EntryField.findAll({
-                    where: { entry_id: entry.id },
-                    attributes: ['entry_id', 'field_id', 'field_value']
-                  });
-        
-                  // Fetch field mappings for the entry fields
-                  const fieldIds = entryFields.map(field => field.field_id);
-                  const fieldMappings = await FieldsMapping.findAll({
-                    where: { field_id: fieldIds, category_id: entry.category_id },
-                    attributes: ['field_id', 'field_type', 'field_category', 'exclude_from_total','account_id']
-                  });
-        
-                  // Combine entry fields and field mappings based on field_id
-                  entry.dynamicFields = entryFields.map(field => {
-                    const fieldMapping = fieldMappings.find(mapping => mapping.field_id === field.field_id);
-                    return {
-                      field_id: field.field_id,
-                      field_value: field.field_value,
-                      field_type: fieldMapping.field_type,
-                      field_category: fieldMapping.field_category,
-                      exclude_from_total: fieldMapping.exclude_from_total,
-                      tax_account_id:fieldMapping.account_id
-                    };
-                  });
-                }
+        // Fetch entry fields and their corresponding field mappings for the current group
+        for (const entry of group) {
+          // Fetch entry fields for the current entry
+          const entryFields = await EntryField.findAll({
+            where: { entry_id: entry.id },
+            attributes: ['entry_id', 'field_id', 'field_value']
+          });
+
+          // Fetch field mappings for the entry fields
+          const fieldIds = entryFields.map(field => field.field_id);
+          const fieldMappings = await FieldsMapping.findAll({
+            where: { field_id: fieldIds, category_id: entry.category_id },
+            attributes: ['field_id', 'field_type', 'field_category', 'exclude_from_total', 'account_id']
+          });
+
+          // Combine entry fields and field mappings based on field_id
+          entry.dynamicFields = entryFields.map(field => {
+            const fieldMapping = fieldMappings.find(mapping => mapping.field_id === field.field_id);
+            return {
+              field_id: field.field_id,
+              field_value: field.field_value,
+              field_type: fieldMapping.field_type,
+              field_category: fieldMapping.field_category,
+              exclude_from_total: fieldMapping.exclude_from_total,
+              tax_account_id: fieldMapping.account_id
+            };
+          });
+        }
 
         // Remove existing journal_entries and journal_items for each entry in the group
         await removeExistingJournalEntriesAndItems(group);
@@ -846,7 +1428,7 @@ const processGroupForJournalEntries = async (entries) => {
       where: { id: entries[0].account_id },
       transaction: t
     });
-    const customerName =account.name;
+    const customerName = account.name;
     // Step 1: Insert a new journal entry
     const journalEntry = await JournalEntry.create({
       journal_date: journalDate,
@@ -868,18 +1450,18 @@ const processGroupForJournalEntries = async (entries) => {
     for (const entry of entries) {
       // Fetch entry fields for the current entry
       const dynamicFields = entry.dynamicFields;
-    //  console.log(dynamicFields);
+      //  console.log(dynamicFields);
 
 
       // Determine the amount based on exclude_from_total and field_category
       const amount = dynamicFields.some(field => field.field_category === 1 && field.exclude_from_total) ? entry.value : entry.total_amount;
       // console.log(amount);
       total_amount += parseFloat(amount); // Parse the amount before summation
-            // console.log(total_amount);
+      // console.log(total_amount);
       // console.log(dynamicFields);
 
       // Step 3: Insert journal items for the entry
-      const journalItems = await getJournalItems(entry, dynamicFields, journalEntry.id, amount,customerName);
+      const journalItems = await getJournalItems(entry, dynamicFields, journalEntry.id, amount, customerName);
       allJournalItems.push(...journalItems);
     }
     // console.log(total_amount);
@@ -889,8 +1471,8 @@ const processGroupForJournalEntries = async (entries) => {
     allJournalItems.unshift(...partyJournalItems);
 
     await JournalItem.bulkCreate(allJournalItems, {
-      fields: ['journal_id', 'account_id', 'group_id', 'amount', 'type', 'createdAt', 'updatedAt','narration'],
-      returning: ['journal_id', 'account_id', 'group_id', 'amount', 'type', 'createdAt', 'updatedAt','narration'],
+      fields: ['journal_id', 'account_id', 'group_id', 'amount', 'type', 'createdAt', 'updatedAt', 'narration'],
+      returning: ['journal_id', 'account_id', 'group_id', 'amount', 'type', 'createdAt', 'updatedAt', 'narration'],
       transaction: t
     });
 

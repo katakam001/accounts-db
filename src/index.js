@@ -1,14 +1,20 @@
+const path = require('path');
+const dotenv = require('dotenv');
+
+// Load the correct .env file based on NODE_ENV
+dotenv.config({
+  path: path.resolve(__dirname, `../.env.${process.env.NODE_ENV || 'development'}`)
+});
+
 const express = require("express");
 const cors = require("cors");
 const cookieParser = require('cookie-parser');
-const path = require('path');
 const chokidar = require('chokidar');
 const moment = require('moment-timezone');
 const app = express();
 const syncAndInjectData = require('./syncAndInject');
 const { getDb, reloadDb } = require("./utils/getDb");
 const { server, broadcast } = require('./websocket'); // Import the WebSocket server and broadcast function
-require('dotenv').config();
 
 // Function to reload configuration
 async function reloadConfig() {
@@ -71,7 +77,7 @@ app.use(
   cors({
     credentials: true,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-    origin: ["http://localhost:4200"],
+    origin: [process.env.DOMAIN_URL],
   })
 );
 
@@ -95,6 +101,7 @@ app.get("/", (req, res) => {
 // routes
 require("./routes/auth.routes")(app);
 require("./routes/admin.routes.js")(app);
+require("./routes/copyJob.routes.js")(app);
 require("./routes/financialYearTracking.routes.js")(app);
 require("./routes/account.routes")(app);
 require("./routes/group.routes")(app);
@@ -120,9 +127,15 @@ require("./routes/consolidateStockRegister.routes.js")(app); // Updated from con
 require("./routes/balance.routes.js")(app); // Updated from balance.routes.js
 require("./routes/ledger.routes.js")(app); // Updated from ledger.routes.js
 require("./routes/upload.routes.js")(app); // Updated from upload.routes.js
+require("./routes/download.routes.js")(app); // Updated from download.routes.js
+require("./routes/exports.routes.js")(app); // Updated from exports.routes.js
 require("./routes/sequenceNumber.routes.js")(app); // Updated from sequenceNumber.routes.js
 require("./routes/openingStock.routes.js")(app); // Updated from openingStock.routes.js
-require("./routes/closingStockValuation.routes.js")(app); // Updated from closingStockValuation.routes.js
+require("./routes/stockValuation.routes.js")(app); // Updated from stockValuation.routes.js
+require("./routes/tradingAccount.routes.js")(app);
+require("./routes/profitAndLoss.routes.js")(app);
+require("./routes/tradingAccAndProfitAndLoss.routes.js")(app);
+require("./routes/balanceSheet.routes.js")(app);
 
 // Invoke the sync and inject function
 syncAndInjectData(db).then(() => {

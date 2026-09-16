@@ -5,34 +5,35 @@ module.exports = (sequelize, Sequelize) => {
       autoIncrement: true,
       primaryKey: true
     },
-    firstname: {
-      type: Sequelize.STRING(250),
-      allowNull: false
-    },
-    middlename: {
-      type: Sequelize.TEXT,
-      allowNull: true
-    },
-    lastname: {
-      type: Sequelize.STRING(250),
-      allowNull: false
-    },
     username: {
       type: Sequelize.TEXT,
-      allowNull: false
+      allowNull: false,
+      unique: true
     },
     password: {
       type: Sequelize.TEXT,
       allowNull: false
     },
+    email: {
+      type: Sequelize.STRING,
+      allowNull: false,
+      unique: true
+    },
+    contact_number: {
+      type: Sequelize.STRING,
+      allowNull: true
+    },
+    is_email_verified: {
+      type: Sequelize.BOOLEAN,
+      defaultValue: false
+    },
+    is_contact_verified: {
+      type: Sequelize.BOOLEAN,
+      defaultValue: false
+    },
     last_login: {
       type: Sequelize.DATE,
       allowNull: true
-    },
-    type: {
-      type: Sequelize.BOOLEAN,
-      allowNull: false,
-      defaultValue: false
     },
     status: {
       type: Sequelize.BOOLEAN,
@@ -41,11 +42,11 @@ module.exports = (sequelize, Sequelize) => {
     },
     loginAttempts: {
       type: Sequelize.INTEGER,
-      defaultValue: 0,
+      defaultValue: 0
     },
-    email: {
-      type: Sequelize.STRING,
-      allowNull: false
+    is_profile_completed: {
+      type: Sequelize.BOOLEAN,
+      defaultValue: false
     }
   });
 

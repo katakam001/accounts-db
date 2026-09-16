@@ -1,0 +1,144 @@
+--only run this query for accumalted temp usage for entire database.
+This resets all statistics for the current database, including:
+
+temp_files
+
+temp_bytes
+
+Tuple stats
+
+Block reads/writes
+
+SELECT pg_stat_reset();
+
+
+SELECT 
+  datname,
+  temp_files,
+  temp_bytes,
+  pg_size_pretty(temp_bytes) AS temp_size
+FROM pg_stat_database
+WHERE temp_files > 0
+ORDER BY temp_bytes DESC;
+  datname   | temp_files | temp_bytes | temp_size 
+------------+------------+------------+-----------
+ account_db |          2 |    2260992 | 2208 kB
+(1 row)
+
+
+
+--only run this when you want to clear the below query stats.
+this reset top 10 query and temp size and all other details
+
+SELECT pg_stat_statements_reset();
+
+query vs temp_blks_written in pg_stat_statements
+query:	The actual SQL text that was executed. This is the fingerprint of the statement.
+temp_blks_written:	The number of temporary blocks written to disk during execution of that query.
+
+
+SELECT 
+  query,
+  calls,
+  total_exec_time,
+  temp_blks_written,
+  pg_size_pretty(temp_blks_written * 8192) AS temp_written_size
+FROM pg_stat_statements
+ORDER BY temp_blks_written DESC
+LIMIT 10;
+
+
+SELECT 
+  query,
+  calls,
+  total_exec_time,
+  ROUND((total_exec_time / calls)::numeric, 2) AS avg_exec_time_ms,
+FROM pg_stat_statements
+ORDER BY total_exec_time DESC
+LIMIT 10;
+
+
+
+This function lists active temp files while queries are running:
+SELECT * FROM pg_ls_tmpdir();
+
+if issue persist:
+1)excute query plan on the query which is taking huge temp space using this command
+
+EXPLAIN (ANALYZE, BUFFERS) <actually query with data mean full where clause with values>
+this can be run using the psql command as well like this
+psql -h localhost -p 5432 -U postgres -d account_db -c "actual query;" > explain_query.txt
+
+Great question—`EXPLAIN (ANALYZE, BUFFERS)` is one of the most powerful tools in PostgreSQL for understanding **how a query actually runs**. Here's what each part does:
+
+---
+
+### 🔍 `EXPLAIN`
+
+- Shows the **execution plan** PostgreSQL intends to use.
+- Includes steps like sequential scans, index scans, joins, sorts, etc.
+- Without `ANALYZE`, it’s just a prediction—no actual execution.
+
+---
+
+### ⚙️ `ANALYZE`
+
+- Actually **executes the query** and measures real performance.
+- Adds runtime stats like:
+  - Actual time taken per step
+  - Number of rows processed
+  - Whether the planner’s estimates were accurate
+
+This helps you spot inefficiencies like:
+- Overestimated row counts
+- Slow joins or sorts
+- Unused indexes
+
+---
+
+### 📦 `BUFFERS`
+
+- Adds **I/O statistics** to the output.
+- Shows how many blocks were:
+  - Read from disk (`read`)
+  - Found in memory (`hit`)
+  - Dirtied or written
+
+This is crucial for diagnosing:
+- Temp file usage
+- Disk-heavy operations
+- Cache effectiveness
+
+---
+
+### ✅ Example Output Insight
+
+You might see something like:
+
+```
+Sort  (cost=1234.56..1234.78 rows=100 width=64)
+  Sort Method: external merge  Disk: 50MB
+  Buffers: shared hit=100 read=20 written=10
+```
+
+This tells you:
+- PostgreSQL had to **sort to disk** (temp file usage)
+- It read 20 blocks from disk and wrote 10—indicating I/O pressure
+
+---
+
+So when you run:
+
+```sql
+EXPLAIN (ANALYZE, BUFFERS) <your_query_here>;
+```
+
+You're getting a **full diagnostic snapshot** of how PostgreSQL executed your query, how much time it took, and how much disk/memory it used.
+
+If you paste the output here, I’ll help you interpret it and pinpoint where the temp file usage is coming from. You're asking all the right questions.
+
+
+2)do the analysis of query main thing to identify is index scan are happening or not,if not add the indexes.
+3)fix the CTE to convert them to temp tables and break big query to into smaller query with temp tables for CTE.
+
+4) once after every fix check the stats query and top 10 query for every 1 week.

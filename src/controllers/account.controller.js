@@ -1,4 +1,7 @@
 const { getDb } = require("../utils/getDb");
+const cache = require("../services/cache.service"); // ✅ Import shared cache service
+const invoiceUtils = require('../utils/invoiceUtils');
+
 
 exports.accountList = async (req, res) => {
   try {
@@ -162,6 +165,7 @@ exports.getAccount = async (req, res) => {
 
 exports.accountUpdate = async (req, res) => {
   const { name, gst_no, user_id, debit_balance, credit_balance, financial_year, isDealer, group, address } = req.body;
+
   try {
     const db = getDb();
     const Account = db.account;
@@ -169,10 +173,22 @@ exports.accountUpdate = async (req, res) => {
     const Address = db.address;
     const AccountGroup = db.accountGroup;
     const { id } = req.params;
+
     const account = await Account.findByPk(id);
-    if (!account) {
-      return res.status(404).send('Account not found');
+    if (!account) return res.status(404).send('Account not found');
+
+    // Save old name for composite key cleanup
+    const oldAccountName = account.name;
+
+    // Fetch previous group for cache cleanup
+    const previousMapping = await AccountGroup.findOne({ where: { account_id: id } });
+    let oldGroupName = null;
+    if (previousMapping) {
+      const oldGroup = await Group.findByPk(previousMapping.group_id);
+      oldGroupName = oldGroup?.name;
     }
+
+    // Update account fields
     account.name = name;
     account.gst_no = gst_no;
     account.date_updated = new Date();
@@ -182,20 +198,13 @@ exports.accountUpdate = async (req, res) => {
     account.financial_year = financial_year;
     account.isDealer = isDealer;
     await account.save();
-    console.log(group);
 
+    // Update group mapping if changed
     let groupData = null;
     if (group) {
-      // Check if the exact mapping already exists
-      const existingPair = await AccountGroup.findOne({
-        where: { account_id: id, group_id: group }
-      });
-
+      const existingPair = await AccountGroup.findOne({ where: { account_id: id, group_id: group } });
       if (!existingPair) {
-        // Remove any previous mapping for this account
         await AccountGroup.destroy({ where: { account_id: id } });
-
-        // Create new mapping
         await AccountGroup.create({ account_id: id, group_id: group });
       }
 
@@ -252,16 +261,72 @@ exports.accountUpdate = async (req, res) => {
       } : null
     };
 
+    // 🔁 Cache update
+    const cacheKey = `${account.user_id}_${account.financial_year}`;
+    const cachedData = cache.getCache(cacheKey);
+
+    if (cachedData?.accountMap instanceof Map) {
+      // Update accountMap
+      for (const [key, value] of cachedData.accountMap.entries()) {
+        if (value.accountId === account.id) {
+          cachedData.accountMap.delete(key);
+          break;
+        }
+      }
+      cachedData.accountMap.set(name.toLowerCase(), {
+        accountId: account.id,
+        groupId: groupData?.id
+      });
+
+      // Determine prefixes
+      const oldPrefix = getPrefixFromGroupName(oldGroupName);
+      const newPrefix = getPrefixFromGroupName(groupData?.name);
+
+      const oldAccountListKey = `${oldPrefix}Account`;
+      const oldCategoryMapKey = `${oldPrefix}CategoryAccountMap`;
+      const newAccountListKey = `${newPrefix}Account`;
+      const newCategoryMapKey = `${newPrefix}CategoryAccountMap`;
+
+      // Remove from old group cache
+      if (Array.isArray(cachedData[oldAccountListKey])) {
+        cachedData[oldAccountListKey] = cachedData[oldAccountListKey].filter(a => a.account_id !== account.id);
+      }
+      if (cachedData[oldCategoryMapKey] instanceof Map) {
+        const oldMap = invoiceUtils.categorizeAccountsByTaxRate([
+          { account_id: account.id, account_name: oldAccountName }
+        ]);
+        for (const key of oldMap.keys()) {
+          cachedData[oldCategoryMapKey].delete(key);
+        }
+      }
+
+      // Add to new group cache
+      if (Array.isArray(cachedData[newAccountListKey]) && cachedData[newCategoryMapKey] instanceof Map) {
+        cachedData[newAccountListKey].push({
+          account_id: account.id,
+          account_name: account.name,
+          group_id: groupData?.id
+        });
+
+        const newMap = invoiceUtils.categorizeAccountsByTaxRate([
+          { account_id: account.id, account_name: account.name }
+        ]);
+        for (const [key, value] of newMap.entries()) {
+          cachedData[newCategoryMapKey].set(key, value);
+        }
+      }
+
+      cache.setCache(cacheKey, cachedData, 3600);
+    }
+
     res.send(response);
   } catch (error) {
     if (error.name === "SequelizeUniqueConstraintError" && error.parent?.code === "23505") {
-      // Send error response with meaningful message
       res.status(400).json({
         error: 'Duplicate account name detected',
         message: `The account name "${name}" already exists. Please choose a unique name.`
       });
     } else {
-      // Handle other errors
       console.error('Error while updating the account:', error);
       res.status(500).json({
         error: 'Internal Server Error',
@@ -271,50 +336,90 @@ exports.accountUpdate = async (req, res) => {
   }
 };
 
+// 🔧 Helper
+function getPrefixFromGroupName(name) {
+  if (name === "Sale Account") return "sale";
+  if (name === "Purchase Account") return "purchase";
+  if (name === "Credit Note Account") return "creditNote";
+  if (name === "Debit Note Account") return "debitNote";
+  return null;
+}
+
 exports.accountDelete = async (req, res) => {
   const db = getDb();
-  const transaction = await db.sequelize.transaction(); // Start a transaction
+  const transaction = await db.sequelize.transaction();
+
   try {
     const Account = db.account;
     const Address = db.address;
     const AccountGroup = db.accountGroup;
+    const Group = db.group;
     const { id } = req.params;
 
-    // Check if the account exists
     const account = await Account.findByPk(id, { transaction });
     if (!account) {
-      await transaction.rollback(); // Rollback transaction if account not found
+      await transaction.rollback();
       return res.status(404).json({ message: 'Account not found' });
     }
 
-    // Check if account group exists and remove it
+    // Fetch group mapping before deletion
     const accountGroup = await AccountGroup.findOne({ where: { account_id: id }, transaction });
+    let groupName = null;
     if (accountGroup) {
+      const group = await Group.findByPk(accountGroup.group_id, { transaction });
+      groupName = group?.name;
       await AccountGroup.destroy({ where: { account_id: id }, transaction });
     }
 
-    // Check if address exists and remove it
+    // Delete address if exists
     const address = await Address.findOne({ where: { account_id: id }, transaction });
     if (address) {
       await Address.destroy({ where: { account_id: id }, transaction });
     }
 
-    // Delete the account
+    // Delete account
     await account.destroy({ transaction });
 
-    // Commit the transaction after successful deletions
+    // 🔁 Cache cleanup
+    const cacheKey = `${account.user_id}_${account.financial_year}`;
+    const cachedData = cache.getCache(cacheKey);
+
+    if (cachedData?.accountMap instanceof Map) {
+      cachedData.accountMap.delete(account.name.toLowerCase());
+
+      const prefix = getPrefixFromGroupName(groupName);
+      const accountListKey = `${prefix}Account`;
+      const categoryMapKey = `${prefix}CategoryAccountMap`;
+
+      // Remove from account list
+      if (Array.isArray(cachedData[accountListKey])) {
+        cachedData[accountListKey] = cachedData[accountListKey].filter(a => a.account_id !== account.id);
+      }
+
+      // Remove from category map
+      if (cachedData[categoryMapKey] instanceof Map) {
+        const oldMap = invoiceUtils.categorizeAccountsByTaxRate([
+          { account_id: account.id, account_name: account.name }
+        ]);
+        for (const key of oldMap.keys()) {
+          cachedData[categoryMapKey].delete(key);
+        }
+      }
+
+      cache.setCache(cacheKey, cachedData, 3600);
+    }
+
     await transaction.commit();
     res.status(200).json({ message: 'Account deleted successfully' });
   } catch (error) {
-    // Rollback the transaction in case of errors
     await transaction.rollback();
     console.error('Error deleting account:', error);
 
     if (error.name === 'SequelizeForeignKeyConstraintError') {
       res.status(400).json({
         error: 'foreign key constraint',
-        message: `Cannot delete account due to foreign key constraint.`,
-        detail: error.parent.detail || error.message, // Provide database-generated details
+        message: 'Cannot delete account due to foreign key constraint.',
+        detail: error.parent.detail || error.message
       });
     } else {
       res.status(500).json({ message: 'Internal server error', error: error.message });
@@ -386,6 +491,50 @@ exports.accountCreate = async (req, res) => {
       group: groupData,
       address: addressData
     };
+    const cacheKey = `${newAccount.user_id}_${newAccount.financial_year}`;
+    const cachedData = cache.getCache(cacheKey);
+
+    if (cachedData?.accountMap instanceof Map) {
+      const normalizedName = newAccount.name.toLowerCase();
+      cachedData.accountMap.set(normalizedName, {
+        accountId: newAccount.id,
+        groupId: groupData?.id
+      });
+
+      // 🔍 Determine accountPrefix based on group name
+      let accountPrefix = null;
+      const groupName = groupData?.name;
+      accountPrefix = getPrefixFromGroupName(groupName);
+
+      // 🔁 Only update if keys already exist
+      const accountListKey = `${accountPrefix}Account`;
+      const categoryMapKey = `${accountPrefix}CategoryAccountMap`;
+
+      if (accountPrefix &&
+        Array.isArray(cachedData[accountListKey]) &&
+        cachedData[categoryMapKey] instanceof Map) {
+
+        // Append new account
+        cachedData[accountListKey].push({
+          account_id: newAccount.id,
+          account_name: newAccount.name,
+          group_id: groupData.id
+        });
+
+        // Categorize and merge into existing map
+        const newMap = invoiceUtils.categorizeAccountsByTaxRate([
+          {
+            account_id: newAccount.id,
+            account_name: newAccount.name
+          }
+        ]);
+        for (const [key, value] of newMap.entries()) {
+          cachedData[categoryMapKey].set(key, value);
+        }
+      }
+
+      cache.setCache(cacheKey, cachedData, 3600); // Refresh TTL
+    }
 
     res.status(201).send(response);
   } catch (error) {

@@ -1,0 +1,17 @@
+const { authJwt } = require("../middleware");
+const controller = require("../controllers/balanceSheet.controller");
+
+module.exports = function (app) {
+  app.use(function (req, res, next) {
+    res.header(
+      "Access-Control-Allow-Headers",
+      "Origin, Content-Type, Accept"
+    );
+    next();
+  });
+
+  app.post("/api/balance-sheet/horizontal", [authJwt.verifyToken], controller.calculateBalanceSheet);
+  app.get("/api/balance-sheet/export-horizontal-to-pdf", [authJwt.verifyToken], controller.exportBalanceSheetHorizontalToPDF);
+
+};
+

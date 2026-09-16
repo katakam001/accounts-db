@@ -1,11 +1,18 @@
 const { SQSClient, GetQueueAttributesCommand, ReceiveMessageCommand, DeleteMessageBatchCommand } = require("@aws-sdk/client-sqs");
 const uploadService = require("../services/upload.service");
-const sqs = new SQSClient({ region: "ap-south-2" });
-require('dotenv').config();
+const sqs = new SQSClient({ region: process.env.AWS_REGION });
 const invoiceUtils = require('../utils/invoiceUtils');
 const { fetchCategories } = require('../services/category.service');
 const { getAllItems } = require('../services/items.service');
 const cache = require("../services/cache.service"); // ✅ Import shared cache service
+const stageHelperService = require("./copyJob/stages/common/stageHelpers.service");
+const processStage1aService = require("./copyJob/stages/stage1a/processStage.service");
+const processStage1bService = require("./copyJob/stages/stage1b/processStage.service");
+const processStage1cService = require("./copyJob/stages/stage1c/processStage.service");
+const processStage2aService = require("./copyJob/stages/stage2a/processStage.service");
+const processStage2bService = require("./copyJob/stages/stage2b/processStage.service");
+const processStage2cService = require("./copyJob/stages/stage2c/processStage.service");
+const processStage2dService = require("./copyJob/stages/stage2d/processStage.service");
 
 async function monitorQueueAndConsume(messageCount, resetMonitoringFlag) {
     console.log(`Monitoring queue with ${messageCount} messages available...`);
@@ -64,16 +71,37 @@ function groupMessages(Messages) {
         const attributes = message.MessageAttributes;
         const userId = parseInt(attributes.userId.StringValue);
         const financialYear = attributes.financialYear.StringValue;
+        const fileType = attributes.fileType?.StringValue;
+        const exportId = attributes.exportId?.StringValue;
+        const stage = attributes.stage?.StringValue;
+        const batchId = attributes.batchId?.StringValue;
+        const messageType = attributes.messageType?.StringValue;
         const isInvoiceProcessing = attributes.type?.StringValue && attributes.taxType?.StringValue;
-        const type = isInvoiceProcessing
+
+        let type = isInvoiceProcessing
             ? `${attributes.type.StringValue}-${attributes.taxType.StringValue}`
             : attributes.statementType?.StringValue;
 
+        // ✅ Override type with fileType if exportId exists
+        if (exportId) {
+            type = parseInt(exportId);
+        }
+        if (messageType) {
+            type = parseInt(batchId);
+        }
+        if (stage) {
+            type = `${attributes.stage.StringValue}-${attributes.fileType.StringValue}`
+        }
+        if (stage && messageType) {
+            type = `${attributes.stage.StringValue}-${attributes.batchId.StringValue}`
+        }
+
         const transactionData = JSON.parse(message.Body);
         const isStatement = type === "bank";
-        const key = isStatement
-            ? `${userId}_${financialYear}_${parseInt(attributes.accountId.StringValue)}`
-            : `${userId}_${financialYear}_${type}`;
+        const key = exportId || messageType
+            ? `${userId}_${financialYear}_${fileType}`
+            : isStatement ? `${userId}_${financialYear}_${parseInt(attributes.accountId.StringValue)}_${parseInt(batchId)}`
+                : `${userId}_${financialYear}_${type}_${parseInt(batchId)}`;
 
         if (!groupedMessages.has(key)) groupedMessages.set(key, {});
 
@@ -96,32 +124,51 @@ function groupMessages(Messages) {
 
 async function processGroupedTransactions(key, transactionRecords) {
     const suspenseAccountName = "Suspense Account";
-    const [userId, financialYear, typeOrAccountId] = key.split("_").map(val => isNaN(val) ? val : parseInt(val));
+    const exportTypes = ["daybook", "accountCopy", "ledger", "trailBalanceExport", "tradingAccount", "profitAndLoss", "tradingAccountProfitAndLoss", "horizontalBalanceSheet"];
+    const uploadTypes = ["bankStatement", "trailBalanceUpload", "purchaseCgst", "purchaseIgst", "purchaseTcs", "creditSaleCgst", "creditSaleIgst", "cashSaleCgst", "cashSaleIgst", "creditNoteCgst", "creditNoteIgst", "debitNoteCgst", "debitNoteIgst", "carryForwardAccounts"];
+    const excludeUploadTypesForSummary = ["carryForwardAccounts"];
+    const [userId, financialYear, typeOrAccountId, batchId] = key.split("_").map(val => isNaN(val) ? val : parseInt(val));
 
-    const validCSVIdentifiers = ['1-cgst', '1-igst', '2-cgst', '2-igst'];
+    const validCSVIdentifiers = ['1-cgst', '1-igst', '1-tcs', '2-cgst', '2-igst', '5-cgst', '5-igst', '6-cgst', '6-igst', '8-cgst', '8-igst'];
+    const validCopyJobStages = ['1-copyJob', '2-copyJob', '3-copyJob', '4-copyJob', '5-copyJob', '6-copyJob', '7-copyJob', '8-copyJob'];
+
     const isCSVInvoice = validCSVIdentifiers.includes(typeOrAccountId);
-    const isTrailBalance = typeOrAccountId === "trialBalance";
-    const accountId = isCSVInvoice || isTrailBalance ? null : typeOrAccountId;
+    const isTrailBalance = typeOrAccountId === "trailBalance";
+    const iscarryForwardAccounts = typeOrAccountId === "carryForwardAccounts" && batchId;
+    const isCopyJob = validCopyJobStages.includes(typeOrAccountId);
+    const isExport = exportTypes.includes(typeOrAccountId);
+    // 🔹 New exclusion list
+    const isSummary = uploadTypes.includes(typeOrAccountId) && !excludeUploadTypesForSummary.includes(typeOrAccountId);
+    const isCopySummary = typeOrAccountId === "copyJob";
+    const isCarryForwardSummary = typeOrAccountId === "carryForwardAccounts" && !batchId;
+    const accountId = isCSVInvoice || isTrailBalance || isExport || isSummary || isCopyJob || isCopySummary || iscarryForwardAccounts || isCarryForwardSummary ? null : typeOrAccountId;
 
 
-    const validTypes = ['1', '2'];
-    const validTaxTypes = ['cgst', 'igst'];
+    const validTypes = ['1', '2', '5', '6', '8'];
+    const validTaxTypes = ['cgst', 'igst', 'tcs'];
 
     let type = null;
     let taxType = null;
-
-
 
     if (isCSVInvoice && typeof typeOrAccountId === 'string') {
         const [typePart, taxPart] = typeOrAccountId.split('-');
 
         if (validTypes.includes(typePart) && validTaxTypes.includes(taxPart)) {
-            type = parseInt(typePart, 10); // Now a proper number: 1 or 2
-            taxType = taxPart;             // 'cgst' or 'igst'
+            type = parseInt(typePart, 10); // Now a proper number: 1,2,5,6,8
+            taxType = taxPart;             // 'cgst','igst','tcs'
         }
     }
+    let stageNum = null;
 
-    console.log(`Processing ${isCSVInvoice ? "CSV Invoices" : "PDF"} for User: ${userId}, Financial Year: ${financialYear}, Account ID: ${accountId || "N/A"}`);
+    if (isCopyJob && typeof typeOrAccountId === 'string') {
+
+        const parts = typeOrAccountId.split("-");
+        const stageStr = parts[0];
+        stageNum = parseInt(stageStr, 10);
+    }
+
+
+    console.log(`Processing ${isCSVInvoice ? "CSV Invoices" : "PDF"} for User: ${userId}, Financial Year: ${financialYear},batch Id :${batchId} || "N/A", Account ID: ${accountId || "N/A"}`);
 
     let cachedData;
     // console.log(cachedData);
@@ -139,7 +186,8 @@ async function processGroupedTransactions(key, transactionRecords) {
             suspenseAccountName: suspenseAccountName.toLowerCase(),
             bankAccount: findBankAccountById(cachedData.accountMap, accountId),
             userId,
-            financialYear
+            financialYear,
+            batchId
         });
 
     } else if (isTrailBalance) {
@@ -154,61 +202,185 @@ async function processGroupedTransactions(key, transactionRecords) {
             groupMappingMap: cachedData.groupMappingMap,
             accountMappingMap: cachedData.accountMappingMap
         });
+        cachedData.accountMap = await uploadService.loadAccountsWithGroupIds({ userId, financialYear });
+        cache.setCache(`${userId}_${financialYear}`, cachedData, 3600);
+    } else if (iscarryForwardAccounts) {
+
+        await uploadService.processCarryForwardAccounts({
+            carryForwardRecords: transactionRecords[typeOrAccountId],
+            userId,
+            financialYear,
+            accountMap: cachedData.accountMap,
+            groupMap: cachedData.groupMap,
+            batchId
+        });
+        cachedData.accountMap = await uploadService.loadAccountsWithGroupIds({ userId, financialYear });
+        cache.setCache(`${userId}_${financialYear}`, cachedData, 3600);
+    } else if (isCarryForwardSummary) {
+
+        await uploadService.processCarryForwardSummaryStatus({
+            groupedRecords: transactionRecords
+        });
+
+    }else if (isExport) {
+
+        await uploadService.processExportStatus({
+            groupedRecords: transactionRecords,
+            userId,
+            financialYear,
+        });
+
+    } else if (isSummary) {
+
+        await uploadService.processSummaryStatus({
+            groupedRecords: transactionRecords
+        });
+
+    } else if (isCopyJob) {
+        const records = transactionRecords[typeOrAccountId];
+
+        if (stageNum === 1) {
+            // Stage1a
+            await processStage1aService.processStage1a({
+                jobId: batchId,
+                records
+            });
+        } else if (stageNum === 2) {
+            // Stage1b
+            await processStage1bService.processStage1b({
+                jobId: batchId,
+                records
+            });
+        } else if (stageNum === 3) {
+            // Stage1c
+            await processStage1cService.processStage1c({
+                jobId: batchId,
+                records
+            });
+        } else if (stageNum === 4) {
+            // Stage2a
+            await processStage2aService.processStage2a({
+                jobId: batchId,
+                records
+            });
+        } else if (stageNum === 5) {
+            // Stage2b
+            await processStage2bService.processStage2b({
+                jobId: batchId,
+                records
+            });
+        } else if (stageNum === 6) {
+            // Stage2c
+            await processStage2cService.processStage2c({
+                jobId: batchId,
+                records
+            });
+        } else if (stageNum === 7) {
+            // Stage2c
+            await processStage2dService.processStage2d({
+                jobId: batchId,
+                records
+            });
+        }
+    } else if (isCopySummary) {
+        await stageHelperService.processStageSummary({
+            groupedRecords: transactionRecords
+        });
     } else {
         // ✅ Process CSV invoices
         await loadAndCacheInvoiceData(userId, financialYear, type, cachedData);
+        const accountPrefix =
+            type === 1 ? "purchase" :
+                type === 2 || type === 8 ? "sale" :
+                    type === 5 ? "creditNote" :
+                        type === 6 ? "debitNote" :
+                            "unknown";
 
         await uploadService.processInvoiceTransactions({
             extractedData: transactionRecords[typeOrAccountId],
-            categoryAccountMap: cachedData[type === 1 ? "purchaseCategoryAccountMap" : "saleCategoryAccountMap"],
+            categoryAccountMap: cachedData[`${accountPrefix}CategoryAccountMap`],
             accountMap: cachedData.accountMap,
-            categoryMap: cachedData[type === 1 ? "purchaseCategoryMap" : "saleCategoryMap"],
+            categoryMap: cachedData[type === 1 || type === 5 ? "purchaseCategoryMap" : "saleCategoryMap"],
             itemsMap: cachedData.itemsMap,
-            unitIdMap: cachedData[type === 1 ? "purchaseUnitIdMap" : "saleUnitIdMap"],
-            dynamicFieldsMap: cachedData[type === 1 ? "purchaseDynamicFieldsMap" : "saleDynamicFieldsMap"],
+            unitIdMap: cachedData[type === 1 || type === 5 ? "purchaseUnitIdMap" : "saleUnitIdMap"],
+            dynamicFieldsMap: cachedData[type === 1 || type === 5 ? "purchaseDynamicFieldsMap" : "saleDynamicFieldsMap"],
             suspenseAccountName: suspenseAccountName.toLowerCase(),
             userId,
             financialYear,
             type,
-            taxType
+            taxType,
+            batchId
         });
     }
 }
 
-
 // 🔹 Function to load and cache invoice data
 async function loadAndCacheInvoiceData(userId, financialYear, type, cachedData) {
-    const selectedPrefix = type === 1 ? "purchase" : "sale"; // ✅ Load only the required cache
+    // ✅ Prefix for account-related caching
+    const accountPrefix =
+        type === 1 ? "purchase" :
+            type === 2 || type === 8 ? "sale" :
+                type === 5 ? "creditNote" :
+                    type === 6 ? "debitNote" :
+                        "unknown";
 
-    if (!cachedData[`${selectedPrefix}Account`]) {
-        cachedData[`${selectedPrefix}Account`] = await uploadService.getAccountsByGroup({
-            group_name: type === 1 ? "Purchase Account" : "Sale Account",
+    // ✅ Group name mapping for account fetch
+    const groupName =
+        type === 2 || type === 8 ? "Sale Account" :
+            type === 1 ? "Purchase Account" :
+                type === 6 ? "Debit Note Account" :
+                    type === 5 ? "Credit Note Account" :
+                        "Unknown Account";
+
+    // ✅ Fetch and cache account data
+    if (!cachedData[`${accountPrefix}Account`]) {
+        cachedData[`${accountPrefix}Account`] = await uploadService.getAccountsByGroup({
+            group_name: groupName,
             user_id: userId,
             financial_year: financialYear
         });
-        cachedData[`${selectedPrefix}CategoryAccountMap`] = invoiceUtils.categorizeAccountsByGstRate(cachedData[`${selectedPrefix}Account`]);
+        cachedData[`${accountPrefix}CategoryAccountMap`] = invoiceUtils.categorizeAccountsByTaxRate(
+            cachedData[`${accountPrefix}Account`]
+        );
     }
 
+    // ✅ Prefix for category/item/unit/dynamic field caching
+    const selectedPrefix = type === 1 || type === 5 ? "purchase" : "sale";
+
+    // ✅ Normalize type for category fetch
+    const normalizedType = type === 2 || type === 6 || type === 8 ? 2 : 1;
+
+    // ✅ Fetch and cache category data
     if (!cachedData[`${selectedPrefix}CategoryMap`]) {
-        cachedData[`${selectedPrefix}Categories`] = await fetchCategories({ type, userId, financialYear });
-        cachedData[`${selectedPrefix}CategoryMap`] = invoiceUtils.categorizeCategoriesByGstRate(cachedData[`${selectedPrefix}Categories`]);
+        cachedData[`${selectedPrefix}Categories`] = await fetchCategories({
+            type: normalizedType,
+            userId,
+            financialYear
+        });
+        cachedData[`${selectedPrefix}CategoryMap`] = invoiceUtils.categorizeCategoriesByTaxRate(
+            cachedData[`${selectedPrefix}Categories`]
+        );
     }
 
+    // ✅ Fetch and cache item data
     if (!cachedData.itemsMap) {
         cachedData.items = await getAllItems({ userId, financialYear });
-        cachedData.itemsMap = invoiceUtils.categorizeItemsByGstRate(cachedData.items);
+        cachedData.itemsMap = invoiceUtils.categorizeItemsByTaxRate(cachedData.items);
     }
 
     const categoryIds = Array.from(cachedData[`${selectedPrefix}CategoryMap`]?.values() || []);
 
+    // ✅ Fetch and cache unit IDs
     if (!cachedData[`${selectedPrefix}UnitIdMap`]) {
         cachedData[`${selectedPrefix}UnitIdMap`] = await uploadService.fetchUnitIdsByCategoryIds({ categoryIds });
     }
 
+    // ✅ Fetch and cache dynamic fields
     if (!cachedData[`${selectedPrefix}DynamicFieldsMap`]) {
         cachedData[`${selectedPrefix}DynamicFieldsMap`] = await uploadService.fetchDynamicFieldsByCategoryIds({ categoryIds });
     }
 
+    // ✅ Final cache set
     cache.setCache(`${userId}_${financialYear}`, cachedData, 3600);
 }
 
@@ -257,7 +429,6 @@ async function loadAndCacheMappingRuleMaps(userId, financialYear, cachedData) {
     }
 }
 
-
 function findBankAccountById(accountMap, targetAccountId) {
     for (const [accountName, data] of accountMap) {
         if (data.accountId === targetAccountId) {
@@ -270,8 +441,6 @@ function findBankAccountById(accountMap, targetAccountId) {
     }
     return null; // Not found
 }
-
-
 
 async function checkQueueDepth() {
     try {
@@ -286,7 +455,6 @@ async function checkQueueDepth() {
         return 0; // Return 0 if error occurs
     }
 }
-
 
 const deleteBatchMessages = async (Messages) => {
     const deleteParams = {

@@ -27,5 +27,6 @@ module.exports = function (app) {
   app.post("/api/auth/password-reset", controller.requestPasswordReset);
 
   app.post("/api/auth/password-reset/confirm", controller.confirmPasswordReset);
-  app.post("/api/auth/change-password",[authJwt.verifyToken], controller.changePassword);
+  app.post("/api/auth/change-password", [authJwt.verifyToken], controller.changePassword);
+  app.put("/api/auth/profile", [authJwt.verifyToken], controller.updateUserProfile);
 };
