@@ -175,15 +175,15 @@ function pushNested(transformed, label, children, groupMap) {
 function pushMixed(transformed, label, accounts, subGroups, groupMap, hierarchyTree) {
   // Roll up all subgroup accounts recursively
   subGroups.forEach(child => {
-    const { debitSum: d, creditSum: c } = rollUpAccounts(child, groupMap, hierarchyTree);
-    const group_id = groupMap.get(normalize(node.name)).accounts[0];
+    const { debitSum: d, creditSum: c, group } = rollUpAccounts(child, groupMap, hierarchyTree);
+    const group_id = group?.group_id || null;  // safe fallback
     const amount = Math.abs(d - c);
 
     transformed.push({
       label: child,
       groupMode: 'flat',
       type: 'group',
-      group_id: group_id,
+      group_id,
       innerAmount: 0,
       outerAmount: amount
     });
@@ -207,13 +207,13 @@ exports.mapStructuredGroupsBySide = (groupedAccounts, sideSet, config, hierarchy
       normKey;
 
     const accounts = groupMap.get(normKey)?.accounts || [];
-
+    const group_id = accounts.length > 0 ? accounts[0].group_id : null;
     if (!structured) {
       const { net } = sumAccounts(accounts);
       transformed.push({
         label: groupName,
         type: 'group',
-        group_id: accounts[0].group_id,      // or use DB/config ID
+        group_id,      // or use DB/config ID
         group: 'flat',
         innerAmount: 0,
         outerAmount: net
@@ -241,6 +241,7 @@ exports.mapStructuredGroupsBySide = (groupedAccounts, sideSet, config, hierarchy
 function rollUpAccounts(label, groupMap, hierarchyTree) {
   let debitSum = 0;
   let creditSum = 0;
+  let groupInfo = null;   // 🔹 new: capture group object
 
   // Recursive walker
   function walk(node) {
@@ -253,6 +254,14 @@ function rollUpAccounts(label, groupMap, hierarchyTree) {
         debitSum += acc.debit || 0;
         creditSum += acc.credit || 0;
       });
+
+      // 🔹 capture group metadata once
+      if (!groupInfo) {
+        groupInfo = {
+          group_id: group.accounts?.[0]?.group_id || null,
+          groupName: group.groupName || node.name
+        };
+      }
     }
 
     // Recurse into children
@@ -272,7 +281,7 @@ function rollUpAccounts(label, groupMap, hierarchyTree) {
   const rootNode = findNode(label, hierarchyTree);
   if (rootNode) walk(rootNode);
 
-  return { debitSum, creditSum };
+  return { debitSum, creditSum, group: groupInfo };
 }
 
 function filterEmptyGroupsFlat(transformed) {
