@@ -2,7 +2,7 @@ exports.transformTrialBalanceRows = (rows) => {
   const grouped = {};
 
   rows.forEach(row => {
-    const { group_name, account_name, account_id, balance } = row;
+    const { group_id,group_name, account_name, account_id, balance } = row;
     const amount = Math.abs(balance);
     const isCredit = balance > 0;
 
@@ -13,6 +13,7 @@ exports.transformTrialBalanceRows = (rows) => {
     grouped[group_name].push({
       accountName: account_name,
       account_id,
+      group_id,
       debit: isCredit ? 0 : amount,
       credit: isCredit ? amount : 0
     });

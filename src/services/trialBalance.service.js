@@ -55,7 +55,7 @@ exports.fetchTrialBalanceRows = async ({ db, userId, financialYear, fromDate, to
       LEFT JOIN account_list al ON cob.account_id = al.id
       GROUP BY g.id, g.name, al.id, al.name
     )
-    SELECT group_name, account_name, account_id, COALESCE(balance, 0) AS balance
+    SELECT group_id,group_name, account_name, account_id, COALESCE(balance, 0) AS balance
     FROM GroupedItems
     ORDER BY group_name, account_name;
 

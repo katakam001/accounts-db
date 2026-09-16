@@ -103,7 +103,7 @@ function pushFlat(transformed, label, accounts) {
   let debitSum = 0;
   let creditSum = 0;
 
-  transformed.push({ label, groupMode: 'flat', innerAmount: 0, outerAmount: 0 });
+  transformed.push({ label, groupMode: 'flat', innerAmount: 0, outerAmount: 0 });//confirm
 
   accounts.forEach((acc, index) => {
     const debit = acc.debit || 0;
@@ -116,6 +116,8 @@ function pushFlat(transformed, label, accounts) {
 
     transformed.push({
       label: acc.accountName,
+      type: 'account',
+      account_id: acc.account_id,
       parentLabel: label,   // 🔹 track parent
       groupMode: 'flat',
       innerAmount: amount,
@@ -134,12 +136,12 @@ function pushNested(transformed, label, children, groupMap) {
   let creditSum = 0;
   let lastAccountIndex = -1;
 
-  transformed.push({ label, groupMode: 'nested', innerAmount: 0, outerAmount: 0 });
+  transformed.push({ label, groupMode: 'nested', innerAmount: 0, outerAmount: 0 });//confirm
 
   children.forEach(child => {
     const childAccounts = groupMap.get(normalize(child))?.accounts || [];
 
-    transformed.push({ label: child, groupMode: 'flat', innerAmount: 0, outerAmount: 0 });
+    transformed.push({ label: child, groupMode: 'flat', type: 'group', group_id: childAccounts[0].group_id, innerAmount: 0, outerAmount: 0 });
 
     childAccounts.forEach(acc => {
       const debit = acc.debit || 0;
@@ -152,6 +154,8 @@ function pushNested(transformed, label, children, groupMap) {
 
       transformed.push({
         label: acc.accountName,
+        type: 'account',
+        account_id: acc.account_id,
         parentLabel: label,
         groupMode: 'flat',
         innerAmount: amount,
@@ -172,11 +176,14 @@ function pushMixed(transformed, label, accounts, subGroups, groupMap, hierarchyT
   // Roll up all subgroup accounts recursively
   subGroups.forEach(child => {
     const { debitSum: d, creditSum: c } = rollUpAccounts(child, groupMap, hierarchyTree);
+    const group_id = groupMap.get(normalize(node.name)).accounts[0];
     const amount = Math.abs(d - c);
 
     transformed.push({
       label: child,
       groupMode: 'flat',
+      type: 'group',
+      group_id: group_id,
       innerAmount: 0,
       outerAmount: amount
     });
@@ -205,6 +212,8 @@ exports.mapStructuredGroupsBySide = (groupedAccounts, sideSet, config, hierarchy
       const { net } = sumAccounts(accounts);
       transformed.push({
         label: groupName,
+        type: 'group',
+        group_id: accounts[0].group_id,      // or use DB/config ID
         group: 'flat',
         innerAmount: 0,
         outerAmount: net
