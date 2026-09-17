@@ -164,6 +164,11 @@ exports.exportTrailBalanceToPDF = async (req, res) => {
 
         const { groupedAccounts, totalDebit, totalCredit } = transformTrialBalanceRows(rows);
 
+        let reportTitle = "Trial Balance";
+        if (groupId && groupedAccounts.length > 0) {
+            // use the groupName from the first groupedAccounts entry
+            reportTitle = groupedAccounts[0].groupName;
+        }
         const inputKeyTimestamp = new Date().toISOString();
 
         // Step 2: Insert export record with status = 0 (DATA GENERATED)
@@ -189,6 +194,7 @@ exports.exportTrailBalanceToPDF = async (req, res) => {
             totalDebit,
             totalCredit,
             groupedAccounts,
+            reportTitle
         };
 
         const buffer = Buffer.from(JSON.stringify(data));
