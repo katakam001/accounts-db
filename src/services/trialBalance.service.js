@@ -1,4 +1,4 @@
-exports.fetchTrialBalanceRows = async ({ db, userId, financialYear, fromDate, toDate }) => {
+exports.fetchTrialBalanceRows = async ({ db, userId, financialYear, fromDate, toDate, groupId = null }) => {
 
   const query = `
     WITH JournalEntries AS (
@@ -53,6 +53,7 @@ exports.fetchTrialBalanceRows = async ({ db, userId, financialYear, fromDate, to
       FROM CombinedWithOpeningBalances cob
       JOIN group_list g ON cob.group_id = g.id
       LEFT JOIN account_list al ON cob.account_id = al.id
+      ${groupId ? 'WHERE g.id = :groupId' : ''}   -- ✅ only applies if groupId is passed
       GROUP BY g.id, g.name, al.id, al.name
     )
     SELECT group_id,group_name, account_name, account_id, COALESCE(balance, 0) AS balance
@@ -62,7 +63,7 @@ exports.fetchTrialBalanceRows = async ({ db, userId, financialYear, fromDate, to
   `;
 
   return db.sequelize.query(query, {
-    replacements: { userId, fromDate, toDate, financialYear },
+    replacements: { userId, fromDate, toDate, financialYear, groupId },
     type: db.sequelize.QueryTypes.SELECT
   });
 };

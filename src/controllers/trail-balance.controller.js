@@ -146,6 +146,7 @@ exports.exportTrailBalanceToPDF = async (req, res) => {
     const financialYear = req.query.financialYear;
     const fromDate = req.query.fromDate ? new Date(req.query.fromDate) : null;
     const toDate = req.query.toDate ? new Date(req.query.toDate) : null;
+    const groupId = req.query.groupId ? Number(req.query.groupId) : null;
     const companyName = req.query.companyName;
     const city = req.query.city;
     const db = getDb();
@@ -157,7 +158,8 @@ exports.exportTrailBalanceToPDF = async (req, res) => {
             userId,
             financialYear,
             fromDate,
-            toDate
+            toDate,
+            groupId
         });
 
         const { groupedAccounts, totalDebit, totalCredit } = transformTrialBalanceRows(rows);
