@@ -1,5 +1,5 @@
 exports.fetchSummary = async ({ db, userId, financialYear, fromDate, toDate }) => {
-    const query = `
+  const query = `
     WITH JournalEntries AS (
       SELECT id FROM journal_entries
       WHERE user_id = :userId
@@ -58,49 +58,61 @@ exports.fetchSummary = async ({ db, userId, financialYear, fromDate, toDate }) =
     ORDER BY account_name;
   `;
 
-    const rows = await db.sequelize.query(query, {
-        replacements: { userId, fromDate, toDate, financialYear },
-        type: db.sequelize.QueryTypes.SELECT
-    });
+  const rows = await db.sequelize.query(query, {
+    replacements: { userId, fromDate, toDate, financialYear },
+    type: db.sequelize.QueryTypes.SELECT
+  });
 
-    const receipts = [];
-    const payments = [];
-    let totalReceipts = 0;
-    let totalPayments = 0;
+  // ✅ Get Opening Cash directly from account_list
+  const cashAccount = await db.account_list.findOne({
+    where: { user_id: userId, financial_year: financialYear, name: 'CASH' }
+  });
 
-    // Find CASH account for opening/closing
-    const cashRow = rows.find(r => r.account_name.toUpperCase() === "CASH");
+  let openingCash = 0;
+  if (cashAccount) {
+    if (cashAccount.debit_balance && Number(cashAccount.debit_balance) !== 0) {
+      openingCash = Number(cashAccount.debit_balance);
+    } else if (cashAccount.credit_balance && Number(cashAccount.credit_balance) !== 0) {
+      openingCash = Number(cashAccount.credit_balance);
+    }
+  }
 
-    rows.forEach(row => {
-        if (row.account_name.toUpperCase() === "CASH") {
-            return; // 🚫 Skip CASH account itself
-        }
+  const receipts = [];
+  const payments = [];
+  let totalReceipts = 0;
+  let totalPayments = 0;
 
-        const credit = Number(row.total_credit) || 0;
-        const debit = Number(row.total_debit) || 0;
+  rows.forEach(row => {
+    if (row.account_name.toUpperCase() === "CASH") {
+      return; // 🚫 Skip CASH account itself
+    }
 
-        if (credit > 0) {
-            receipts.push({ accountId: row.account_id, accountName: row.account_name, amount: credit });
-            totalReceipts += credit;
-        }
-        if (debit > 0) {
-            payments.push({ accountId: row.account_id, accountName: row.account_name, amount: debit });
-            totalPayments += debit;
-        }
-    });
+    const credit = Number(row.total_credit) || 0;
+    const debit = Number(row.total_debit) || 0;
 
-    const openingCash = cashRow ? Number(cashRow.total_credit) || 0 : 0;
-    const closingCash = openingCash + totalReceipts - totalPayments;
+    if (credit > 0) {
+      receipts.push({ accountId: row.account_id, accountName: row.account_name, amount: credit });
+      totalReceipts += credit;
+    }
+    if (debit > 0) {
+      payments.push({ accountId: row.account_id, accountName: row.account_name, amount: debit });
+      totalPayments += debit;
+    }
+  });
 
-    receipts.unshift({ accountId: cashRow?.account_id, accountName: "Opening Cash", amount: openingCash });
-    payments.push({ accountId: cashRow?.account_id, accountName: "Closing Cash", amount: closingCash });
-    return {
-        receipts,
-        payments,
-        totals: {
-            totalReceipts: openingCash + totalReceipts,
-            totalPayments: totalPayments + closingCash,
-            net: (openingCash + totalReceipts) - (totalPayments + closingCash)
-        }
-    };
+  // ✅ Closing Cash computed manually
+  const closingCash = openingCash + totalReceipts - totalPayments;
+
+  receipts.unshift({ accountId: cashAccount?.id, accountName: "Opening Cash", amount: openingCash });
+  payments.push({ accountId: cashAccount?.id, accountName: "Closing Cash", amount: closingCash });
+
+  return {
+    receipts,
+    payments,
+    totals: {
+      totalReceipts: openingCash + totalReceipts,
+      totalPayments: totalPayments + closingCash,
+      net: (openingCash + totalReceipts) - (totalPayments + closingCash)
+    }
+  };
 };
