@@ -1,5 +1,70 @@
-Sure! Here are some common PM2 commands that you might find useful:
+Got it, Bhaskar 👍 — let’s strip away the clutter and keep only the **final checklist** you’ll need whenever this issue happens again (after reboot, env reset, or path errors).  
 
+---
+
+## 🛠 Final PM2 + Env Checklist
+
+1. **Check PM2 process environment**
+   ```bash
+   pm2 show accounts-db
+   ```
+   - Confirm `node env │ production`
+   - Confirm `exec cwd │ /home/ec2-user/accounts-db`
+
+2. **If NODE_ENV is missing**
+   - Use your ecosystem file:
+     ```bash
+     pm2 start ecosystem.config.js --env production
+     pm2 save
+     ```
+   - This persists `NODE_ENV=production` across reboots.
+
+3. **Verify env file loading**
+   - In logs:
+     ```
+     NODE_ENV: production
+     Loading env file: /home/ec2-user/accounts-db/.env.production
+     DB Dialect: postgres
+     ```
+   - If it shows `.env.development`, fix the loader fallback in `index.js`:
+     ```js
+     const envFile = process.env.NODE_ENV
+       ? `.env.${process.env.NODE_ENV}`
+       : '.env.production';
+     dotenv.config({ path: path.resolve(__dirname, `../${envFile}`) });
+     ```
+
+4. **Fix path errors (ENOENT)**
+   - Use absolute paths or `path.resolve(__dirname, 'keys/privkey.pem')` in your config.
+   - Or set them in `.env.production`:
+     ```
+     PRIVATE_KEY_PATH=/home/ec2-user/accounts-db/src/keys/privkey.pem
+     CERT_KEY_PATH=/home/ec2-user/accounts-db/src/keys/fullchain.pem
+     ```
+
+5. **Persist configuration**
+   - After any change:
+     ```bash
+     pm2 restart accounts-db
+     pm2 save
+     ```
+   - This locks in the environment and working directory.
+
+6. **Log rotation (optional hardening)**
+   Add to `ecosystem.config.js`:
+   ```js
+   max_memory_restart: '500M',
+   out_file: '/home/ec2-user/.pm2/logs/accounts-db-out.log',
+   error_file: '/home/ec2-user/.pm2/logs/accounts-db-error.log',
+   merge_logs: true,
+   log_date_format: 'YYYY-MM-DD HH:mm:ss'
+   ```
+
+---
+
+✅ With this checklist, you’ll never again hit the “NODE_ENV undefined” or “ENOENT cert path” surprises after reboot.  
+
+Would you like me to extend your `ecosystem.config.js` with **log rotation + auto‑restart on crash** so you can copy‑paste a hardened production config?
 ### Basic Commands
 - **Start an Application**:
   ```sh

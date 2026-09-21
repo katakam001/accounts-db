@@ -166,8 +166,19 @@ exports.combinedBookListForDayBook = async (req, res) => {
   }
 };
 
-async function fetchBatchEntries(userid, financial_year, limit, rowCursor) {
+async function fetchBatchEntries(userid, financial_year, limit, rowCursor, fromDate, toDate) {
   const db = getDb();
+
+  const journalDateFilters = [];
+  if (fromDate) journalDateFilters.push("je.journal_date >= :fromDate");
+  if (toDate) journalDateFilters.push("je.journal_date <= :toDate");
+  const journalDateClause = journalDateFilters.length ? "AND " + journalDateFilters.join(" AND ") : "";
+
+  const cashDateFilters = [];
+  if (fromDate) cashDateFilters.push("ce.cash_date >= :fromDate");
+  if (toDate) cashDateFilters.push("ce.cash_date <= :toDate");
+  const cashDateClause = cashDateFilters.length ? "AND " + cashDateFilters.join(" AND ") : "";
+
   const combinedQuery = `
     -- Fetch records from journal_entries and combined_cash_entries within the financial year
     WITH combined_entries AS (
@@ -190,6 +201,7 @@ async function fetchBatchEntries(userid, financial_year, limit, rowCursor) {
       WHERE
         je.user_id = :userid AND
         je.financial_year = :financial_year
+        ${journalDateClause}
       UNION ALL
       SELECT
         DATE(ce.cash_date) AS date,
@@ -209,11 +221,12 @@ async function fetchBatchEntries(userid, financial_year, limit, rowCursor) {
         ce.user_id = :userid AND
         ce.financial_year = :financial_year AND
         ce.is_cash_adjustment IS NOT TRUE
+        ${cashDateClause}
     ),
     numbered_entries AS (
       SELECT
         *,
-        ROW_NUMBER() OVER (ORDER BY date, id) AS row_num
+             ROW_NUMBER() OVER (ORDER BY date, id) AS row_num
       FROM
         combined_entries
     )
@@ -230,22 +243,22 @@ async function fetchBatchEntries(userid, financial_year, limit, rowCursor) {
   `;
 
   const replacements = { userid, financial_year, limit, rowCursor };
+  if (fromDate) replacements.fromDate = fromDate;
+  if (toDate) replacements.toDate = toDate;
 
-  const combinedResult = await db.sequelize.query(combinedQuery, {
+  return await db.sequelize.query(combinedQuery, {
     replacements,
     type: db.sequelize.QueryTypes.SELECT
   });
-
-  return combinedResult;
 }
 
-async function batchProcessingForDayBook(userid, financial_year, limit, rowCursor) {
+async function batchProcessingForDayBook(userid, financial_year, limit, rowCursor, fromDate, toDate) {
   let combinedResult = [];
   let hasNextPage = false;
   let nextRowCursor = rowCursor;
 
   while (true) {
-    const batchEntries = await fetchBatchEntries(userid, financial_year, limit, nextRowCursor);
+    const batchEntries = await fetchBatchEntries(userid, financial_year, limit, nextRowCursor, fromDate, toDate);
     if (batchEntries.length === 0) {
       break;
     }
@@ -372,7 +385,7 @@ async function processData(daybookEntries, lastPageBalance) {
     }
 
     return {
-      date:formatDate(date),
+      date: formatDate(date),
       entries,
       totalCashCredit,
       totalJournalCredit,
@@ -411,9 +424,9 @@ function groupByDate(entries) {
 }
 
 // Function to fetch daybook entries (replace with your actual data fetching logic)
-const fetchDaybookEntries = async (userId, financialYear, limit, rowCursor) => {
+const fetchDaybookEntries = async (userId, financialYear, limit, rowCursor, fromDate, toDate) => {
   // Replace this with your actual data fetching logic
-  const { entries, nextRowCursor, hasNextPage } = await batchProcessingForDayBook(userId, financialYear, limit, rowCursor);
+  const { entries, nextRowCursor, hasNextPage } = await batchProcessingForDayBook(userId, financialYear, limit, rowCursor, fromDate, toDate);
   return { entries, nextRowCursor, hasNextPage };
 };
 
@@ -421,6 +434,8 @@ const fetchDaybookEntries = async (userId, financialYear, limit, rowCursor) => {
 exports.exportDaybookToExcel = async (req, res) => {
   try {
     const { userId, financialYear } = req.query;
+    const fromDate = req.query.fromDate ? new Date(req.query.fromDate) : null;
+    const toDate = req.query.toDate ? new Date(req.query.toDate) : null;
     const db = getDb();
     const Account = db.account;
     const limit = 1000; // Define the batch size
@@ -437,7 +452,7 @@ exports.exportDaybookToExcel = async (req, res) => {
     lastPageBalance = parseFloat(account.debit_balance - account.credit_balance);
 
     while (hasNextPage) {
-      const { entries, nextRowCursor, hasNextPage: nextPage } = await fetchDaybookEntries(userId, financialYear, limit, rowCursor);
+      const { entries, nextRowCursor, hasNextPage: nextPage } = await fetchDaybookEntries(userId, financialYear, limit, rowCursor, fromDate, toDate);
       const { groupedDayBookEntries, finalBalanceCarryForward } = await processData(entries, lastPageBalance); // Destructure the returned object
       lastPageBalance = finalBalanceCarryForward; // Assign the final balance carry forward for the last page
       filteredEntries.push(...groupedDayBookEntries);
@@ -577,6 +592,8 @@ exports.exportDaybookToExcel = async (req, res) => {
 
 exports.exportDaybookToPDF = async (req, res) => {
   const { userId, financialYear, companyName, city } = req.query;
+  const fromDate = req.query.fromDate ? new Date(req.query.fromDate) : null;
+  const toDate = req.query.toDate ? new Date(req.query.toDate) : null;
   const limit = 1000;
   const rowsPerPage = 40;
   const db = getDb();
@@ -604,12 +621,7 @@ exports.exportDaybookToPDF = async (req, res) => {
     lastPageBalance = parseFloat(account.debit_balance - account.credit_balance);
 
     while (hasNextPage) {
-      const { entries, nextRowCursor, hasNextPage: nextPage } = await fetchDaybookEntries(
-        userId,
-        financialYear,
-        limit,
-        rowCursor
-      );
+      const { entries, nextRowCursor, hasNextPage: nextPage } = await fetchDaybookEntries(userId, financialYear, limit, rowCursor, fromDate, toDate);
 
       const { groupedDayBookEntries, finalBalanceCarryForward } = await processData(entries, lastPageBalance);
       lastPageBalance = finalBalanceCarryForward;
@@ -1154,7 +1166,7 @@ exports.createJournalEntryWithItems = async (req, res) => {
         journal_id: item.journal_id,
         account_id: item.account_id,
         group_id: item.group_id,
-        amount: item.amount, 
+        amount: item.amount,
         type: item.type,
         narration: item.narration,
       })),
