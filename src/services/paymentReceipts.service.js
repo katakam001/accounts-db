@@ -68,25 +68,29 @@ exports.fetchSummary = async ({ db, userId, financialYear, fromDate, toDate }) =
     where: { user_id: userId, financial_year: financialYear, name: 'CASH' }
   });
 
+  // Helper to round to 2 decimals
+  const round2 = (num) => Math.round((Number(num) + Number.EPSILON) * 100) / 100;
+
   let openingCash = 0;
   if (cashAccount) {
-    if (cashAccount.debit_balance && Number(cashAccount.debit_balance) !== 0) {
-      openingCash = Number(cashAccount.debit_balance);
-    } else if (cashAccount.credit_balance && Number(cashAccount.credit_balance) !== 0) {
-      openingCash = Number(cashAccount.credit_balance);
+    const debit = round2(cashAccount.debit_balance || 0);
+    const credit = round2(cashAccount.credit_balance || 0);
+
+    // Use whichever side has a non-zero balance
+    if (debit !== 0) {
+      openingCash = debit;
+    } else if (credit !== 0) {
+      openingCash = credit;
     }
   }
-
-  const receipts = [];
-  const payments = [];
 
   rows.forEach(row => {
     if (row.account_name.toUpperCase() === "CASH") {
       return; // 🚫 Skip CASH account itself
     }
 
-    const credit = Number(row.total_credit) || 0;
-    const debit = Number(row.total_debit) || 0;
+    const credit = round2(Number(row.total_credit) || 0);
+    const debit = round2(Number(row.total_debit) || 0);
 
     if (credit > 0) {
       receipts.push({ accountId: row.account_id, accountName: row.account_name, amount: credit });
@@ -96,28 +100,30 @@ exports.fetchSummary = async ({ db, userId, financialYear, fromDate, toDate }) =
     }
   });
 
-  // ✅ Compute totals directly from arrays
-  const totalReceipts = receipts.reduce((sum, r) => sum + (Number(r.amount) || 0), 0);
-  const totalPayments = payments.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+  // ✅ Compute totals directly from arrays (rounded)
+  const totalReceipts = round2(receipts.reduce((sum, r) => sum + (Number(r.amount) || 0), 0));
+  const totalPayments = round2(payments.reduce((sum, p) => sum + (Number(p.amount) || 0), 0));
 
   // ✅ Closing Cash computed after arrays are complete
-  const closingCash = openingCash + totalReceipts - totalPayments;
+  const closingCash = round2(openingCash + totalReceipts - totalPayments);
 
   // Add Opening Cash to receipts
-  receipts.unshift({ accountId: cashAccount?.id, accountName: "Opening Cash", amount: openingCash });
+  receipts.unshift({ accountId: cashAccount?.id, accountName: "Opening Cash", amount: round2(openingCash) });
 
   // Add Closing Cash to payments
   payments.push({ accountId: cashAccount?.id, accountName: "Closing Cash", amount: closingCash });
 
-  // ✅ Totals derived from arrays (includes Opening + Closing Cash exactly once)
+  // ✅ Totals derived from arrays (rounded)
   return {
     receipts,
     payments,
     totals: {
-      totalReceipts: receipts.reduce((sum, r) => sum + (Number(r.amount) || 0), 0),
-      totalPayments: payments.reduce((sum, p) => sum + (Number(p.amount) || 0), 0),
-      net: receipts.reduce((sum, r) => sum + (Number(r.amount) || 0), 0) -
+      totalReceipts: round2(receipts.reduce((sum, r) => sum + (Number(r.amount) || 0), 0)),
+      totalPayments: round2(payments.reduce((sum, p) => sum + (Number(p.amount) || 0), 0)),
+      net: round2(
+        receipts.reduce((sum, r) => sum + (Number(r.amount) || 0), 0) -
         payments.reduce((sum, p) => sum + (Number(p.amount) || 0), 0)
+      )
     }
   };
 };
