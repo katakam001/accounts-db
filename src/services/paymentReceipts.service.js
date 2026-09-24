@@ -64,7 +64,7 @@ exports.fetchSummary = async ({ db, userId, financialYear, fromDate, toDate }) =
   });
 
   // ✅ Get Opening Cash directly from account_list
-  const cashAccount = await db.account_list.findOne({
+  const cashAccount = await db.account.findOne({
     where: { user_id: userId, financial_year: financialYear, name: 'CASH' }
   });
 
