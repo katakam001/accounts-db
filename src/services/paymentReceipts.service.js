@@ -84,6 +84,9 @@ exports.fetchSummary = async ({ db, userId, financialYear, fromDate, toDate }) =
     }
   }
 
+  const receipts = [];
+  const payments = [];
+
   rows.forEach(row => {
     if (row.account_name.toUpperCase() === "CASH") {
       return; // 🚫 Skip CASH account itself
