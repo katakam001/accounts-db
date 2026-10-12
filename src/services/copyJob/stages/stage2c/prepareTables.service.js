@@ -142,17 +142,6 @@ module.exports = async function prepareStage2c(jobId) {
           await db.sequelize.query(`DROP TABLE IF EXISTS parent_ids`, { transaction });
         }
 
-        // Stop if all exhausted
-        if (exhausted.cash_entries && exhausted.cash_entries_batch && exhausted.production_entries) {
-          await transaction.rollback();
-          break;
-        }
-
-        // Stop if this chunk has no rows
-        if (cashEntries.length === 0 && cashBatch.length === 0 && productionEntries.length === 0) {
-          await transaction.rollback();
-          break;
-        }
 
         // Build bundle
         const bundle = {
@@ -207,6 +196,19 @@ module.exports = async function prepareStage2c(jobId) {
 
         await transaction.commit();
         chunkIndex++;
+
+        // Stop if all exhausted
+        if (exhausted.cash_entries && exhausted.cash_entries_batch && exhausted.production_entries) {
+          await transaction.rollback();
+          break;
+        }
+
+        // Stop if this chunk has no rows
+        if (cashEntries.length === 0 && cashBatch.length === 0 && productionEntries.length === 0) {
+          await transaction.rollback();
+          break;
+        }
+
       } catch (err) {
         await transaction.rollback();
         console.error(`❌ Stage2c chunk ${chunkIndex} failed for Job ${jobId}:`, err.stack);
