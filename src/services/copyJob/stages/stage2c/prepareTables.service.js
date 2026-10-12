@@ -80,26 +80,60 @@ module.exports = async function prepareStage2c(jobId) {
         if (!exhausted.production_entries) {
           await db.sequelize.query(`CREATE TEMP TABLE parent_ids (id BIGINT)`, { transaction });
 
-          const [_, insertedCount] = await db.sequelize.query(
+          await db.sequelize.query(
             `INSERT INTO parent_ids (id)
-             SELECT id
-             FROM production_entries
-             WHERE user_id = :uid AND financial_year = :fy
-               AND production_entry_id IS NULL
-             ORDER BY id
-             LIMIT :limit OFFSET :offset`,
-            { replacements: { uid: job.source_user_id, fy: job.financial_year, limit: PAGE_SIZE, offset: offsets.production_entries }, type: db.Sequelize.QueryTypes.INSERT, transaction }
+   SELECT id
+   FROM production_entries
+   WHERE user_id = :uid AND financial_year = :fy
+     AND production_entry_id IS NULL
+   ORDER BY id
+   LIMIT :limit OFFSET :offset`,
+            {
+              replacements: {
+                uid: job.source_user_id,
+                fy: job.financial_year,
+                limit: PAGE_SIZE,
+                offset: offsets.production_entries
+              },
+              transaction
+            }
           );
 
-          if (insertedCount > 0) {
+          const parentCountResult = await db.sequelize.query(
+            `SELECT COUNT(*)::INT AS count
+   FROM parent_ids`,
+            {
+              type: db.Sequelize.QueryTypes.SELECT,
+              transaction
+            }
+          );
+
+          const parentCount = parentCountResult[0]?.count || 0;
+
+          if (parentCount > 0) {
+
             productionEntries = await db.sequelize.query(
-              `SELECT pe.* 
-               FROM production_entries pe
-               JOIN parent_ids p ON pe.id = p.id OR pe.production_entry_id = p.id
-               WHERE pe.user_id = :uid AND pe.financial_year = :fy`,
-              { replacements: { uid: job.source_user_id, fy: job.financial_year }, type: db.Sequelize.QueryTypes.SELECT, transaction }
+              `SELECT pe.*
+     FROM production_entries pe
+     JOIN parent_ids p
+       ON pe.id = p.id OR pe.production_entry_id = p.id
+     WHERE pe.user_id = :uid
+       AND pe.financial_year = :fy`,
+              {
+                replacements: {
+                  uid: job.source_user_id,
+                  fy: job.financial_year
+                },
+                type: db.Sequelize.QueryTypes.SELECT,
+                transaction
+              }
             );
-            if (productionEntries.length < PAGE_SIZE) exhausted.production_entries = true;
+
+            // keep your existing logic
+            if (productionEntries.length < PAGE_SIZE) {
+              exhausted.production_entries = true;
+            }
+
             offsets.production_entries += PAGE_SIZE;
           } else {
             exhausted.production_entries = true;
