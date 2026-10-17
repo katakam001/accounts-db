@@ -339,13 +339,25 @@ exports.buildGroupAccountMap = (groupedAccounts, config) => {
       } else if (struct.displayMode === 'nested') {
         const rel = RELATIONSHIP_GROUPS.find(r => normalize(r.parent) === normalize(groupName));
         const children = rel?.children || [];
-        accounts = children.flatMap(child => groupMap.get(normalize(child)) || []);
+        accounts = children.flatMap(child =>
+          (groupMap.get(normalize(child)) || []).map(acc => ({
+            ...acc,
+            parent_group_name: groupName,
+            child_group_name: child
+          }))
+        );
       } else if (struct.displayMode === 'mixed') {
         const rel = RELATIONSHIP_GROUPS.find(r => normalize(r.parent) === normalize(groupName));
         const children = rel?.children || [];
         accounts = [
           ...(groupMap.get(normalize(groupName)) || []),
-          ...children.flatMap(child => groupMap.get(normalize(child)) || [])
+          ...children.flatMap(child =>
+            (groupMap.get(normalize(child)) || []).map(acc => ({
+              ...acc,
+              parent_group_name: groupName,
+              child_group_name: child
+            }))
+          )
         ];
       }
     } else {
